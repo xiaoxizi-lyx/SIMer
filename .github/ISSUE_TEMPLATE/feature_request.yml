@@ -1,0 +1,30 @@
+name: 💡 功能建议 (Feature Request)
+description: 提出对 SIMer 的新功能想法或用户体验优化建议
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        欢迎分享您对 SIMer 的创新设想或体验改进建议！
+  - type: textarea
+    id: problem
+    attributes:
+      label: 解决的痛点 (Problem Statement)
+      description: 当前应用在哪些场景下不够方便？或者遇到了什么限制？
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: 建议方案 (Proposed Solution)
+      description: 您期望 SIMer 如何改进或增加哪些功能？
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 替代方案或补充说明 (Alternatives / Additional Context)
+      description: 您是否考虑过其他方案或有相关的界面参考？
+    validations:
+      required: false

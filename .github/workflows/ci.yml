@@ -1,0 +1,151 @@
+name: SIMer CI & Release
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: 'Publish to GitHub Releases'
+        required: false
+        type: boolean
+        default: true
+      custom_tag:
+        description: 'Custom tag name (optional, defaults to v<version> from pubspec.yaml)'
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  analyze-and-test:
+    name: Code Analysis & Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Run Flutter Analyzer
+        run: flutter analyze
+
+      - name: Run Unit Tests
+        run: flutter test --coverage
+
+  build-and-release:
+    name: Build Multi-Arch APKs & Release
+    needs: analyze-and-test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Extract App Version & Tag
+        id: version_info
+        run: |
+          APP_VERSION=$(grep '^version:' pubspec.yaml | sed 's/version: //' | cut -d '+' -f 1 | tr -d ' ')
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG_NAME="${{ github.ref_name }}"
+          elif [ -n "${{ inputs.custom_tag }}" ]; then
+            TAG_NAME="${{ inputs.custom_tag }}"
+          else
+            TAG_NAME="v${APP_VERSION}"
+          fi
+          echo "app_version=${APP_VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag_name=${TAG_NAME}" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: ${APP_VERSION}, tag: ${TAG_NAME}"
+
+      - name: Build Universal APK
+        run: flutter build apk --release
+
+      - name: Build Split ABIs APKs (arm64-v8a, armeabi-v7a, x86_64)
+        run: flutter build apk --release --split-per-abi
+
+      - name: Organize Artifacts & Generate Checksums
+        run: |
+          VERSION="${{ steps.version_info.outputs.app_version }}"
+          mkdir -p release-apks
+          
+          # Universal APK
+          cp build/app/outputs/flutter-apk/app-release.apk "release-apks/SIMer-v${VERSION}-universal.apk"
+          
+          # Split ABIs APKs
+          cp build/app/outputs/flutter-apk/app-arm64-v8a-release.apk "release-apks/SIMer-v${VERSION}-arm64-v8a.apk"
+          cp build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk "release-apks/SIMer-v${VERSION}-armeabi-v7a.apk"
+          cp build/app/outputs/flutter-apk/app-x86_64-release.apk "release-apks/SIMer-v${VERSION}-x86_64.apk"
+          
+          # Compute SHA-256 checksums
+          cd release-apks
+          sha256sum *.apk > SHA256SUMS.txt
+          ls -lh
+
+      - name: Upload APKs Artifact to Workflow
+        uses: actions/upload-artifact@v4
+        with:
+          name: SIMer-release-apks
+          path: release-apks/
+          retention-days: 14
+
+      - name: Publish to GitHub Releases
+        uses: softprops/action-gh-release@v2
+        if: github.event_name != 'pull_request' && (github.event_name != 'workflow_dispatch' || inputs.publish_release != false)
+        with:
+          tag_name: ${{ steps.version_info.outputs.tag_name }}
+          name: "SIMer ${{ steps.version_info.outputs.tag_name }}"
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+          make_latest: "true"
+          body: |
+            ## SIMer ${{ steps.version_info.outputs.tag_name }}
+
+            ### 📦 APK 架构下载指南
+            - **`SIMer-v${{ steps.version_info.outputs.app_version }}-arm64-v8a.apk`**：推荐绝大多数现代 Android 手机下载（64位 ARM，体积小，运行性能最佳）
+            - **`SIMer-v${{ steps.version_info.outputs.app_version }}-armeabi-v7a.apk`**：适用于较旧的 32 位 Android 手机及老旧设备
+            - **`SIMer-v${{ steps.version_info.outputs.app_version }}-x86_64.apk`**：适用于 64 位 x86 平板、PC 模拟器及 ChromeOS
+            - **`SIMer-v${{ steps.version_info.outputs.app_version }}-universal.apk`**：全架构通用包（内含所有支持架构的二进制，设备兼容性最强）
+
+            *注：现代 Flutter 官方发布引擎已全面下线旧式 32 位 x86 运行时，所有 Intel/AMD 模拟器及 PC 环境建议选择 x86_64 版本。*
+
+            ### 🔐 完整性校验
+            所有安装包的 SHA-256 校验哈希值详见附件中的 `SHA256SUMS.txt`。
+          files: |
+            release-apks/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
