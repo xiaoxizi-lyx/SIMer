@@ -1,190 +1,106 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:workmanager/workmanager.dart';
+import 'package:timezone/timezone.dart' as tz;
 
-import '../database/database_helper.dart';
+import '../models/sim_card.dart';
+import 'reminder_planner.dart';
 
-/// 通知服务：SIM卡到期提醒
-class NotificationService {
-  NotificationService._();
-
-  static final FlutterLocalNotificationsPlugin _notifications =
+/// 到期提醒通知。
+///
+/// 不再依赖每天运行的后台任务（国产系统上常被延迟或杀掉），而是在卡片变化、
+/// 设置变化与应用启动时，为每张卡片直接向系统预约一次性的提醒
+/// （非精确闹钟，无需 SCHEDULE_EXACT_ALARM 权限；重启后由插件自动恢复）。
+abstract final class NotificationService {
+  static final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
 
-  static const String _channelId = 'sim_keeper_expiry';
-  static const String _channelName = 'SIM卡到期提醒';
-  static const String _channelDescription = '当SIM卡即将到期或需要使用时发送提醒';
-  static const String _taskName = 'sim_keeper_daily_check';
-  static const String _taskUniqueName = 'com.simkeeper.dailyExpiryCheck';
+  static const String _channelId = 'simer_expiry_reminders';
+  static const String _channelName = '到期提醒';
+  static const String _channelDescription = 'SIM 卡即将到期、今天到期或已过期时提醒';
 
-  /// 初始化通知插件
-  static Future<void> initialize() async {
-    // Android 初始化设置
-    const androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
-    );
-
-    // iOS 初始化设置
-    const iosSettings = DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
-
-    const settings = InitializationSettings(
-      android: androidSettings,
-      iOS: iosSettings,
-    );
-
-    await _notifications.initialize(
-      settings: settings,
-      onDidReceiveNotificationResponse: _onNotificationTapped,
-    );
-
-    // 请求 Android 13+ 通知权限
-    await _requestPermissions();
-  }
-
-  /// 请求通知权限
-  static Future<void> _requestPermissions() async {
-    // Android
-    final androidPlugin = _notifications
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >();
-    await androidPlugin?.requestNotificationsPermission();
-
-    // iOS
-    final iosPlugin = _notifications
-        .resolvePlatformSpecificImplementation<
-          IOSFlutterLocalNotificationsPlugin
-        >();
-    await iosPlugin?.requestPermissions(alert: true, badge: true, sound: true);
-  }
-
-  /// 通知被点击时的回调
-  static void _onNotificationTapped(NotificationResponse response) {
-    // 后续接入页面导航：根据 payload 跳转到对应SIM卡详情
-    // payload 格式: sim_card_id
-  }
-
-  /// 注册每日后台检查任务
-  static Future<void> scheduleExpiryCheck() async {
-    await Workmanager().initialize(_callbackDispatcher, isInDebugMode: false);
-
-    await Workmanager().registerPeriodicTask(
-      _taskUniqueName,
-      _taskName,
-      frequency: const Duration(hours: 24),
-      constraints: Constraints(
-        networkType: NetworkType.not_required,
-        requiresBatteryNotLow: false,
-        requiresCharging: false,
-        requiresDeviceIdle: false,
-        requiresStorageNotLow: false,
-      ),
-      existingWorkPolicy: ExistingWorkPolicy.replace,
-      initialDelay: const Duration(minutes: 5),
-    );
-  }
-
-  /// 取消每日后台检查任务
-  static Future<void> cancelExpiryCheck() async {
-    await Workmanager().cancelByUniqueName(_taskUniqueName);
-  }
-
-  /// 检查所有卡片并发送需要提醒的通知
-  static Future<void> checkAndNotify() async {
-    final cards = await DatabaseHelper.instance.getSimCards(archived: false);
-    final cardsNeedingReminder = cards
-        .where((c) => c.isExpired || c.isExpiringSoon)
-        .toList();
-
-    for (int i = 0; i < cardsNeedingReminder.length; i++) {
-      final card = cardsNeedingReminder[i];
-      final daysLeft = card.daysRemaining ?? 0;
-
-      String title;
-      String body;
-
-      if (daysLeft < 0) {
-        title = '⚠️ SIM卡已过期';
-        body = '${card.carrierName} 的SIM卡已过期，请及时处理';
-      } else if (daysLeft == 0) {
-        title = '⏰ SIM卡今天到期';
-        body = '${card.carrierName} 的SIM卡今天到期';
-      } else if (daysLeft == 1) {
-        title = '🔴 SIM卡明天到期';
-        body = '${card.carrierName} 的SIM卡将在明天到期';
-      } else {
-        title = '📱 SIM卡即将到期';
-        body = '${card.carrierName} 的SIM卡将在 $daysLeft 天后到期';
-      }
-
-      // 滚动有效期的特殊提示
-      if (card.validityType.name == 'rolling') {
-        body += '，请尽快使用以续期';
-      }
-
-      await _showNotification(
-        id: card.id ?? i,
-        title: title,
-        body: body,
-        payload: '${card.id}',
-      );
-    }
-  }
-
-  /// 显示单条通知
-  static Future<void> _showNotification({
-    required int id,
-    required String title,
-    required String body,
-    String? payload,
-  }) async {
-    const androidDetails = AndroidNotificationDetails(
+  static const NotificationDetails _details = NotificationDetails(
+    android: AndroidNotificationDetails(
       _channelId,
       _channelName,
       channelDescription: _channelDescription,
       importance: Importance.high,
       priority: Priority.high,
-      showWhen: true,
-      enableVibration: true,
       icon: '@mipmap/ic_launcher',
+    ),
+  );
+
+  /// 用户点击通知后要打开的卡片 UUID；首页监听并展示卡片详情。
+  static final ValueNotifier<String?> openCardRequest = ValueNotifier(null);
+
+  static bool _initialized = false;
+
+  static AndroidFlutterLocalNotificationsPlugin? get _android => _plugin
+      .resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin
+      >();
+
+  static Future<void> initialize() async {
+    await _plugin.initialize(
+      settings: const InitializationSettings(
+        android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      ),
+      onDidReceiveNotificationResponse: (response) {
+        final uuid = response.payload;
+        if (uuid != null && uuid.isNotEmpty) openCardRequest.value = uuid;
+      },
     );
+    _initialized = true;
 
-    const iosDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBadge: true,
-      presentSound: true,
-    );
-
-    const details = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
-
-    await _notifications.show(
-      id: id,
-      title: title,
-      body: body,
-      notificationDetails: details,
-      payload: payload,
-    );
-  }
-
-  /// 清除所有通知
-  static Future<void> clearAllNotifications() async {
-    await _notifications.cancelAll();
-  }
-}
-
-/// WorkManager 回调入口（必须是顶层函数）
-@pragma('vm:entry-point')
-void _callbackDispatcher() {
-  Workmanager().executeTask((taskName, inputData) async {
-    if (taskName == 'sim_keeper_daily_check') {
-      await NotificationService.checkAndNotify();
+    // 应用由点击通知冷启动时
+    final launch = await _plugin.getNotificationAppLaunchDetails();
+    final payload = launch?.notificationResponse?.payload;
+    if ((launch?.didNotificationLaunchApp ?? false) &&
+        payload != null &&
+        payload.isNotEmpty) {
+      openCardRequest.value = payload;
     }
-    return true;
-  });
+  }
+
+  /// 系统是否允许本应用发送通知。
+  static Future<bool> areEnabled() async =>
+      await _android?.areNotificationsEnabled() ?? false;
+
+  /// 请求通知权限（Android 13+ 会弹出系统对话框）。返回是否已授权。
+  static Future<bool> requestPermission() async =>
+      await _android?.requestNotificationsPermission() ?? false;
+
+  /// 按当前卡片重新预约所有提醒：先取消尚未触发的旧提醒，已显示的通知保持不变。
+  static Future<void> reschedule(
+    Iterable<SimCard> cards, {
+    required bool enabled,
+    required int hour,
+    required int minute,
+  }) async {
+    if (!_initialized) return;
+    await _plugin.cancelAllPendingNotifications();
+    if (!enabled) return;
+
+    final plan = ReminderPlanner.plan(
+      cards,
+      now: DateTime.now(),
+      hour: hour,
+      minute: minute,
+    );
+    for (final reminder in plan) {
+      try {
+        await _plugin.zonedSchedule(
+          id: reminder.id,
+          title: reminder.title,
+          body: reminder.body,
+          // 以绝对时刻预约；时区变化后在下次启动时按新时区重新预约
+          scheduledDate: tz.TZDateTime.from(reminder.fireAt, tz.UTC),
+          notificationDetails: _details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          payload: reminder.cardUuid,
+        );
+      } on Exception catch (e) {
+        debugPrint('预约提醒失败 ($reminder): $e');
+      }
+    }
+  }
 }

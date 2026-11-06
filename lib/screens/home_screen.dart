@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/sim_card_provider.dart';
+import '../services/notification_service.dart';
 import '../providers/auth_provider.dart';
 import '../providers/filter_provider.dart';
 import '../theme/app_colors.dart';
+import '../widgets/card_detail_sheet.dart';
 import '../widgets/sim_card_flip.dart';
 import '../widgets/filter_chips.dart' as fc;
 import '../widgets/sort_menu.dart';
@@ -27,7 +29,19 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _showAuthNotice());
+    NotificationService.openCardRequest.addListener(_openRequestedCard);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showAuthNotice();
+      _openRequestedCard();
+    });
+  }
+
+  /// 点击到期提醒通知后，打开对应卡片的详情。
+  void _openRequestedCard() {
+    final uuid = NotificationService.openCardRequest.value;
+    if (uuid == null || !mounted) return;
+    NotificationService.openCardRequest.value = null;
+    CardDetailSheet.show(context, uuid);
   }
 
   /// 显示应用锁的一次性提示（例如设备移除锁屏后应用锁被自动关闭）。
@@ -44,6 +58,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   void dispose() {
+    NotificationService.openCardRequest.removeListener(_openRequestedCard);
     _searchController.dispose();
     super.dispose();
   }

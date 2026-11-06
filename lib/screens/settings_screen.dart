@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
+import '../providers/reminder_provider.dart';
 import '../theme/app_colors.dart';
 import 'tag_manage_screen.dart';
 import 'archive_screen.dart';
@@ -30,6 +31,10 @@ class SettingsScreen extends StatelessWidget {
           const SizedBox(height: 16),
 
           // ═══════ 数据 ═══════
+          _buildSectionHeader(context, '提醒'),
+          _buildReminderSection(context),
+          const SizedBox(height: 16),
+
           _buildSectionHeader(context, '数据'),
           _buildDataSection(context),
           const SizedBox(height: 16),
@@ -203,6 +208,57 @@ class SettingsScreen extends StatelessWidget {
       ),
     );
     if (selected != null) await auth.setLockTimeout(selected);
+  }
+
+  Widget _buildReminderSection(BuildContext context) {
+    final reminders = context.watch<ReminderProvider>();
+    final time = reminders.time;
+    return _settingsCard(
+      context,
+      children: [
+        SwitchListTile.adaptive(
+          secondary: const Icon(Icons.notifications_active_outlined, size: 22),
+          title: const Text('到期提醒', style: TextStyle(fontSize: 15)),
+          subtitle: const Text(
+            '在卡片提前提醒日、到期当天与过期次日各提醒一次',
+            style: TextStyle(fontSize: 12),
+          ),
+          value: reminders.enabled,
+          onChanged: reminders.setEnabled,
+        ),
+        if (reminders.enabled) ...[
+          _thinDivider(context),
+          ListTile(
+            leading: const Icon(Icons.schedule_rounded, size: 22),
+            title: const Text('提醒时间', style: TextStyle(fontSize: 15)),
+            trailing: Text(time.format(context)),
+            onTap: () async {
+              final picked = await showTimePicker(
+                context: context,
+                initialTime: time,
+              );
+              if (picked != null) await reminders.setTime(picked);
+            },
+          ),
+          if (!reminders.permissionGranted) ...[
+            _thinDivider(context),
+            ListTile(
+              leading: Icon(
+                Icons.notifications_off_outlined,
+                size: 22,
+                color: Theme.of(context).colorScheme.error,
+              ),
+              title: const Text('通知权限未开启', style: TextStyle(fontSize: 15)),
+              subtitle: const Text(
+                '未开启时提醒不会显示，点击授权',
+                style: TextStyle(fontSize: 12),
+              ),
+              onTap: reminders.requestPermission,
+            ),
+          ],
+        ],
+      ],
+    );
   }
 
   Widget _buildDataSection(BuildContext context) {

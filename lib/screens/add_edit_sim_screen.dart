@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
@@ -5,6 +7,7 @@ import 'package:uuid/uuid.dart';
 import '../models/enums.dart';
 import '../models/sim_card.dart';
 import '../models/tag.dart';
+import '../providers/reminder_provider.dart';
 import '../providers/sim_card_provider.dart';
 import '../services/qr_parser_service.dart';
 import 'qr_scanner_screen.dart';
@@ -173,6 +176,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
 
     setState(() => _saving = true);
     final provider = context.read<SimCardProvider>();
+    final reminders = context.read<ReminderProvider>();
     try {
       final card = _draft.build(newUuid: const Uuid().v4());
       if (_draft.isEditing) {
@@ -180,6 +184,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
       } else {
         await provider.addSimCard(card);
       }
+      unawaited(reminders.onCardSaved(card));
       if (mounted) Navigator.of(context).pop(true);
     } on Exception catch (e) {
       debugPrint('保存失败: $e');
