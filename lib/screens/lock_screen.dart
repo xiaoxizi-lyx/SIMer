@@ -1,14 +1,62 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
 import '../theme/app_colors.dart';
-import 'home_screen.dart';
 
-/// 生物识别锁屏页面
+/// 在锁定时覆盖整个应用（包括所有已打开的页面、对话框和底部弹窗）。
 ///
-/// App 启动时如果开启了生物识别锁，展示此页面
-/// 自动触发认证，成功后跳转到首页
+/// 放在 `MaterialApp.builder` 中，位于 Navigator 之上；同时把应用生命周期转发给
+/// [AuthProvider] 以便离开应用超时后重新上锁。
+class AppLockGate extends StatefulWidget {
+  const AppLockGate({super.key, required this.child});
+
+  final Widget child;
+
+  @override
+  State<AppLockGate> createState() => _AppLockGateState();
+}
+
+class _AppLockGateState extends State<AppLockGate> {
+  late final AppLifecycleListener _lifecycle = AppLifecycleListener(
+    onStateChange: (state) =>
+        context.read<AuthProvider>().handleLifecycle(state),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle; // 立即开始监听
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final locked = context.select<AuthProvider, bool>((a) => a.isLocked);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        // 锁定时下层内容既不可交互，也不暴露给读屏，动画暂停
+        ExcludeSemantics(
+          excluding: locked,
+          child: TickerMode(
+            enabled: !locked,
+            child: IgnorePointer(ignoring: locked, child: widget.child),
+          ),
+        ),
+        if (locked) const LockScreen(),
+      ],
+    );
+  }
+}
+
+/// 锁屏界面。出现时（且应用在前台）自动发起一次验证。
 class LockScreen extends StatefulWidget {
   const LockScreen({super.key});
 
@@ -18,170 +66,120 @@ class LockScreen extends StatefulWidget {
 
 class _LockScreenState extends State<LockScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _breatheController;
-  late Animation<double> _breatheAnimation;
-  bool _isAuthenticating = false;
+  late final AnimationController _breathe = AnimationController(
+    duration: const Duration(milliseconds: 2000),
+    vsync: this,
+  );
+  late final AppLifecycleListener _lifecycle = AppLifecycleListener(
+    onResume: _authenticate,
+  );
 
   @override
   void initState() {
     super.initState();
-    _breatheController = AnimationController(
-      duration: const Duration(milliseconds: 2000),
-      vsync: this,
-    );
-    _breatheAnimation = Tween<double>(begin: 0.6, end: 1.0).animate(
-      CurvedAnimation(parent: _breatheController, curve: Curves.easeInOut),
-    );
-    _breatheController.repeat(reverse: true);
-
-    // 自动触发认证
+    _lifecycle;
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _triggerAuth();
+      if (!mounted) return;
+      if (!MediaQuery.disableAnimationsOf(context)) {
+        _breathe.repeat(reverse: true);
+      }
+      if (WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed) {
+        _authenticate();
+      }
     });
   }
 
   @override
   void dispose() {
-    _breatheController.dispose();
+    _lifecycle.dispose();
+    _breathe.dispose();
     super.dispose();
   }
 
-  Future<void> _triggerAuth() async {
-    if (_isAuthenticating) return;
-    setState(() => _isAuthenticating = true);
-
-    try {
-      final authProvider = context.read<AuthProvider>();
-      final success = await authProvider.authenticate();
-      if (success && mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const HomeScreen()),
-        );
-      }
-    } catch (_) {
-      // 认证失败或取消
-    } finally {
-      if (mounted) {
-        setState(() => _isAuthenticating = false);
-      }
-    }
+  void _authenticate() {
+    if (!mounted) return;
+    context.read<AuthProvider>().authenticate();
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor = isDark
-        ? AppColors.darkBackground
-        : AppColors.lightBackground;
-    final textColor = isDark ? AppColors.darkText : AppColors.lightText;
-    final secondaryColor = isDark
+    final auth = context.watch<AuthProvider>();
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final secondary = isDark
         ? AppColors.darkTextSecondary
         : AppColors.lightTextSecondary;
 
-    return Scaffold(
-      backgroundColor: bgColor,
-      body: SafeArea(
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // ── App 图标 ──
-              AnimatedBuilder(
-                animation: _breatheAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _breatheAnimation.value,
-                    child: child,
-                  );
-                },
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: AppColors.cardGradient(AppColors.primary),
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.primary.withValues(alpha: 0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: Scaffold(
+        backgroundColor: isDark
+            ? AppColors.darkBackground
+            : AppColors.lightBackground,
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ScaleTransition(
+                    scale: Tween<double>(begin: 0.85, end: 1).animate(
+                      CurvedAnimation(
+                        parent: _breathe,
+                        curve: Curves.easeInOut,
                       ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.sim_card_rounded,
-                    size: 48,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              // ── App 名称 ──
-              Text(
-                'SIMer',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.w700,
-                  color: textColor,
-                ),
-              ),
-              const SizedBox(height: 8),
-
-              // ── 提示信息 ──
-              Text(
-                '请验证身份',
-                style: TextStyle(fontSize: 15, color: secondaryColor),
-              ),
-              const SizedBox(height: 48),
-
-              // ── 指纹按钮 ──
-              GestureDetector(
-                onTap: _isAuthenticating ? null : _triggerAuth,
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: _isAuthenticating
-                        ? AppColors.primary.withValues(alpha: 0.1)
-                        : AppColors.primary.withValues(alpha: 0.08),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.primary.withValues(alpha: 0.3),
-                      width: 2,
+                    ),
+                    child: Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: AppColors.cardGradient(AppColors.primary),
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(24),
+                      ),
+                      child: const Icon(
+                        Icons.sim_card_rounded,
+                        size: 48,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
-                  child: _isAuthenticating
-                      ? const Padding(
-                          padding: EdgeInsets.all(20),
-                          child: CircularProgressIndicator.adaptive(
-                            strokeWidth: 2.5,
-                          ),
-                        )
-                      : Icon(
-                          Icons.fingerprint_rounded,
-                          size: 36,
-                          color: AppColors.primary,
-                        ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // ── 点击提示 ──
-              if (!_isAuthenticating)
-                Text(
-                  '点击验证',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: secondaryColor.withValues(alpha: 0.7),
+                  const SizedBox(height: 24),
+                  Text(
+                    'SIMer 已锁定',
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-            ],
+                  const SizedBox(height: 8),
+                  Text(
+                    auth.lastError ?? '请验证身份后继续',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: auth.lastError == null
+                          ? secondary
+                          : theme.colorScheme.error,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                  FilledButton.icon(
+                    onPressed: auth.isAuthenticating ? null : _authenticate,
+                    icon: auth.isAuthenticating
+                        ? const SizedBox.square(
+                            dimension: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.fingerprint_rounded),
+                    label: const Text('解锁'),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

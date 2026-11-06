@@ -121,42 +121,88 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildSecuritySection(BuildContext context) {
-    final authProvider = context.watch<AuthProvider>();
+    final auth = context.watch<AuthProvider>();
+
+    Future<void> toggleLock(bool value) async {
+      final error = await auth.setLockEnabled(value);
+      if (error != null && context.mounted) {
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(error)));
+      }
+    }
 
     return _settingsCard(
       context,
       children: [
-        ListTile(
-          leading: const Icon(Icons.fingerprint_rounded, size: 22),
-          title: Text('启用生物识别锁', style: TextStyle(fontSize: 15)),
-          subtitle: !authProvider.biometricAvailable
-              ? Text(
-                  '设备不支持生物识别',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: AppColors.countdownDanger,
-                  ),
-                )
-              : null,
-          trailing: Switch.adaptive(
-            value: authProvider.biometricEnabled,
-            onChanged: authProvider.biometricAvailable
-                ? (value) async {
-                    final error = await authProvider.setBiometricEnabled(value);
-                    if (error != null && context.mounted) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(error),
-                          behavior: SnackBarBehavior.floating,
-                        ),
-                      );
-                    }
-                  }
-                : null,
+        SwitchListTile.adaptive(
+          secondary: const Icon(Icons.fingerprint_rounded, size: 22),
+          title: const Text('应用锁', style: TextStyle(fontSize: 15)),
+          subtitle: Text(
+            auth.deviceSecure ? '打开应用时验证指纹、面容或设备密码' : '需要先在系统设置中设置锁屏密码',
+            style: const TextStyle(fontSize: 12),
           ),
+          value: auth.lockEnabled,
+          onChanged: auth.isAuthenticating ? null : toggleLock,
+        ),
+        if (auth.lockEnabled) ...[
+          _thinDivider(context),
+          ListTile(
+            leading: const Icon(Icons.timer_outlined, size: 22),
+            title: const Text('自动锁定', style: TextStyle(fontSize: 15)),
+            subtitle: const Text(
+              '离开应用多久后需要重新验证',
+              style: TextStyle(fontSize: 12),
+            ),
+            trailing: Text(auth.lockTimeout.label),
+            onTap: () => _chooseLockTimeout(context, auth),
+          ),
+        ],
+        _thinDivider(context),
+        SwitchListTile.adaptive(
+          secondary: const Icon(Icons.visibility_off_outlined, size: 22),
+          title: const Text('防窥保护', style: TextStyle(fontSize: 15)),
+          subtitle: const Text(
+            '在「最近任务」中隐藏应用内容；Android 12 及以下会同时禁止截屏',
+            style: TextStyle(fontSize: 12),
+          ),
+          value: auth.privacyProtection,
+          onChanged: auth.setPrivacyProtection,
         ),
       ],
     );
+  }
+
+  Future<void> _chooseLockTimeout(
+    BuildContext context,
+    AuthProvider auth,
+  ) async {
+    final selected = await showDialog<LockTimeout>(
+      context: context,
+      builder: (ctx) => SimpleDialog(
+        title: const Text('自动锁定'),
+        children: [
+          RadioGroup<LockTimeout>(
+            groupValue: auth.lockTimeout,
+            onChanged: (value) => Navigator.of(ctx).pop(value),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                for (final timeout in LockTimeout.values)
+                  RadioListTile<LockTimeout>(
+                    value: timeout,
+                    title: Text(
+                      timeout == LockTimeout.immediately
+                          ? '离开应用后立即'
+                          : '离开应用 ${timeout.label}',
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+    if (selected != null) await auth.setLockTimeout(selected);
   }
 
   Widget _buildDataSection(BuildContext context) {

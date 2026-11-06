@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 import '../database/database_helper.dart';
+import '../providers/auth_provider.dart';
 import '../providers/sim_card_provider.dart';
 import '../services/backup_codec.dart';
 import '../services/backup_service.dart';
@@ -39,13 +40,15 @@ Future<void> runExportFlow(BuildContext context) async {
   if (target == null || !context.mounted) return;
 
   final messenger = ScaffoldMessenger.of(context);
+  final auth = context.read<AuthProvider>();
   try {
     final String message;
     switch (target) {
       case _ExportTarget.file:
-        message = await BackupService.saveToFile() ? '备份已保存' : '已取消保存';
+        final saved = await auth.withoutAutoLock(BackupService.saveToFile);
+        message = saved ? '备份已保存' : '已取消保存';
       case _ExportTarget.share:
-        message = switch (await BackupService.share()) {
+        message = switch (await auth.withoutAutoLock(BackupService.share)) {
           ShareExportStatus.shared => '备份已分享',
           ShareExportStatus.dismissed => '已取消分享',
           ShareExportStatus.unknown => '已打开分享面板',
@@ -62,10 +65,11 @@ Future<void> runExportFlow(BuildContext context) async {
 Future<void> runImportFlow(BuildContext context) async {
   final messenger = ScaffoldMessenger.of(context);
   final provider = context.read<SimCardProvider>();
+  final auth = context.read<AuthProvider>();
 
   final ImportPreview? preview;
   try {
-    preview = await BackupService.pickAndPreview();
+    preview = await auth.withoutAutoLock(BackupService.pickAndPreview);
   } on BackupFormatException catch (e) {
     messenger.showSnackBar(SnackBar(content: Text(e.message)));
     return;

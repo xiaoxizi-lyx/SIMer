@@ -7,7 +7,9 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/auth_provider.dart';
 import '../services/platform_service.dart';
 import '../services/qr_parser_service.dart';
 import '../theme/app_colors.dart';
@@ -246,7 +248,9 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     File? tempCopy;
     String? raw;
     try {
-      final file = await FilePicker.pickFile(type: FileType.image);
+      final file = await context.read<AuthProvider>().withoutAutoLock(
+        () => FilePicker.pickFile(type: FileType.image),
+      );
       if (file == null) return;
       var path = file.path;
       if (path == null) {

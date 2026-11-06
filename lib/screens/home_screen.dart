@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/sim_card_provider.dart';
+import '../providers/auth_provider.dart';
 import '../providers/filter_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/sim_card_flip.dart';
@@ -22,6 +23,24 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showAuthNotice());
+  }
+
+  /// 显示应用锁的一次性提示（例如设备移除锁屏后应用锁被自动关闭）。
+  void _showAuthNotice() {
+    if (!mounted) return;
+    final auth = context.read<AuthProvider>();
+    final notice = auth.notice;
+    if (notice == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(notice), duration: const Duration(seconds: 6)),
+    );
+    auth.dismissNotice();
+  }
 
   @override
   void dispose() {
