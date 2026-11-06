@@ -141,17 +141,33 @@ jobs:
       - name: Verify APK permissions and signature
         run: |
           build_tools="$(find "${ANDROID_HOME}/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
+          echo "Using ${build_tools}"
           for apk in build/app/outputs/flutter-apk/app-*-release.apk; do
             echo "== ${apk}"
             permissions="$("${build_tools}/aapt2" dump permissions "${apk}")"
             echo "${permissions}"
+            # Both checks must fail closed: if the tool output cannot be read, stop instead of passing.
+            if ! echo "${permissions}" | grep -q "uses-permission"; then
+              echo "::error::Could not read the permissions of ${apk}"
+              exit 1
+            fi
             if echo "${permissions}" | grep -q "android.permission.INTERNET"; then
               echo "::error::${apk} requests the INTERNET permission"
               exit 1
             fi
-            certs="$("${build_tools}/apksigner" verify --print-certs "${apk}")"
-            echo "${certs}" | grep -E "Signer #1 certificate (DN|SHA-256 digest)"
-            if [ "${IS_RELEASE}" = "true" ] && echo "${certs}" | grep -q "CN=Android Debug"; then
+            if ! certs="$("${build_tools}/apksigner" verify --print-certs "${apk}")"; then
+              echo "::error::${apk} failed signature verification"
+              exit 1
+            fi
+            # apksigner prints "Signer #1 certificate DN: ..." up to 36.x and "V2 Signer: certificate DN: ..." from 37.
+            dn="$(echo "${certs}" | grep "certificate DN:" || true)"
+            if [ -z "${dn}" ]; then
+              echo "${certs}"
+              echo "::error::Could not read the signing certificate of ${apk}"
+              exit 1
+            fi
+            echo "${certs}" | grep -E "certificate (DN|SHA-256 digest):"
+            if [ "${IS_RELEASE}" = "true" ] && echo "${dn}" | grep -q "CN=Android Debug"; then
               echo "::error::${apk} is signed with the Android debug key"
               exit 1
             fi
