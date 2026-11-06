@@ -92,14 +92,22 @@ class ArchiveScreen extends StatelessWidget {
                 icon: Icons.unarchive_rounded,
                 label: '恢复',
                 color: AppColors.primary,
-                onTap: () {
-                  provider.restoreSimCard(card.id!);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('已恢复 ${card.carrierName}'),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
+                onTap: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  try {
+                    await provider.restoreSimCard(card.id!);
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text('已恢复 ${card.carrierName}'),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  } on Exception catch (e) {
+                    debugPrint('恢复失败: $e');
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('恢复失败，请重试')),
+                    );
+                  }
                 },
               ),
               const SizedBox(width: 12),
@@ -172,15 +180,23 @@ class ArchiveScreen extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.countdownDanger,
             ),
-            onPressed: () {
-              provider.permanentlyDelete(card.id!);
+            onPressed: () async {
               Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('已永久删除 ${card.carrierName}'),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
+              final messenger = ScaffoldMessenger.of(context);
+              try {
+                await provider.permanentlyDelete(card.id!);
+                messenger.showSnackBar(
+                  SnackBar(
+                    content: Text('已永久删除 ${card.carrierName}'),
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              } on Exception catch (e) {
+                debugPrint('删除失败: $e');
+                messenger.showSnackBar(
+                  const SnackBar(content: Text('删除失败，请重试')),
+                );
+              }
             },
             child: const Text('删除'),
           ),

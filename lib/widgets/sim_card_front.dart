@@ -31,9 +31,10 @@ class SimCardFront extends StatelessWidget {
   Widget build(BuildContext context) {
     final gradient = AppColors.cardGradient(_baseColor);
 
+    // 至少 200 高，系统字体放大时随内容增高而不是溢出
     return Container(
       width: double.infinity,
-      height: 200,
+      constraints: const BoxConstraints(minHeight: 200),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(20),
         gradient: LinearGradient(
@@ -53,18 +54,23 @@ class SimCardFront extends StatelessWidget {
         color: Colors.transparent,
         child: Padding(
           padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // ── 顶部行：旗帜+运营商名 / 状态徽章 ──
-              _buildTopRow(),
-              const Spacer(),
-              // ── 中部：号码 + 倒计时 ──
-              _buildMiddleSection(),
-              const Spacer(),
-              // ── 底部：ICCID / SIM类型+标签 ──
-              _buildBottomRow(),
-            ],
+          // IntrinsicHeight + 最小高度：内容少时保持原有的上中下分布，内容多时自然撑高
+          child: IntrinsicHeight(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ── 顶部行：旗帜+运营商名 / 状态徽章 ──
+                _buildTopRow(),
+                const Spacer(),
+                const SizedBox(height: 12),
+                // ── 中部：号码 + 倒计时 ──
+                _buildMiddleSection(),
+                const Spacer(),
+                const SizedBox(height: 12),
+                // ── 底部：ICCID / SIM类型+标签 ──
+                _buildBottomRow(),
+              ],
+            ),
           ),
         ),
       ),
@@ -140,13 +146,18 @@ class SimCardFront extends StatelessWidget {
       children: [
         // 主号码
         if (simCard.primaryNumber != null)
-          Text(
-            simCard.primaryNumber!,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              color: _textColor,
-              letterSpacing: 1.2,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              simCard.primaryNumber!,
+              maxLines: 1,
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w700,
+                color: _textColor,
+                letterSpacing: 1.2,
+              ),
             ),
           ),
         // 次要号码
@@ -159,8 +170,11 @@ class SimCardFront extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 6),
-        // 倒计时 + 滚动有效期按钮
-        Row(
+        // 倒计时 + 滚动有效期按钮（空间不足时换行）
+        Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
             ValidityCountdown(
               daysRemaining: simCard.daysRemaining,
@@ -169,10 +183,7 @@ class SimCardFront extends StatelessWidget {
               textColor: _textColor,
               fontSize: 12,
             ),
-            if (showMarkUsed && onMarkAsUsed != null) ...[
-              const SizedBox(width: 8),
-              _buildMarkUsedButton(),
-            ],
+            if (showMarkUsed && onMarkAsUsed != null) _buildMarkUsedButton(),
           ],
         ),
       ],

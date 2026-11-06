@@ -1,6 +1,7 @@
 package io.github.xiaoxizi_lyx.simer
 
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
@@ -19,6 +20,7 @@ class MainActivity : FlutterFragmentActivity() {
                         applyPrivacyProtection(call.argument<Boolean>("enabled") ?: false)
                         result.success(null)
                     }
+                    "appVersion" -> result.success(appVersion())
                     "openAppSettings" -> {
                         startActivity(
                             Intent(
@@ -47,6 +49,24 @@ class MainActivity : FlutterFragmentActivity() {
         } else {
             window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
+    }
+
+    private fun appVersion(): Map<String, Any?> {
+        val info =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getPackageInfo(packageName, 0)
+            }
+        val code =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                info.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                info.versionCode.toLong()
+            }
+        return mapOf("versionName" to info.versionName, "versionCode" to code)
     }
 
     private companion object {

@@ -15,6 +15,24 @@ abstract final class PlatformService {
   static Future<void> setPrivacyProtection({required bool enabled}) =>
       _invoke('setPrivacyProtection', {'enabled': enabled});
 
+  /// 应用版本号，例如「2.0.0 (2002)」；无法获取时为 null。
+  static Future<String?> appVersion() async {
+    if (!_isAndroid) return null;
+    try {
+      final info = await _channel.invokeMapMethod<String, Object?>(
+        'appVersion',
+      );
+      final name = info?['versionName'];
+      final code = info?['versionCode'];
+      return name == null ? null : '$name ($code)';
+    } on PlatformException catch (e) {
+      debugPrint('读取版本号失败: $e');
+      return null;
+    } on MissingPluginException {
+      return null;
+    }
+  }
+
   /// 打开系统中本应用的设置页（例如让用户手动授予相机权限）。
   static Future<void> openAppSettings() => _invoke('openAppSettings');
 

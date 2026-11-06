@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../providers/sim_card_provider.dart';
 import '../services/notification_service.dart';
+import '../models/enums.dart';
 import '../providers/auth_provider.dart';
 import '../providers/filter_provider.dart';
 import '../theme/app_colors.dart';
@@ -65,18 +66,33 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: Column(
-        children: [
-          // ── 筛选栏 ──
-          _buildFilterBar(),
-          // ── 卡片列表 ──
-          Expanded(child: _buildBody()),
-        ],
+    // 搜索中按系统返回键先关闭搜索，而不是退出应用
+    return PopScope(
+      canPop: !_isSearching,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _closeSearch();
+      },
+      child: Scaffold(
+        appBar: _buildAppBar(),
+        body: Column(
+          children: [
+            // ── 筛选栏 ──
+            _buildFilterBar(),
+            // ── 卡片列表 ──
+            Expanded(child: _buildBody()),
+          ],
+        ),
+        floatingActionButton: _buildFAB(),
       ),
-      floatingActionButton: _buildFAB(),
     );
+  }
+
+  void _closeSearch() {
+    setState(() {
+      _isSearching = false;
+      _searchController.clear();
+    });
+    context.read<FilterProvider>().clearSearch();
   }
 
   PreferredSizeWidget _buildAppBar() {
@@ -86,19 +102,14 @@ class _HomeScreenState extends State<HomeScreen> {
       return AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            setState(() {
-              _isSearching = false;
-              _searchController.clear();
-              filterProvider.setSearchQuery('');
-            });
-          },
+          tooltip: '关闭搜索',
+          onPressed: _closeSearch,
         ),
         title: TextField(
           controller: _searchController,
           autofocus: true,
           decoration: InputDecoration(
-            hintText: '搜索运营商、号码、ICCID…',
+            hintText: '搜索运营商、号码、国家、标签…',
             hintStyle: TextStyle(fontSize: 15),
             border: InputBorder.none,
             filled: false,
@@ -161,11 +172,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final simCardProvider = context.watch<SimCardProvider>();
     final filterProvider = context.watch<FilterProvider>();
 
-    // 统计可用的国家（不含归档）
-    final countries = <String>{};
-    for (final card in simCardProvider.simCards) {
-      countries.add(card.countryCode);
-    }
+    // 可选的国家与运营商（不含归档），按名称排序
+    final cards = simCardProvider.simCards;
+    final countries = {for (final card in cards) card.countryCode}.toList()
+      ..sort();
+    final carriers = {for (final card in cards) card.carrierName}.toList()
+      ..sort();
 
     // 可用标签
     final tagEntries = simCardProvider.tags
@@ -176,8 +188,14 @@ class _HomeScreenState extends State<HomeScreen> {
     return fc.FilterChips(
       statusFilter: filterProvider.statusFilter,
       countryFilter: filterProvider.countryFilter,
+      carrierFilter: filterProvider.carrierFilter,
       tagFilters: filterProvider.tagFilters,
-      availableCountries: countries,
+      statusCounts: {
+        for (final status in StatusFilter.values)
+          status: simCardProvider.countFor(status),
+      },
+      availableCountries: countries.toSet(),
+      availableCarriers: carriers,
       availableTags: tagEntries,
       onStatusChanged: (status) {
         filterProvider.setStatusFilter(status);
@@ -185,6 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
       onCountryChanged: (country) {
         filterProvider.setCountryFilter(country);
       },
+      onCarrierChanged: filterProvider.setCarrierFilter,
       onTagsChanged: (tags) {
         filterProvider.setTagFilters(tags);
       },

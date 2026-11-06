@@ -1,13 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../models/tag.dart';
+import '../providers/filter_provider.dart';
 import '../providers/sim_card_provider.dart';
 import '../theme/app_colors.dart';
 
 /// 标签管理页面
 ///
-/// CRUD 操作：添加、编辑、删除、重排序
+/// 添加、编辑、删除标签
 class TagManageScreen extends StatefulWidget {
   const TagManageScreen({super.key});
 
@@ -92,10 +95,11 @@ class _TagManageScreenState extends State<TagManageScreen> {
     final tagColor = Color(tag.color);
     final provider = context.read<SimCardProvider>();
 
-    // 统计使用该标签的卡数量
-    final usageCount = provider.simCards
-        .where((c) => c.tagIds.contains(tag.id))
-        .length;
+    // 统计使用该标签的卡数量（含已归档的卡片，删除时它们同样会失去该标签）
+    final usageCount = [
+      ...provider.simCards,
+      ...provider.archivedCards,
+    ].where((c) => c.tagIds.contains(tag.id)).length;
 
     return Container(
       key: ValueKey(tag.id),
@@ -247,6 +251,12 @@ class _TagManageScreenState extends State<TagManageScreen> {
                   onPressed: () {
                     final name = _nameController.text.trim();
                     if (name.isEmpty) return;
+                    if (provider.isTagNameTaken(name, exceptId: tag?.id)) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('已有名为「$name」的标签')));
+                      return;
+                    }
                     Navigator.of(ctx)
                         .pop({'name': name, 'color': selectedColor.toARGB32()});
                   },
@@ -259,20 +269,24 @@ class _TagManageScreenState extends State<TagManageScreen> {
       },
     );
 
-    if (result != null && mounted) {
+    if (result == null || !context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
       if (isEditing) {
-        final updated = tag.copyWith(
-          name: result['name'] as String,
-          color: result['color'] as int,
+        await provider.updateTag(
+          tag.copyWith(
+            name: result['name'] as String,
+            color: result['color'] as int,
+          ),
         );
-        await provider.updateTag(updated);
       } else {
-        final newTag = Tag(
-          name: result['name'] as String,
-          color: result['color'] as int,
+        await provider.addTag(
+          Tag(name: result['name'] as String, color: result['color'] as int),
         );
-        await provider.addTag(newTag);
       }
+    } on Exception catch (e) {
+      debugPrint('保存标签失败: $e');
+      messenger.showSnackBar(const SnackBar(content: Text('保存标签失败，请重试')));
     }
   }
 
@@ -296,8 +310,11 @@ class _TagManageScreenState extends State<TagManageScreen> {
               backgroundColor: AppColors.countdownDanger,
             ),
             onPressed: () {
-              ctx.read<SimCardProvider>().deleteTag(tag.id!);
               Navigator.of(ctx).pop();
+              final id = tag.id!;
+              // 同时移除首页中该标签的筛选，避免残留的筛选让列表“莫名”变空
+              ctx.read<FilterProvider>().removeTagFilter(id);
+              unawaited(ctx.read<SimCardProvider>().deleteTag(id));
             },
             child: const Text('删除'),
           ),

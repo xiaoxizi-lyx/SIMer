@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/reminder_provider.dart';
+import '../services/platform_service.dart';
 import '../theme/app_colors.dart';
 import 'tag_manage_screen.dart';
 import 'archive_screen.dart';
@@ -322,7 +323,13 @@ class SettingsScreen extends StatelessWidget {
             'SIMer',
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
-          subtitle: Text('版本 1.0.0', style: TextStyle(fontSize: 12)),
+          subtitle: FutureBuilder<String?>(
+            future: PlatformService.appVersion(),
+            builder: (context, snapshot) => Text(
+              '版本 ${snapshot.data ?? '—'}',
+              style: const TextStyle(fontSize: 12),
+            ),
+          ),
         ),
         _thinDivider(context),
         ListTile(

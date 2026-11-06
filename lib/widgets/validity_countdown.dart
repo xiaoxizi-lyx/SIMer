@@ -142,17 +142,20 @@ class _ValidityCountdownState extends State<ValidityCountdown>
     required Color color,
     required bool animate,
   }) {
+    // 文字可换行：系统字体放大时不会横向溢出
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: widget.fontSize + 2, color: color),
         const SizedBox(width: 4),
-        Text(
-          text,
-          style: TextStyle(
-            fontSize: widget.fontSize,
-            fontWeight: FontWeight.w600,
-            color: color,
+        Flexible(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: widget.fontSize,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
           ),
         ),
       ],

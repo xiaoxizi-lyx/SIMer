@@ -14,26 +14,34 @@ class FilterChips extends StatelessWidget {
   // 当前筛选状态
   final StatusFilter? statusFilter;
   final String? countryFilter;
+  final String? carrierFilter;
   final List<int> tagFilters;
 
   // 可用选项
+  final Map<StatusFilter, int> statusCounts;
   final Set<String> availableCountries;
+  final List<String> availableCarriers;
   final List<MapEntry<int, String>> availableTags; // id → name
 
   // 回调
   final ValueChanged<StatusFilter?> onStatusChanged;
   final ValueChanged<String?> onCountryChanged;
+  final ValueChanged<String?> onCarrierChanged;
   final ValueChanged<List<int>> onTagsChanged;
 
   const FilterChips({
     super.key,
     required this.statusFilter,
     required this.countryFilter,
+    required this.carrierFilter,
     required this.tagFilters,
+    required this.statusCounts,
     required this.availableCountries,
+    required this.availableCarriers,
     required this.availableTags,
     required this.onStatusChanged,
     required this.onCountryChanged,
+    required this.onCarrierChanged,
     required this.onTagsChanged,
   });
 
@@ -57,9 +65,10 @@ class FilterChips extends StatelessWidget {
             chipTextColor: chipTextColor,
           ),
           ...StatusFilter.values.map((status) {
+            final count = statusCounts[status] ?? 0;
             return _buildChip(
               context: context,
-              label: status.label,
+              label: count > 0 ? '${status.label} $count' : status.label,
               isSelected: statusFilter == status,
               onTap: () =>
                   onStatusChanged(statusFilter == status ? null : status),
@@ -83,6 +92,21 @@ class FilterChips extends StatelessWidget {
               chipTextColor: chipTextColor,
             );
           }),
+
+          // ── 运营商筛选（至少两家运营商时才有意义） ──
+          if (availableCarriers.length > 1) ...[
+            _chipDivider(),
+            ...availableCarriers.map(
+              (carrier) => _buildChip(
+                context: context,
+                label: carrier,
+                isSelected: carrierFilter == carrier,
+                onTap: () =>
+                    onCarrierChanged(carrierFilter == carrier ? null : carrier),
+                chipTextColor: chipTextColor,
+              ),
+            ),
+          ],
 
           // ── 标签筛选 ──
           if (availableTags.isNotEmpty) _chipDivider(),

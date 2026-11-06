@@ -42,4 +42,40 @@ void main() {
     await _pump(tester, _rolling(daysSinceUse: 1));
     expect(find.text('我已使用'), findsNothing);
   });
+
+  for (final scale in [1.0, 1.3, 1.6, 2.0]) {
+    testWidgets('系统字体放大 ${scale}x 时卡片正面不溢出（360dp 宽）', (tester) async {
+      tester.view.physicalSize = const Size(1080, 2400);
+      tester.view.devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+      await withClock(
+        Clock.fixed(DateTime(2026, 11, 6, 12)),
+        () => tester.pumpWidget(
+          MaterialApp(
+            builder: (context, child) => MediaQuery(
+              data: MediaQuery.of(context)
+                  .copyWith(textScaler: TextScaler.linear(scale)),
+              child: child!,
+            ),
+            home: Scaffold(
+              body: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  SimCardFront(
+                    simCard: _rolling(daysSinceUse: 25),
+                    onMarkAsUsed: () {},
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      // 正常字号下仍保持 200 的卡片高度
+      if (scale == 1.0) {
+        expect(tester.getSize(find.byType(SimCardFront)).height, 200);
+      }
+    });
+  }
 }
