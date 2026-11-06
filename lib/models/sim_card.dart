@@ -93,11 +93,11 @@ class SimCard {
     this.photoPath,
     DateTime? createdAt,
     DateTime? updatedAt,
-  })  : phoneNumbers = phoneNumbers ?? [],
-        features = features ?? FeatureSet(),
-        tagIds = tagIds ?? [],
-        createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+  }) : phoneNumbers = phoneNumbers ?? [],
+       features = features ?? FeatureSet(),
+       tagIds = tagIds ?? [],
+       createdAt = createdAt ?? DateTime.now(),
+       updatedAt = updatedAt ?? DateTime.now();
 
   // ── 计算属性 ──
 
@@ -177,186 +177,182 @@ class SimCard {
 
   /// 转为数据库 Map（不含 phoneNumbers 和 tagIds，这些在关联表中）
   Map<String, dynamic> toMap() => {
-        if (id != null) 'id': id,
-        'uuid': uuid,
-        'type': type.name,
-        'status': status.name,
-        'iccid': iccid,
-        'carrier_name': carrierName,
-        'carrier_code': carrierCode,
-        'country_code': countryCode,
-        'source': source,
-        'notes': notes,
-        'validity_type': validityType.name,
-        'activation_date': activationDate?.toIso8601String(),
-        'expiration_date': expirationDate?.toIso8601String(),
-        'rolling_days': rollingDays,
-        'last_used_date': lastUsedDate?.toIso8601String(),
-        'reminder_days_before': reminderDaysBefore,
-        'data_balance_mb': dataBalanceMB,
-        'data_total_mb': dataTotalMB,
-        'voice_minutes_remaining': voiceMinutesRemaining,
-        'voice_minutes_total': voiceMinutesTotal,
-        'sms_remaining': smsRemaining,
-        'sms_total': smsTotal,
-        'balance': balance,
-        'balance_currency': balanceCurrency,
-        'features': features.toJsonString(),
-        'rsp_server_address': rspServerAddress,
-        'activation_code': activationCode,
-        'confirmation_code': confirmationCode,
-        'qr_code_raw_data': qrCodeRawData,
-        'card_color': cardColor,
-        'photo_path': photoPath,
-        'created_at': createdAt.toIso8601String(),
-        'updated_at': updatedAt.toIso8601String(),
-      };
+    if (id != null) 'id': id,
+    'uuid': uuid,
+    'type': type.name,
+    'status': status.name,
+    'iccid': iccid,
+    'carrier_name': carrierName,
+    'carrier_code': carrierCode,
+    'country_code': countryCode,
+    'source': source,
+    'notes': notes,
+    'validity_type': validityType.name,
+    'activation_date': activationDate?.toIso8601String(),
+    'expiration_date': expirationDate?.toIso8601String(),
+    'rolling_days': rollingDays,
+    'last_used_date': lastUsedDate?.toIso8601String(),
+    'reminder_days_before': reminderDaysBefore,
+    'data_balance_mb': dataBalanceMB,
+    'data_total_mb': dataTotalMB,
+    'voice_minutes_remaining': voiceMinutesRemaining,
+    'voice_minutes_total': voiceMinutesTotal,
+    'sms_remaining': smsRemaining,
+    'sms_total': smsTotal,
+    'balance': balance,
+    'balance_currency': balanceCurrency,
+    'features': features.toJsonString(),
+    'rsp_server_address': rspServerAddress,
+    'activation_code': activationCode,
+    'confirmation_code': confirmationCode,
+    'qr_code_raw_data': qrCodeRawData,
+    'card_color': cardColor,
+    'photo_path': photoPath,
+    'created_at': createdAt.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
+  };
 
   factory SimCard.fromMap(
     Map<String, dynamic> map, {
     List<String>? phoneNumbers,
     List<int>? tagIds,
-  }) =>
-      SimCard(
-        id: map['id'] as int?,
-        uuid: map['uuid'] as String,
-        type: SimType.fromString(map['type'] as String),
-        status: SimStatus.fromString(map['status'] as String),
-        iccid: map['iccid'] as String?,
-        carrierName: map['carrier_name'] as String,
-        carrierCode: map['carrier_code'] as String?,
-        countryCode: map['country_code'] as String,
-        phoneNumbers: phoneNumbers,
-        source: map['source'] as String?,
-        notes: map['notes'] as String?,
-        validityType: ValidityType.fromString(map['validity_type'] as String),
-        activationDate: map['activation_date'] != null
-            ? DateTime.parse(map['activation_date'] as String)
-            : null,
-        expirationDate: map['expiration_date'] != null
-            ? DateTime.parse(map['expiration_date'] as String)
-            : null,
-        rollingDays: map['rolling_days'] as int?,
-        lastUsedDate: map['last_used_date'] != null
-            ? DateTime.parse(map['last_used_date'] as String)
-            : null,
-        reminderDaysBefore: map['reminder_days_before'] as int? ?? 7,
-        dataBalanceMB: (map['data_balance_mb'] as num?)?.toDouble(),
-        dataTotalMB: (map['data_total_mb'] as num?)?.toDouble(),
-        voiceMinutesRemaining:
-            (map['voice_minutes_remaining'] as num?)?.toDouble(),
-        voiceMinutesTotal: (map['voice_minutes_total'] as num?)?.toDouble(),
-        smsRemaining: map['sms_remaining'] as int?,
-        smsTotal: map['sms_total'] as int?,
-        balance: (map['balance'] as num?)?.toDouble(),
-        balanceCurrency: map['balance_currency'] as String?,
-        features: map['features'] != null
-            ? FeatureSet.fromJsonString(map['features'] as String)
-            : null,
-        rspServerAddress: map['rsp_server_address'] as String?,
-        activationCode: map['activation_code'] as String?,
-        confirmationCode: map['confirmation_code'] as String?,
-        qrCodeRawData: map['qr_code_raw_data'] as String?,
-        cardColor: map['card_color'] as int,
-        tagIds: tagIds,
-        photoPath: map['photo_path'] as String?,
-        createdAt: DateTime.parse(map['created_at'] as String),
-        updatedAt: DateTime.parse(map['updated_at'] as String),
-      );
+  }) => SimCard(
+    id: map['id'] as int?,
+    uuid: map['uuid'] as String,
+    type: SimType.fromString(map['type'] as String),
+    status: SimStatus.fromString(map['status'] as String),
+    iccid: map['iccid'] as String?,
+    carrierName: map['carrier_name'] as String,
+    carrierCode: map['carrier_code'] as String?,
+    countryCode: map['country_code'] as String,
+    phoneNumbers: phoneNumbers,
+    source: map['source'] as String?,
+    notes: map['notes'] as String?,
+    validityType: ValidityType.fromString(map['validity_type'] as String),
+    activationDate: map['activation_date'] != null
+        ? DateTime.parse(map['activation_date'] as String)
+        : null,
+    expirationDate: map['expiration_date'] != null
+        ? DateTime.parse(map['expiration_date'] as String)
+        : null,
+    rollingDays: map['rolling_days'] as int?,
+    lastUsedDate: map['last_used_date'] != null
+        ? DateTime.parse(map['last_used_date'] as String)
+        : null,
+    reminderDaysBefore: map['reminder_days_before'] as int? ?? 7,
+    dataBalanceMB: (map['data_balance_mb'] as num?)?.toDouble(),
+    dataTotalMB: (map['data_total_mb'] as num?)?.toDouble(),
+    voiceMinutesRemaining: (map['voice_minutes_remaining'] as num?)?.toDouble(),
+    voiceMinutesTotal: (map['voice_minutes_total'] as num?)?.toDouble(),
+    smsRemaining: map['sms_remaining'] as int?,
+    smsTotal: map['sms_total'] as int?,
+    balance: (map['balance'] as num?)?.toDouble(),
+    balanceCurrency: map['balance_currency'] as String?,
+    features: map['features'] != null
+        ? FeatureSet.fromJsonString(map['features'] as String)
+        : null,
+    rspServerAddress: map['rsp_server_address'] as String?,
+    activationCode: map['activation_code'] as String?,
+    confirmationCode: map['confirmation_code'] as String?,
+    qrCodeRawData: map['qr_code_raw_data'] as String?,
+    cardColor: map['card_color'] as int,
+    tagIds: tagIds,
+    photoPath: map['photo_path'] as String?,
+    createdAt: DateTime.parse(map['created_at'] as String),
+    updatedAt: DateTime.parse(map['updated_at'] as String),
+  );
 
   /// 转为 JSON（用于导出，包含所有关联数据）
   Map<String, dynamic> toJson() => {
-        'uuid': uuid,
-        'type': type.name,
-        'status': status.name,
-        'iccid': iccid,
-        'carrierName': carrierName,
-        'carrierCode': carrierCode,
-        'countryCode': countryCode,
-        'phoneNumbers': phoneNumbers,
-        'source': source,
-        'notes': notes,
-        'validityType': validityType.name,
-        'activationDate': activationDate?.toIso8601String(),
-        'expirationDate': expirationDate?.toIso8601String(),
-        'rollingDays': rollingDays,
-        'lastUsedDate': lastUsedDate?.toIso8601String(),
-        'reminderDaysBefore': reminderDaysBefore,
-        'dataBalanceMB': dataBalanceMB,
-        'dataTotalMB': dataTotalMB,
-        'voiceMinutesRemaining': voiceMinutesRemaining,
-        'voiceMinutesTotal': voiceMinutesTotal,
-        'smsRemaining': smsRemaining,
-        'smsTotal': smsTotal,
-        'balance': balance,
-        'balanceCurrency': balanceCurrency,
-        'features': features.toJson(),
-        'rspServerAddress': rspServerAddress,
-        'activationCode': activationCode,
-        'confirmationCode': confirmationCode,
-        'qrCodeRawData': qrCodeRawData,
-        'cardColor': cardColor,
-        'tagIds': tagIds,
-        'photoPath': photoPath,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-      };
+    'uuid': uuid,
+    'type': type.name,
+    'status': status.name,
+    'iccid': iccid,
+    'carrierName': carrierName,
+    'carrierCode': carrierCode,
+    'countryCode': countryCode,
+    'phoneNumbers': phoneNumbers,
+    'source': source,
+    'notes': notes,
+    'validityType': validityType.name,
+    'activationDate': activationDate?.toIso8601String(),
+    'expirationDate': expirationDate?.toIso8601String(),
+    'rollingDays': rollingDays,
+    'lastUsedDate': lastUsedDate?.toIso8601String(),
+    'reminderDaysBefore': reminderDaysBefore,
+    'dataBalanceMB': dataBalanceMB,
+    'dataTotalMB': dataTotalMB,
+    'voiceMinutesRemaining': voiceMinutesRemaining,
+    'voiceMinutesTotal': voiceMinutesTotal,
+    'smsRemaining': smsRemaining,
+    'smsTotal': smsTotal,
+    'balance': balance,
+    'balanceCurrency': balanceCurrency,
+    'features': features.toJson(),
+    'rspServerAddress': rspServerAddress,
+    'activationCode': activationCode,
+    'confirmationCode': confirmationCode,
+    'qrCodeRawData': qrCodeRawData,
+    'cardColor': cardColor,
+    'tagIds': tagIds,
+    'photoPath': photoPath,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 
   factory SimCard.fromJson(Map<String, dynamic> json) => SimCard(
-        uuid: json['uuid'] as String,
-        type: SimType.fromString(json['type'] as String),
-        status: SimStatus.fromString(json['status'] as String),
-        iccid: json['iccid'] as String?,
-        carrierName: json['carrierName'] as String,
-        carrierCode: json['carrierCode'] as String?,
-        countryCode: json['countryCode'] as String,
-        phoneNumbers: (json['phoneNumbers'] as List<dynamic>?)
-                ?.map((e) => e as String)
-                .toList() ??
-            [],
-        source: json['source'] as String?,
-        notes: json['notes'] as String?,
-        validityType: ValidityType.fromString(json['validityType'] as String),
-        activationDate: json['activationDate'] != null
-            ? DateTime.parse(json['activationDate'] as String)
-            : null,
-        expirationDate: json['expirationDate'] != null
-            ? DateTime.parse(json['expirationDate'] as String)
-            : null,
-        rollingDays: json['rollingDays'] as int?,
-        lastUsedDate: json['lastUsedDate'] != null
-            ? DateTime.parse(json['lastUsedDate'] as String)
-            : null,
-        reminderDaysBefore: json['reminderDaysBefore'] as int? ?? 7,
-        dataBalanceMB: (json['dataBalanceMB'] as num?)?.toDouble(),
-        dataTotalMB: (json['dataTotalMB'] as num?)?.toDouble(),
-        voiceMinutesRemaining:
-            (json['voiceMinutesRemaining'] as num?)?.toDouble(),
-        voiceMinutesTotal: (json['voiceMinutesTotal'] as num?)?.toDouble(),
-        smsRemaining: json['smsRemaining'] as int?,
-        smsTotal: json['smsTotal'] as int?,
-        balance: (json['balance'] as num?)?.toDouble(),
-        balanceCurrency: json['balanceCurrency'] as String?,
-        features: json['features'] != null
-            ? FeatureSet.fromJson(json['features'] as Map<String, dynamic>)
-            : null,
-        rspServerAddress: json['rspServerAddress'] as String?,
-        activationCode: json['activationCode'] as String?,
-        confirmationCode: json['confirmationCode'] as String?,
-        qrCodeRawData: json['qrCodeRawData'] as String?,
-        cardColor: json['cardColor'] as int,
-        tagIds: (json['tagIds'] as List<dynamic>?)
-                ?.map((e) => e as int)
-                .toList() ??
-            [],
-        photoPath: json['photoPath'] as String?,
-        createdAt: json['createdAt'] != null
-            ? DateTime.parse(json['createdAt'] as String)
-            : null,
-        updatedAt: json['updatedAt'] != null
-            ? DateTime.parse(json['updatedAt'] as String)
-            : null,
-      );
+    uuid: json['uuid'] as String,
+    type: SimType.fromString(json['type'] as String),
+    status: SimStatus.fromString(json['status'] as String),
+    iccid: json['iccid'] as String?,
+    carrierName: json['carrierName'] as String,
+    carrierCode: json['carrierCode'] as String?,
+    countryCode: json['countryCode'] as String,
+    phoneNumbers:
+        (json['phoneNumbers'] as List<dynamic>?)
+            ?.map((e) => e as String)
+            .toList() ??
+        [],
+    source: json['source'] as String?,
+    notes: json['notes'] as String?,
+    validityType: ValidityType.fromString(json['validityType'] as String),
+    activationDate: json['activationDate'] != null
+        ? DateTime.parse(json['activationDate'] as String)
+        : null,
+    expirationDate: json['expirationDate'] != null
+        ? DateTime.parse(json['expirationDate'] as String)
+        : null,
+    rollingDays: json['rollingDays'] as int?,
+    lastUsedDate: json['lastUsedDate'] != null
+        ? DateTime.parse(json['lastUsedDate'] as String)
+        : null,
+    reminderDaysBefore: json['reminderDaysBefore'] as int? ?? 7,
+    dataBalanceMB: (json['dataBalanceMB'] as num?)?.toDouble(),
+    dataTotalMB: (json['dataTotalMB'] as num?)?.toDouble(),
+    voiceMinutesRemaining: (json['voiceMinutesRemaining'] as num?)?.toDouble(),
+    voiceMinutesTotal: (json['voiceMinutesTotal'] as num?)?.toDouble(),
+    smsRemaining: json['smsRemaining'] as int?,
+    smsTotal: json['smsTotal'] as int?,
+    balance: (json['balance'] as num?)?.toDouble(),
+    balanceCurrency: json['balanceCurrency'] as String?,
+    features: json['features'] != null
+        ? FeatureSet.fromJson(json['features'] as Map<String, dynamic>)
+        : null,
+    rspServerAddress: json['rspServerAddress'] as String?,
+    activationCode: json['activationCode'] as String?,
+    confirmationCode: json['confirmationCode'] as String?,
+    qrCodeRawData: json['qrCodeRawData'] as String?,
+    cardColor: json['cardColor'] as int,
+    tagIds:
+        (json['tagIds'] as List<dynamic>?)?.map((e) => e as int).toList() ?? [],
+    photoPath: json['photoPath'] as String?,
+    createdAt: json['createdAt'] != null
+        ? DateTime.parse(json['createdAt'] as String)
+        : null,
+    updatedAt: json['updatedAt'] != null
+        ? DateTime.parse(json['updatedAt'] as String)
+        : null,
+  );
 
   SimCard copyWith({
     int? id,
@@ -392,45 +388,43 @@ class SimCard {
     int? cardColor,
     List<int>? tagIds,
     String? photoPath,
-  }) =>
-      SimCard(
-        id: id ?? this.id,
-        uuid: uuid ?? this.uuid,
-        type: type ?? this.type,
-        status: status ?? this.status,
-        iccid: iccid ?? this.iccid,
-        carrierName: carrierName ?? this.carrierName,
-        carrierCode: carrierCode ?? this.carrierCode,
-        countryCode: countryCode ?? this.countryCode,
-        phoneNumbers: phoneNumbers ?? List.from(this.phoneNumbers),
-        source: source ?? this.source,
-        notes: notes ?? this.notes,
-        validityType: validityType ?? this.validityType,
-        activationDate: activationDate ?? this.activationDate,
-        expirationDate: expirationDate ?? this.expirationDate,
-        rollingDays: rollingDays ?? this.rollingDays,
-        lastUsedDate: lastUsedDate ?? this.lastUsedDate,
-        reminderDaysBefore: reminderDaysBefore ?? this.reminderDaysBefore,
-        dataBalanceMB: dataBalanceMB ?? this.dataBalanceMB,
-        dataTotalMB: dataTotalMB ?? this.dataTotalMB,
-        voiceMinutesRemaining:
-            voiceMinutesRemaining ?? this.voiceMinutesRemaining,
-        voiceMinutesTotal: voiceMinutesTotal ?? this.voiceMinutesTotal,
-        smsRemaining: smsRemaining ?? this.smsRemaining,
-        smsTotal: smsTotal ?? this.smsTotal,
-        balance: balance ?? this.balance,
-        balanceCurrency: balanceCurrency ?? this.balanceCurrency,
-        features: features ?? this.features.copyWith(),
-        rspServerAddress: rspServerAddress ?? this.rspServerAddress,
-        activationCode: activationCode ?? this.activationCode,
-        confirmationCode: confirmationCode ?? this.confirmationCode,
-        qrCodeRawData: qrCodeRawData ?? this.qrCodeRawData,
-        cardColor: cardColor ?? this.cardColor,
-        tagIds: tagIds ?? List.from(this.tagIds),
-        photoPath: photoPath ?? this.photoPath,
-        createdAt: createdAt,
-        updatedAt: DateTime.now(),
-      );
+  }) => SimCard(
+    id: id ?? this.id,
+    uuid: uuid ?? this.uuid,
+    type: type ?? this.type,
+    status: status ?? this.status,
+    iccid: iccid ?? this.iccid,
+    carrierName: carrierName ?? this.carrierName,
+    carrierCode: carrierCode ?? this.carrierCode,
+    countryCode: countryCode ?? this.countryCode,
+    phoneNumbers: phoneNumbers ?? List.from(this.phoneNumbers),
+    source: source ?? this.source,
+    notes: notes ?? this.notes,
+    validityType: validityType ?? this.validityType,
+    activationDate: activationDate ?? this.activationDate,
+    expirationDate: expirationDate ?? this.expirationDate,
+    rollingDays: rollingDays ?? this.rollingDays,
+    lastUsedDate: lastUsedDate ?? this.lastUsedDate,
+    reminderDaysBefore: reminderDaysBefore ?? this.reminderDaysBefore,
+    dataBalanceMB: dataBalanceMB ?? this.dataBalanceMB,
+    dataTotalMB: dataTotalMB ?? this.dataTotalMB,
+    voiceMinutesRemaining: voiceMinutesRemaining ?? this.voiceMinutesRemaining,
+    voiceMinutesTotal: voiceMinutesTotal ?? this.voiceMinutesTotal,
+    smsRemaining: smsRemaining ?? this.smsRemaining,
+    smsTotal: smsTotal ?? this.smsTotal,
+    balance: balance ?? this.balance,
+    balanceCurrency: balanceCurrency ?? this.balanceCurrency,
+    features: features ?? this.features.copyWith(),
+    rspServerAddress: rspServerAddress ?? this.rspServerAddress,
+    activationCode: activationCode ?? this.activationCode,
+    confirmationCode: confirmationCode ?? this.confirmationCode,
+    qrCodeRawData: qrCodeRawData ?? this.qrCodeRawData,
+    cardColor: cardColor ?? this.cardColor,
+    tagIds: tagIds ?? List.from(this.tagIds),
+    photoPath: photoPath ?? this.photoPath,
+    createdAt: createdAt,
+    updatedAt: DateTime.now(),
+  );
 
   @override
   String toString() => 'SimCard(id: $id, carrier: $carrierName, iccid: $iccid)';

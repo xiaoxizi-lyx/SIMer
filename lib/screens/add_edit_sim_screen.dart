@@ -4,6 +4,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
+
 import '../models/sim_card.dart';
 import '../models/enums.dart';
 import '../models/feature_set.dart';
@@ -68,8 +69,10 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
   String _activationCode = '';
   String _confirmationCode = '';
   final TextEditingController _rspServerController = TextEditingController();
-  final TextEditingController _activationCodeController = TextEditingController();
-  final TextEditingController _confirmationCodeController = TextEditingController();
+  final TextEditingController _activationCodeController =
+      TextEditingController();
+  final TextEditingController _confirmationCodeController =
+      TextEditingController();
 
   // ── 外观 ──
   late Color _cardColor;
@@ -379,8 +382,10 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
               ),
               if (_phoneControllers.length > 1)
                 IconButton(
-                  icon: const Icon(Icons.remove_circle_outline_rounded,
-                      color: AppColors.countdownDanger),
+                  icon: const Icon(
+                    Icons.remove_circle_outline_rounded,
+                    color: AppColors.countdownDanger,
+                  ),
                   onPressed: () {
                     setState(() {
                       _phoneControllers[i].dispose();
@@ -419,10 +424,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
           style: GoogleFonts.inter(
             fontSize: 14,
             color: _carrierName.isEmpty
-                ? Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.5)
+                ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)
                 : null,
           ),
         ),
@@ -478,13 +480,14 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
       ...ValidityType.values.map((type) {
         return RadioListTile<ValidityType>(
           title: Text(type.label, style: GoogleFonts.inter(fontSize: 14)),
-          subtitle: Text(type.description,
-              style: GoogleFonts.inter(
-                  fontSize: 11,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
-                      .withValues(alpha: 0.5))),
+          subtitle: Text(
+            type.description,
+            style: GoogleFonts.inter(
+              fontSize: 11,
+              color: Theme.of(context).colorScheme.onSurface
+                  .withValues(alpha: 0.5),
+            ),
+          ),
           value: type,
           groupValue: _validityType,
           dense: true,
@@ -521,10 +524,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
         _label('滚动天数'),
         TextFormField(
           initialValue: _rollingDays.toString(),
-          decoration: const InputDecoration(
-            hintText: '例如 30',
-            suffixText: '天',
-          ),
+          decoration: const InputDecoration(hintText: '例如 30', suffixText: '天'),
           keyboardType: TextInputType.number,
           onChanged: (v) {
             _rollingDays = int.tryParse(v) ?? 30;
@@ -537,10 +537,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
       _label('提前提醒天数'),
       TextFormField(
         initialValue: _reminderDays.toString(),
-        decoration: const InputDecoration(
-          hintText: '到期前几天提醒',
-          suffixText: '天',
-        ),
+        decoration: const InputDecoration(hintText: '到期前几天提醒', suffixText: '天'),
         keyboardType: TextInputType.number,
         onChanged: (v) {
           _reminderDays = int.tryParse(v) ?? 7;
@@ -576,10 +573,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
           style: GoogleFonts.inter(
             fontSize: 14,
             color: date == null
-                ? Theme.of(context)
-                    .colorScheme
-                    .onSurface
-                    .withValues(alpha: 0.5)
+                ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)
                 : null,
           ),
         ),
@@ -603,8 +597,9 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
                 TextFormField(
                   initialValue: _dataBalance,
                   decoration: const InputDecoration(hintText: '例如 1024'),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   onChanged: (v) => _dataBalance = v,
                 ),
               ],
@@ -619,8 +614,9 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
                 TextFormField(
                   initialValue: _dataTotal,
                   decoration: const InputDecoration(hintText: '例如 5120'),
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   onChanged: (v) => _dataTotal = v,
                 ),
               ],
@@ -638,8 +634,9 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
                 _label('通话剩余（分钟）'),
                 TextFormField(
                   initialValue: _voiceRemaining,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   onChanged: (v) => _voiceRemaining = v,
                 ),
               ],
@@ -653,8 +650,9 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
                 _label('通话总量（分钟）'),
                 TextFormField(
                   initialValue: _voiceTotal,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   onChanged: (v) => _voiceTotal = v,
                 ),
               ],
@@ -705,8 +703,9 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
                 _label('话费余额'),
                 TextFormField(
                   initialValue: _balance,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                   onChanged: (v) => _balance = v,
                 ),
               ],
@@ -758,18 +757,14 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
       _label('SM-DP+ 服务器地址'),
       TextFormField(
         controller: _rspServerController,
-        decoration: const InputDecoration(
-          hintText: '例如 rsp.example.com',
-        ),
+        decoration: const InputDecoration(hintText: '例如 rsp.example.com'),
         onChanged: (v) => _rspServer = v,
       ),
       const SizedBox(height: 12),
       _label('激活码（匹配ID）'),
       TextFormField(
         controller: _activationCodeController,
-        decoration: const InputDecoration(
-          hintText: '匹配ID',
-        ),
+        decoration: const InputDecoration(hintText: '匹配ID'),
         onChanged: (v) => _activationCode = v,
       ),
       const SizedBox(height: 12),
@@ -790,7 +785,8 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
               _rspServerController.text = _rspServer;
               _activationCode = result['activationCode'] ?? _activationCode;
               _activationCodeController.text = _activationCode;
-              _confirmationCode = result['confirmationCode'] ?? _confirmationCode;
+              _confirmationCode =
+                  result['confirmationCode'] ?? _confirmationCode;
               _confirmationCodeController.text = _confirmationCode;
             });
           }
@@ -903,8 +899,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
       _label('来源渠道'),
       TextFormField(
         initialValue: _source,
-        decoration:
-            const InputDecoration(hintText: '例如: 淘宝代购、线下门店'),
+        decoration: const InputDecoration(hintText: '例如: 淘宝代购、线下门店'),
         onChanged: (v) => _source = v,
       ),
       const SizedBox(height: 12),
@@ -928,9 +923,8 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_carrierName.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('请选择或输入运营商')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text('请选择或输入运营商')));
       return;
     }
 
@@ -954,8 +948,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
       validityType: _validityType,
       activationDate: _activationDate,
       expirationDate: _expirationDate,
-      rollingDays:
-          _validityType == ValidityType.rolling ? _rollingDays : null,
+      rollingDays: _validityType == ValidityType.rolling ? _rollingDays : null,
       lastUsedDate: widget.simCard?.lastUsedDate,
       reminderDaysBefore: _reminderDays,
       dataBalanceMB: double.tryParse(_dataBalance),
@@ -965,14 +958,11 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
       smsRemaining: int.tryParse(_smsRemaining),
       smsTotal: int.tryParse(_smsTotal),
       balance: double.tryParse(_balance),
-      balanceCurrency:
-          _balanceCurrency.isNotEmpty ? _balanceCurrency : null,
+      balanceCurrency: _balanceCurrency.isNotEmpty ? _balanceCurrency : null,
       features: _features,
       rspServerAddress: _rspServer.isNotEmpty ? _rspServer : null,
-      activationCode:
-          _activationCode.isNotEmpty ? _activationCode : null,
-      confirmationCode:
-          _confirmationCode.isNotEmpty ? _confirmationCode : null,
+      activationCode: _activationCode.isNotEmpty ? _activationCode : null,
+      confirmationCode: _confirmationCode.isNotEmpty ? _confirmationCode : null,
       cardColor: _cardColor.toARGB32(),
       tagIds: _selectedTagIds,
       photoPath: widget.simCard?.photoPath,
@@ -999,10 +989,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
         style: GoogleFonts.inter(
           fontSize: 13,
           fontWeight: FontWeight.w600,
-          color: Theme.of(context)
-              .colorScheme
-              .onSurface
-              .withValues(alpha: 0.7),
+          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
         ),
       ),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../models/sim_card.dart';
 import '../models/enums.dart';
 import '../models/tag.dart';
@@ -64,20 +65,21 @@ class SimCardBack extends StatelessWidget {
               // ── 基本信息 ──
               _buildSection('基本信息', [
                 _infoRow('运营商', simCard.carrierName),
-                _infoRow(
-                  '国家/地区',
-                  CountryData.displayName(simCard.countryCode),
-                ),
+                _infoRow('国家/地区', CountryData.displayName(simCard.countryCode)),
                 if (simCard.iccid != null && simCard.iccid!.isNotEmpty)
-                  _infoRowWithCopy(context, 'ICCID', simCard.formattedIccid!,
-                      simCard.iccid!),
+                  _infoRowWithCopy(
+                    context,
+                    'ICCID',
+                    simCard.formattedIccid!,
+                    simCard.iccid!,
+                  ),
                 if (simCard.phoneNumbers.isNotEmpty)
                   ...simCard.phoneNumbers.asMap().entries.map(
-                        (e) => _infoRow(
-                          e.key == 0 ? '主号码' : '号码${e.key + 1}',
-                          e.value,
-                        ),
-                      ),
+                    (e) => _infoRow(
+                      e.key == 0 ? '主号码' : '号码${e.key + 1}',
+                      e.value,
+                    ),
+                  ),
                 _infoRow('SIM类型', simCard.type.label),
               ]),
               _divider(),
@@ -88,7 +90,9 @@ class SimCardBack extends StatelessWidget {
                   _infoRow('激活日期', _formatDate(simCard.activationDate!)),
                 if (simCard.effectiveExpirationDate != null)
                   _infoRow(
-                      '到期日期', _formatDate(simCard.effectiveExpirationDate!)),
+                    '到期日期',
+                    _formatDate(simCard.effectiveExpirationDate!),
+                  ),
                 if (simCard.validityType == ValidityType.rolling &&
                     simCard.rollingDays != null)
                   _infoRow('滚动周期', '${simCard.rollingDays} 天'),
@@ -121,12 +125,20 @@ class SimCardBack extends StatelessWidget {
                 _buildSection('eSIM信息', [
                   if (simCard.rspServerAddress != null &&
                       simCard.rspServerAddress!.isNotEmpty)
-                    _infoRowWithCopy(context, 'SM-DP+',
-                        simCard.rspServerAddress!, simCard.rspServerAddress!),
+                    _infoRowWithCopy(
+                      context,
+                      'SM-DP+',
+                      simCard.rspServerAddress!,
+                      simCard.rspServerAddress!,
+                    ),
                   if (simCard.activationCode != null &&
                       simCard.activationCode!.isNotEmpty)
-                    _infoRowWithCopy(context, '激活码',
-                        simCard.activationCode!, simCard.activationCode!),
+                    _infoRowWithCopy(
+                      context,
+                      '激活码',
+                      simCard.activationCode!,
+                      simCard.activationCode!,
+                    ),
                   if (simCard.confirmationCode != null &&
                       simCard.confirmationCode!.isNotEmpty)
                     _infoRow('确认码', simCard.confirmationCode!),
@@ -174,11 +186,7 @@ class SimCardBack extends StatelessWidget {
             ),
           ),
         ),
-        Icon(
-          Icons.flip_to_front_rounded,
-          color: _secondaryColor,
-          size: 20,
-        ),
+        Icon(Icons.flip_to_front_rounded, color: _secondaryColor, size: 20),
       ],
     );
   }
@@ -212,10 +220,7 @@ class SimCardBack extends StatelessWidget {
             width: 72,
             child: Text(
               label,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: _secondaryColor,
-              ),
+              style: GoogleFonts.inter(fontSize: 12, color: _secondaryColor),
             ),
           ),
           Expanded(
@@ -248,10 +253,7 @@ class SimCardBack extends StatelessWidget {
             width: 72,
             child: Text(
               label,
-              style: GoogleFonts.inter(
-                fontSize: 12,
-                color: _secondaryColor,
-              ),
+              style: GoogleFonts.inter(fontSize: 12, color: _secondaryColor),
             ),
           ),
           Expanded(
@@ -280,11 +282,7 @@ class SimCardBack extends StatelessWidget {
                 ),
               );
             },
-            child: Icon(
-              Icons.copy_rounded,
-              size: 14,
-              color: _secondaryColor,
-            ),
+            child: Icon(Icons.copy_rounded, size: 14, color: _secondaryColor),
           ),
         ],
       ),
@@ -350,7 +348,9 @@ class SimCardBack extends StatelessWidget {
     }
     if (simCard.balance != null) {
       final currency = simCard.balanceCurrency ?? '';
-      rows.add(_infoRow('余额', '$currency ${simCard.balance!.toStringAsFixed(2)}'));
+      rows.add(
+        _infoRow('余额', '$currency ${simCard.balance!.toStringAsFixed(2)}'),
+      );
     }
     return rows;
   }
@@ -363,16 +363,17 @@ class SimCardBack extends StatelessWidget {
   }
 
   List<Widget> _buildFeatureRows() {
-    return simCard.features.entries
-        .where((e) => e.value.supported)
-        .map((e) {
+    return simCard.features.entries.where((e) => e.value.supported).map((e) {
       final note = e.value.note;
       return Padding(
         padding: const EdgeInsets.only(bottom: 4),
         child: Row(
           children: [
-            Icon(Icons.check_circle_rounded,
-                size: 14, color: AppColors.statusActive),
+            Icon(
+              Icons.check_circle_rounded,
+              size: 14,
+              color: AppColors.statusActive,
+            ),
             const SizedBox(width: 6),
             Text(
               e.key,
@@ -411,8 +412,9 @@ class SimCardBack extends StatelessWidget {
   }
 
   Widget _buildTagSection() {
-    final matchedTags =
-        tags.where((t) => simCard.tagIds.contains(t.id)).toList();
+    final matchedTags = tags
+        .where((t) => simCard.tagIds.contains(t.id))
+        .toList();
     return Wrap(
       spacing: 6,
       runSpacing: 6,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+
 import '../providers/auth_provider.dart';
 import '../theme/app_colors.dart';
 import 'home_screen.dart';
@@ -70,11 +71,13 @@ class _LockScreenState extends State<LockScreen>
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final bgColor =
-        isDark ? AppColors.darkBackground : AppColors.lightBackground;
+    final bgColor = isDark
+        ? AppColors.darkBackground
+        : AppColors.lightBackground;
     final textColor = isDark ? AppColors.darkText : AppColors.lightText;
-    final secondaryColor =
-        isDark ? AppColors.darkTextSecondary : AppColors.lightTextSecondary;
+    final secondaryColor = isDark
+        ? AppColors.darkTextSecondary
+        : AppColors.lightTextSecondary;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -133,10 +136,7 @@ class _LockScreenState extends State<LockScreen>
               // ── 提示信息 ──
               Text(
                 '请验证身份',
-                style: GoogleFonts.inter(
-                  fontSize: 15,
-                  color: secondaryColor,
-                ),
+                style: GoogleFonts.inter(fontSize: 15, color: secondaryColor),
               ),
               const SizedBox(height: 48),
 

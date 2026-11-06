@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+
 import '../database/database_helper.dart';
 import '../models/sim_card.dart';
 import '../models/enums.dart';
@@ -28,8 +29,7 @@ class SimCardProvider extends ChangeNotifier {
       _simCards.where((c) => c.status == SimStatus.active).length;
   int get expiredCount =>
       _simCards.where((c) => c.status == SimStatus.expired).length;
-  int get expiringCount =>
-      _simCards.where((c) => c.needsReminder).length;
+  int get expiringCount => _simCards.where((c) => c.needsReminder).length;
 
   // ── 数据加载 ──
 
@@ -220,8 +220,7 @@ class SimCardProvider extends ChangeNotifier {
       final query = filterProvider.searchQuery.toLowerCase();
       result = result.where((card) {
         return card.carrierName.toLowerCase().contains(query) ||
-            card.phoneNumbers.any(
-                (p) => p.toLowerCase().contains(query)) ||
+            card.phoneNumbers.any((p) => p.toLowerCase().contains(query)) ||
             (card.iccid?.toLowerCase().contains(query) ?? false) ||
             (card.notes?.toLowerCase().contains(query) ?? false) ||
             (card.source?.toLowerCase().contains(query) ?? false) ||
@@ -246,9 +245,11 @@ class SimCardProvider extends ChangeNotifier {
     // 运营商筛选
     if (filterProvider.carrierFilter != null) {
       result = result
-          .where((c) =>
-              c.carrierCode == filterProvider.carrierFilter ||
-              c.carrierName == filterProvider.carrierFilter)
+          .where(
+            (c) =>
+                c.carrierCode == filterProvider.carrierFilter ||
+                c.carrierName == filterProvider.carrierFilter,
+          )
           .toList();
     }
 
@@ -256,7 +257,8 @@ class SimCardProvider extends ChangeNotifier {
     if (filterProvider.tagFilters.isNotEmpty) {
       result = result.where((c) {
         return c.tagIds.any(
-            (tagId) => filterProvider.tagFilters.contains(tagId));
+          (tagId) => filterProvider.tagFilters.contains(tagId),
+        );
       }).toList();
     }
 
@@ -293,6 +295,5 @@ class SimCardProvider extends ChangeNotifier {
   }
 
   /// 获取所有卡片正在使用的颜色集合（用于分配新卡片颜色）
-  Set<int> get usedCardColors =>
-      _simCards.map((c) => c.cardColor).toSet();
+  Set<int> get usedCardColors => _simCards.map((c) => c.cardColor).toSet();
 }

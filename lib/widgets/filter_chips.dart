@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../models/enums.dart';
 import '../data/countries.dart';
 import '../theme/app_colors.dart';
@@ -56,16 +57,15 @@ class FilterChips extends StatelessWidget {
             onTap: () => onStatusChanged(null),
             chipTextColor: chipTextColor,
           ),
-          ...SimStatus.values
-              .where((s) => s != SimStatus.archived)
-              .map((status) {
+          ...SimStatus.values.where((s) => s != SimStatus.archived).map((
+            status,
+          ) {
             return _buildChip(
               context: context,
               label: status.label,
               isSelected: statusFilter == status,
-              onTap: () => onStatusChanged(
-                statusFilter == status ? null : status,
-              ),
+              onTap: () =>
+                  onStatusChanged(statusFilter == status ? null : status),
               statusColor: _statusColor(status),
               chipTextColor: chipTextColor,
             );
@@ -81,9 +81,8 @@ class FilterChips extends StatelessWidget {
               context: context,
               label: '$emoji ${CountryData.countries[code] ?? code}',
               isSelected: countryFilter == code,
-              onTap: () => onCountryChanged(
-                countryFilter == code ? null : code,
-              ),
+              onTap: () =>
+                  onCountryChanged(countryFilter == code ? null : code),
               chipTextColor: chipTextColor,
             );
           }),
@@ -168,9 +167,7 @@ class FilterChips extends StatelessWidget {
               ? Colors.transparent
               : Theme.of(context).dividerTheme.color ?? AppColors.lightDivider,
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         visualDensity: VisualDensity.compact,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+
 import '../models/tag.dart';
 import '../providers/sim_card_provider.dart';
 import '../theme/app_colors.dart';
@@ -61,9 +62,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
           Icon(
             Icons.label_off_rounded,
             size: 64,
-            color: Theme.of(context)
-                .colorScheme
-                .onSurface
+            color: Theme.of(context).colorScheme.onSurface
                 .withValues(alpha: 0.2),
           ),
           const SizedBox(height: 16),
@@ -72,9 +71,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
             style: GoogleFonts.inter(
               fontSize: 17,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
+              color: Theme.of(context).colorScheme.onSurface
                   .withValues(alpha: 0.5),
             ),
           ),
@@ -83,9 +80,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
             '点击右上角添加你的第一个标签',
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
+              color: Theme.of(context).colorScheme.onSurface
                   .withValues(alpha: 0.4),
             ),
           ),
@@ -110,8 +105,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color:
-              Theme.of(context).dividerTheme.color ?? AppColors.lightDivider,
+          color: Theme.of(context).dividerTheme.color ?? AppColors.lightDivider,
           width: 0.5,
         ),
       ),
@@ -136,10 +130,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
         ),
         title: Text(
           tag.name,
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-          ),
+          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500),
         ),
         subtitle: usageCount > 0
             ? Text(
@@ -174,8 +165,8 @@ class _TagManageScreenState extends State<TagManageScreen> {
     final provider = context.read<SimCardProvider>();
     Color selectedColor = tag != null
         ? Color(tag.color)
-        : AppColors.cardColorPool[
-            provider.tags.length % AppColors.cardColorPool.length];
+        : AppColors.cardColorPool[provider.tags.length %
+              AppColors.cardColorPool.length];
 
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -204,9 +195,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
                       style: GoogleFonts.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Theme.of(ctx)
-                            .colorScheme
-                            .onSurface
+                        color: Theme.of(ctx).colorScheme.onSurface
                             .withValues(alpha: 0.7),
                       ),
                     ),
@@ -215,8 +204,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children:
-                        AppColors.cardColorPool.take(10).map((color) {
+                    children: AppColors.cardColorPool.take(10).map((color) {
                       final isSelected = selectedColor == color;
                       return GestureDetector(
                         onTap: () {
@@ -230,14 +218,12 @@ class _TagManageScreenState extends State<TagManageScreen> {
                             color: color,
                             shape: BoxShape.circle,
                             border: isSelected
-                                ? Border.all(
-                                    color: Colors.white, width: 2)
+                                ? Border.all(color: Colors.white, width: 2)
                                 : null,
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color:
-                                          color.withValues(alpha: 0.5),
+                                      color: color.withValues(alpha: 0.5),
                                       blurRadius: 6,
                                     ),
                                   ]
@@ -265,10 +251,8 @@ class _TagManageScreenState extends State<TagManageScreen> {
                   onPressed: () {
                     final name = _nameController.text.trim();
                     if (name.isEmpty) return;
-                    Navigator.of(ctx).pop({
-                      'name': name,
-                      'color': selectedColor.toARGB32(),
-                    });
+                    Navigator.of(ctx)
+                        .pop({'name': name, 'color': selectedColor.toARGB32()});
                   },
                   child: Text(isEditing ? '保存' : '添加'),
                 ),

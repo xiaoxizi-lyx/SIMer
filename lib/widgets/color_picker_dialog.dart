@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
+
 import '../theme/app_colors.dart';
 
 /// 卡片颜色选择对话框
@@ -73,9 +74,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                 '${widget.carrierName ?? '运营商'}推荐',
                 style: GoogleFonts.inter(
                   fontSize: 12,
-                  color: Theme.of(context)
-                      .colorScheme
-                      .onSurface
+                  color: Theme.of(context).colorScheme.onSurface
                       .withValues(alpha: 0.6),
                 ),
               ),
@@ -97,9 +96,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
               '预设颜色',
               style: GoogleFonts.inter(
                 fontSize: 12,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
+                color: Theme.of(context).colorScheme.onSurface
                     .withValues(alpha: 0.6),
               ),
             ),
@@ -217,9 +214,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(size / 3),
-        border: isSelected
-            ? Border.all(color: Colors.white, width: 2.5)
-            : null,
+        border: isSelected ? Border.all(color: Colors.white, width: 2.5) : null,
         boxShadow: isSelected
             ? [
                 BoxShadow(

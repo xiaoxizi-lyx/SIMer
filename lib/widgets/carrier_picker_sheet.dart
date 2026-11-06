@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../models/carrier.dart';
 import '../data/carriers.dart';
 import '../data/countries.dart';
@@ -54,9 +55,7 @@ class _CarrierPickerSheetState extends State<CarrierPickerSheet> {
               height: 4,
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
+                color: Theme.of(context).colorScheme.onSurface
                     .withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
@@ -64,10 +63,7 @@ class _CarrierPickerSheetState extends State<CarrierPickerSheet> {
           ),
           Text(
             '选择运营商',
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           // 搜索框
@@ -108,12 +104,14 @@ class _CarrierPickerSheetState extends State<CarrierPickerSheet> {
                           onPressed: () {
                             final name = _customController.text.trim();
                             if (name.isNotEmpty) {
-                              Navigator.of(context).pop(Carrier(
-                                code: 'custom_$name',
-                                name: name,
-                                countryCode: 'CN',
-                                themeColor: AppColors.cardColorPool.first,
-                              ));
+                              Navigator.of(context).pop(
+                                Carrier(
+                                  code: 'custom_$name',
+                                  name: name,
+                                  countryCode: 'CN',
+                                  themeColor: AppColors.cardColorPool.first,
+                                ),
+                              );
                             }
                           },
                           child: const Text('确定'),
@@ -130,8 +128,9 @@ class _CarrierPickerSheetState extends State<CarrierPickerSheet> {
               itemCount: results.length,
               itemBuilder: (context, index) {
                 final carrier = results[index];
-                final emoji =
-                    CountryData.countryCodeToEmoji(carrier.countryCode);
+                final emoji = CountryData.countryCodeToEmoji(
+                  carrier.countryCode,
+                );
                 return ListTile(
                   leading: Container(
                     width: 36,
@@ -141,8 +140,7 @@ class _CarrierPickerSheetState extends State<CarrierPickerSheet> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     child: Center(
-                      child: Text(emoji,
-                          style: const TextStyle(fontSize: 18)),
+                      child: Text(emoji, style: const TextStyle(fontSize: 18)),
                     ),
                   ),
                   title: Text(

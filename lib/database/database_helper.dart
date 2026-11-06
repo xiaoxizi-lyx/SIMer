@@ -1,6 +1,8 @@
 import 'dart:convert';
+
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+
 import '../models/sim_card.dart';
 import '../models/tag.dart';
 import '../models/enums.dart';
@@ -104,16 +106,17 @@ class DatabaseHelper {
     ''');
 
     // 创建常用查询索引
+    await db.execute('CREATE INDEX idx_sim_cards_status ON sim_cards(status)');
+    await db.execute('CREATE INDEX idx_sim_cards_uuid ON sim_cards(uuid)');
     await db.execute(
-        'CREATE INDEX idx_sim_cards_status ON sim_cards(status)');
+      'CREATE INDEX idx_phone_numbers_sim_card_id ON phone_numbers(sim_card_id)',
+    );
     await db.execute(
-        'CREATE INDEX idx_sim_cards_uuid ON sim_cards(uuid)');
+      'CREATE INDEX idx_sim_card_tags_sim_card_id ON sim_card_tags(sim_card_id)',
+    );
     await db.execute(
-        'CREATE INDEX idx_phone_numbers_sim_card_id ON phone_numbers(sim_card_id)');
-    await db.execute(
-        'CREATE INDEX idx_sim_card_tags_sim_card_id ON sim_card_tags(sim_card_id)');
-    await db.execute(
-        'CREATE INDEX idx_sim_card_tags_tag_id ON sim_card_tags(tag_id)');
+      'CREATE INDEX idx_sim_card_tags_tag_id ON sim_card_tags(tag_id)',
+    );
   }
 
   // ══════════════════════════════════════════
@@ -191,17 +194,17 @@ class DatabaseHelper {
   /// 获取单张SIM卡（含电话号码和标签）
   Future<SimCard?> getSimCard(int id) async {
     final db = await database;
-    final maps = await db.query(
-      'sim_cards',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    final maps = await db.query('sim_cards', where: 'id = ?', whereArgs: [id]);
     if (maps.isEmpty) return null;
 
     final phoneNumbers = await _getPhoneNumbers(db, id);
     final tagIds = await _getTagIds(db, id);
 
-    return SimCard.fromMap(maps.first, phoneNumbers: phoneNumbers, tagIds: tagIds);
+    return SimCard.fromMap(
+      maps.first,
+      phoneNumbers: phoneNumbers,
+      tagIds: tagIds,
+    );
   }
 
   /// 获取所有非归档SIM卡
@@ -269,11 +272,7 @@ class DatabaseHelper {
   Future<void> permanentlyDeleteSimCard(int id) async {
     final db = await database;
     // 外键 ON DELETE CASCADE 会自动删除关联表数据
-    await db.delete(
-      'sim_cards',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    await db.delete('sim_cards', where: 'id = ?', whereArgs: [id]);
   }
 
   /// 标记为已使用（滚动有效期）
@@ -291,7 +290,9 @@ class DatabaseHelper {
 
     if (maps.isEmpty) return;
 
-    final validityType = ValidityType.fromString(maps.first['validity_type'] as String);
+    final validityType = ValidityType.fromString(
+      maps.first['validity_type'] as String,
+    );
     if (validityType != ValidityType.rolling) return;
 
     final currentStatus = SimStatus.fromString(maps.first['status'] as String);
@@ -301,11 +302,7 @@ class DatabaseHelper {
 
     await db.update(
       'sim_cards',
-      {
-        'last_used_date': now,
-        'updated_at': now,
-        'status': newStatus,
-      },
+      {'last_used_date': now, 'updated_at': now, 'status': newStatus},
       where: 'id = ?',
       whereArgs: [id],
     );
@@ -324,22 +321,13 @@ class DatabaseHelper {
   /// 更新标签
   Future<void> updateTag(Tag tag) async {
     final db = await database;
-    await db.update(
-      'tags',
-      tag.toMap(),
-      where: 'id = ?',
-      whereArgs: [tag.id],
-    );
+    await db.update('tags', tag.toMap(), where: 'id = ?', whereArgs: [tag.id]);
   }
 
   /// 删除标签（关联表会通过外键级联删除）
   Future<void> deleteTag(int id) async {
     final db = await database;
-    await db.delete(
-      'tags',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    await db.delete('tags', where: 'id = ?', whereArgs: [id]);
   }
 
   /// 获取所有标签
@@ -395,8 +383,9 @@ class DatabaseHelper {
             .toList();
 
         final existingTags = await txn.query('tags');
-        final existingTagNames =
-            existingTags.map((t) => t['name'] as String).toSet();
+        final existingTagNames = existingTags
+            .map((t) => t['name'] as String)
+            .toSet();
 
         for (final tag in tagList) {
           if (!existingTagNames.contains(tag.name)) {
@@ -416,8 +405,9 @@ class DatabaseHelper {
 
         // 获取所有已有的 UUID
         final existingCards = await txn.query('sim_cards', columns: ['uuid']);
-        final existingUuids =
-            existingCards.map((c) => c['uuid'] as String).toSet();
+        final existingUuids = existingCards
+            .map((c) => c['uuid'] as String)
+            .toSet();
 
         for (final card in cardList) {
           if (existingUuids.contains(card.uuid)) {
@@ -482,13 +472,17 @@ class DatabaseHelper {
 
   /// 从查询结果构建 SimCard 列表
   Future<List<SimCard>> _buildSimCardList(
-      Database db, List<Map<String, dynamic>> maps) async {
+    Database db,
+    List<Map<String, dynamic>> maps,
+  ) async {
     final cards = <SimCard>[];
     for (final map in maps) {
       final id = map['id'] as int;
       final phoneNumbers = await _getPhoneNumbers(db, id);
       final tagIds = await _getTagIds(db, id);
-      cards.add(SimCard.fromMap(map, phoneNumbers: phoneNumbers, tagIds: tagIds));
+      cards.add(
+        SimCard.fromMap(map, phoneNumbers: phoneNumbers, tagIds: tagIds),
+      );
     }
     return cards;
   }

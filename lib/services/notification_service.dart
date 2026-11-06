@@ -1,5 +1,6 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:workmanager/workmanager.dart';
+
 import '../database/database_helper.dart';
 
 /// 通知服务：SIM卡到期提醒
@@ -18,7 +19,9 @@ class NotificationService {
   /// 初始化通知插件
   static Future<void> initialize() async {
     // Android 初始化设置
-    const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const androidSettings = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
 
     // iOS 初始化设置
     const iosSettings = DarwinInitializationSettings(
@@ -44,20 +47,18 @@ class NotificationService {
   /// 请求通知权限
   static Future<void> _requestPermissions() async {
     // Android
-    final androidPlugin =
-        _notifications.resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     await androidPlugin?.requestNotificationsPermission();
 
     // iOS
-    final iosPlugin =
-        _notifications.resolvePlatformSpecificImplementation<
-            IOSFlutterLocalNotificationsPlugin>();
-    await iosPlugin?.requestPermissions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    final iosPlugin = _notifications
+        .resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin
+        >();
+    await iosPlugin?.requestPermissions(alert: true, badge: true, sound: true);
   }
 
   /// 通知被点击时的回调
@@ -68,10 +69,7 @@ class NotificationService {
 
   /// 注册每日后台检查任务
   static Future<void> scheduleExpiryCheck() async {
-    await Workmanager().initialize(
-      _callbackDispatcher,
-      isInDebugMode: false,
-    );
+    await Workmanager().initialize(_callbackDispatcher, isInDebugMode: false);
 
     await Workmanager().registerPeriodicTask(
       _taskUniqueName,
@@ -96,8 +94,8 @@ class NotificationService {
 
   /// 检查所有卡片并发送需要提醒的通知
   static Future<void> checkAndNotify() async {
-    final cardsNeedingReminder =
-        await DatabaseHelper.instance.getSimCardsNeedingReminder();
+    final cardsNeedingReminder = await DatabaseHelper.instance
+        .getSimCardsNeedingReminder();
 
     for (int i = 0; i < cardsNeedingReminder.length; i++) {
       final card = cardsNeedingReminder[i];

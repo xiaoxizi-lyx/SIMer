@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../data/countries.dart';
 
 /// 国家/地区选择器底部弹窗
@@ -42,9 +43,7 @@ class _CountryPickerSheetState extends State<CountryPickerSheet> {
               height: 4,
               margin: const EdgeInsets.only(bottom: 12),
               decoration: BoxDecoration(
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
+                color: Theme.of(context).colorScheme.onSurface
                     .withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(2),
               ),
@@ -52,10 +51,7 @@ class _CountryPickerSheetState extends State<CountryPickerSheet> {
           ),
           Text(
             '选择国家/地区',
-            style: GoogleFonts.inter(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
+            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -73,8 +69,7 @@ class _CountryPickerSheetState extends State<CountryPickerSheet> {
                 final entry = results[index];
                 final emoji = CountryData.countryCodeToEmoji(entry.key);
                 return ListTile(
-                  leading: Text(emoji,
-                      style: const TextStyle(fontSize: 24)),
+                  leading: Text(emoji, style: const TextStyle(fontSize: 24)),
                   title: Text(
                     entry.value,
                     style: GoogleFonts.inter(
@@ -86,9 +81,7 @@ class _CountryPickerSheetState extends State<CountryPickerSheet> {
                     entry.key,
                     style: GoogleFonts.inter(
                       fontSize: 12,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
+                      color: Theme.of(context).colorScheme.onSurface
                           .withValues(alpha: 0.4),
                     ),
                   ),

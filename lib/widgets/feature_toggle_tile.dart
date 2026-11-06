@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../models/feature_set.dart';
 
 /// 功能开关列表项（用于添加/编辑表单）
@@ -28,7 +29,9 @@ class _FeatureToggleTileState extends State<FeatureToggleTile>
   @override
   void initState() {
     super.initState();
-    _noteController = TextEditingController(text: widget.featureItem.note ?? '');
+    _noteController = TextEditingController(
+      text: widget.featureItem.note ?? '',
+    );
   }
 
   @override
@@ -55,18 +58,17 @@ class _FeatureToggleTileState extends State<FeatureToggleTile>
           contentPadding: const EdgeInsets.symmetric(horizontal: 4),
           title: Text(
             widget.featureName,
-            style: GoogleFonts.inter(
-              fontSize: 15,
-              fontWeight: FontWeight.w500,
-            ),
+            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500),
           ),
           trailing: Switch.adaptive(
             value: isSupported,
             onChanged: (value) {
-              widget.onChanged(widget.featureItem.copyWith(
-                supported: value,
-                note: value ? widget.featureItem.note : null,
-              ));
+              widget.onChanged(
+                widget.featureItem.copyWith(
+                  supported: value,
+                  note: value ? widget.featureItem.note : null,
+                ),
+              );
             },
           ),
         ),
@@ -83,16 +85,20 @@ class _FeatureToggleTileState extends State<FeatureToggleTile>
                       hintText: '备注（可选）',
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12, vertical: 10),
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
                     style: GoogleFonts.inter(fontSize: 13),
                     onChanged: (value) {
-                      widget.onChanged(widget.featureItem.copyWith(
-                        note: value.isEmpty ? null : value,
-                      ));
+                      widget.onChanged(
+                        widget.featureItem.copyWith(
+                          note: value.isEmpty ? null : value,
+                        ),
+                      );
                     },
                   ),
                 )

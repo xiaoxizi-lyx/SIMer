@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+
 import '../services/qr_parser_service.dart';
 
 /// QR 码扫描页面
@@ -40,10 +41,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       body: Stack(
         children: [
           // ── 相机预览 ──
-          MobileScanner(
-            controller: _scannerController,
-            onDetect: _onDetect,
-          ),
+          MobileScanner(controller: _scannerController, onDetect: _onDetect),
 
           // ── 扫描区域覆盖层 ──
           _buildOverlay(context),
@@ -194,10 +192,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     );
   }
 
-  Widget _circleButton({
-    required IconData icon,
-    required VoidCallback onTap,
-  }) {
+  Widget _circleButton({required IconData icon, required VoidCallback onTap}) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -257,10 +252,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     }
 
     // 无法解析为 LPA 但有内容，返回原始文本作为激活码
-    return {
-      'rspServer': '',
-      'activationCode': trimmed,
-    };
+    return {'rspServer': '', 'activationCode': trimmed};
   }
 
   void _showResultSheet(String rawData, Map<String, String> parsed) {
@@ -279,8 +271,11 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.check_circle_rounded,
-                      color: Color(0xFF34C759), size: 24),
+                  const Icon(
+                    Icons.check_circle_rounded,
+                    color: Color(0xFF34C759),
+                    size: 24,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     '扫描成功',
@@ -340,9 +335,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
           label,
           style: GoogleFonts.inter(
             fontSize: 12,
-            color: Theme.of(context)
-                .colorScheme
-                .onSurface
+            color: Theme.of(context).colorScheme.onSurface
                 .withValues(alpha: 0.6),
           ),
         ),

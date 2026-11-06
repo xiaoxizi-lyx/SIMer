@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
+
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/sim_card_provider.dart';
@@ -17,9 +18,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('设置'),
-      ),
+      appBar: AppBar(title: const Text('设置')),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
@@ -132,10 +131,7 @@ class SettingsScreen extends StatelessWidget {
       children: [
         ListTile(
           leading: const Icon(Icons.fingerprint_rounded, size: 22),
-          title: Text(
-            '启用生物识别锁',
-            style: GoogleFonts.inter(fontSize: 15),
-          ),
+          title: Text('启用生物识别锁', style: GoogleFonts.inter(fontSize: 15)),
           subtitle: !authProvider.biometricAvailable
               ? Text(
                   '设备不支持生物识别',
@@ -149,8 +145,7 @@ class SettingsScreen extends StatelessWidget {
             value: authProvider.biometricEnabled,
             onChanged: authProvider.biometricAvailable
                 ? (value) async {
-                    final error =
-                        await authProvider.setBiometricEnabled(value);
+                    final error = await authProvider.setBiometricEnabled(value);
                     if (error != null && context.mounted) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -173,10 +168,7 @@ class SettingsScreen extends StatelessWidget {
       children: [
         ListTile(
           leading: const Icon(Icons.upload_file_rounded, size: 22),
-          title: Text(
-            '导出JSON',
-            style: GoogleFonts.inter(fontSize: 15),
-          ),
+          title: Text('导出JSON', style: GoogleFonts.inter(fontSize: 15)),
           subtitle: Text(
             '将所有SIM卡数据导出为JSON文件',
             style: GoogleFonts.inter(fontSize: 12),
@@ -187,10 +179,7 @@ class SettingsScreen extends StatelessWidget {
         _thinDivider(context),
         ListTile(
           leading: const Icon(Icons.download_rounded, size: 22),
-          title: Text(
-            '导入JSON',
-            style: GoogleFonts.inter(fontSize: 15),
-          ),
+          title: Text('导入JSON', style: GoogleFonts.inter(fontSize: 15)),
           subtitle: Text(
             '从JSON文件导入SIM卡数据',
             style: GoogleFonts.inter(fontSize: 12),
@@ -208,29 +197,22 @@ class SettingsScreen extends StatelessWidget {
       children: [
         ListTile(
           leading: const Icon(Icons.label_rounded, size: 22),
-          title: Text(
-            '标签管理',
-            style: GoogleFonts.inter(fontSize: 15),
-          ),
+          title: Text('标签管理', style: GoogleFonts.inter(fontSize: 15)),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const TagManageScreen()),
-            );
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const TagManageScreen()));
           },
         ),
         _thinDivider(context),
         ListTile(
           leading: const Icon(Icons.archive_rounded, size: 22),
-          title: Text(
-            '归档',
-            style: GoogleFonts.inter(fontSize: 15),
-          ),
+          title: Text('归档', style: GoogleFonts.inter(fontSize: 15)),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
           onTap: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ArchiveScreen()),
-            );
+            Navigator.of(context)
+                .push(MaterialPageRoute(builder: (_) => const ArchiveScreen()));
           },
         ),
       ],
@@ -245,23 +227,14 @@ class SettingsScreen extends StatelessWidget {
           leading: const Icon(Icons.info_outline_rounded, size: 22),
           title: Text(
             'SIMer',
-            style: GoogleFonts.inter(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-            ),
+            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
           ),
-          subtitle: Text(
-            '版本 1.0.0',
-            style: GoogleFonts.inter(fontSize: 12),
-          ),
+          subtitle: Text('版本 1.0.0', style: GoogleFonts.inter(fontSize: 12)),
         ),
         _thinDivider(context),
         ListTile(
           leading: const Icon(Icons.description_outlined, size: 22),
-          title: Text(
-            '关于',
-            style: GoogleFonts.inter(fontSize: 15),
-          ),
+          title: Text('关于', style: GoogleFonts.inter(fontSize: 15)),
           subtitle: Text(
             'SIM卡信息记录管理，安全存储你的SIM卡与eSIM信息。',
             style: GoogleFonts.inter(fontSize: 12),
@@ -271,16 +244,14 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _settingsCard(BuildContext context,
-      {required List<Widget> children}) {
+  Widget _settingsCard(BuildContext context, {required List<Widget> children}) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color:
-              Theme.of(context).dividerTheme.color ?? AppColors.lightDivider,
+          color: Theme.of(context).dividerTheme.color ?? AppColors.lightDivider,
           width: 0.5,
         ),
       ),
@@ -302,7 +273,8 @@ class SettingsScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('导出数据'),
         content: const Text(
-            '将所有SIM卡及标签数据导出为JSON文件。导出后可通过系统分享面板发送到其他设备或保存到本地文件。'),
+          '将所有SIM卡及标签数据导出为JSON文件。导出后可通过系统分享面板发送到其他设备或保存到本地文件。',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
@@ -335,7 +307,8 @@ class SettingsScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('导入数据'),
         content: const Text(
-            '从JSON备份文件导入SIM卡及标签数据。注意：相同UUID的记录将被更新覆盖，不存在的记录将被新增。'),
+          '从JSON备份文件导入SIM卡及标签数据。注意：相同UUID的记录将被更新覆盖，不存在的记录将被新增。',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),

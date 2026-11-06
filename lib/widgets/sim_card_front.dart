@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../models/sim_card.dart';
 import '../models/enums.dart';
 import '../models/tag.dart';
@@ -117,9 +118,7 @@ class SimCardFront extends StatelessWidget {
         style: GoogleFonts.inter(
           fontSize: 11,
           fontWeight: FontWeight.w600,
-          color: _textColor == Colors.white
-              ? Colors.white
-              : badgeColor,
+          color: _textColor == Colors.white ? Colors.white : badgeColor,
         ),
       ),
     );
@@ -127,7 +126,8 @@ class SimCardFront extends StatelessWidget {
 
   Widget _buildMiddleSection() {
     final days = simCard.daysRemaining;
-    final bool isRollingDanger = simCard.validityType == ValidityType.rolling &&
+    final bool isRollingDanger =
+        simCard.validityType == ValidityType.rolling &&
         days != null &&
         days <= 7 &&
         days >= 0;
@@ -151,10 +151,7 @@ class SimCardFront extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             simCard.phoneNumbers.skip(1).join(' · '),
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: _secondaryTextColor,
-            ),
+            style: GoogleFonts.inter(fontSize: 12, color: _secondaryTextColor),
             overflow: TextOverflow.ellipsis,
           ),
         ],

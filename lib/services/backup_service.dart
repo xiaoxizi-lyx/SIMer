@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+
 import '../database/database_helper.dart';
 
 /// 数据备份与恢复服务
@@ -53,8 +55,9 @@ class BackupService {
         return BackupResult.failure('文件内容为空');
       }
 
-      final importResult =
-          await DatabaseHelper.instance.importFromJson(jsonString);
+      final importResult = await DatabaseHelper.instance.importFromJson(
+        jsonString,
+      );
 
       return BackupResult.success(importResult.summary);
     } catch (e) {
@@ -79,16 +82,17 @@ class BackupService {
 
     final files = await dir
         .list()
-        .where((entity) =>
-            entity is File &&
-            entity.path.contains(_filePrefix) &&
-            entity.path.endsWith(_fileExtension))
+        .where(
+          (entity) =>
+              entity is File &&
+              entity.path.contains(_filePrefix) &&
+              entity.path.endsWith(_fileExtension),
+        )
         .cast<File>()
         .toList();
 
     // 按修改时间降序排列
-    files.sort((a, b) =>
-        b.lastModifiedSync().compareTo(a.lastModifiedSync()));
+    files.sort((a, b) => b.lastModifiedSync().compareTo(a.lastModifiedSync()));
 
     return files;
   }

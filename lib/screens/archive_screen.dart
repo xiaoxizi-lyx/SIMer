@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+
 import '../models/sim_card.dart';
 import '../providers/sim_card_provider.dart';
 import '../theme/app_colors.dart';
@@ -18,9 +19,7 @@ class ArchiveScreen extends StatelessWidget {
     final archivedCards = provider.archivedCards;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('归档'),
-      ),
+      appBar: AppBar(title: const Text('归档')),
       body: archivedCards.isEmpty
           ? _buildEmptyState(context)
           : ListView.builder(
@@ -42,9 +41,7 @@ class ArchiveScreen extends StatelessWidget {
           Icon(
             Icons.archive_outlined,
             size: 72,
-            color: Theme.of(context)
-                .colorScheme
-                .onSurface
+            color: Theme.of(context).colorScheme.onSurface
                 .withValues(alpha: 0.2),
           ),
           const SizedBox(height: 16),
@@ -53,9 +50,7 @@ class ArchiveScreen extends StatelessWidget {
             style: GoogleFonts.inter(
               fontSize: 17,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
+              color: Theme.of(context).colorScheme.onSurface
                   .withValues(alpha: 0.5),
             ),
           ),
@@ -64,9 +59,7 @@ class ArchiveScreen extends StatelessWidget {
             '已归档的SIM卡会显示在这里',
             style: GoogleFonts.inter(
               fontSize: 14,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
+              color: Theme.of(context).colorScheme.onSurface
                   .withValues(alpha: 0.4),
             ),
           ),
@@ -87,10 +80,7 @@ class ArchiveScreen extends StatelessWidget {
           // 卡片正面（略灰化）
           Opacity(
             opacity: 0.75,
-            child: SimCardFront(
-              simCard: card,
-              tags: provider.tags,
-            ),
+            child: SimCardFront(simCard: card, tags: provider.tags),
           ),
           const SizedBox(height: 8),
           // 操作按钮行
@@ -120,8 +110,7 @@ class ArchiveScreen extends StatelessWidget {
                 icon: Icons.delete_forever_rounded,
                 label: '永久删除',
                 color: AppColors.countdownDanger,
-                onTap: () =>
-                    _confirmPermanentDelete(context, card, provider),
+                onTap: () => _confirmPermanentDelete(context, card, provider),
               ),
             ],
           ),
@@ -144,10 +133,7 @@ class ArchiveScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: color.withValues(alpha: 0.3),
-            width: 1,
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -177,9 +163,7 @@ class ArchiveScreen extends StatelessWidget {
       context: context,
       builder: (ctx) => AlertDialog(
         title: const Text('永久删除'),
-        content: Text(
-          '确定要永久删除 ${card.carrierName} 的SIM卡吗？\n\n此操作不可恢复。',
-        ),
+        content: Text('确定要永久删除 ${card.carrierName} 的SIM卡吗？\n\n此操作不可恢复。'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),

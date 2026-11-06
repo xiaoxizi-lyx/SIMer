@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+
 import '../models/sim_card.dart';
 import '../providers/sim_card_provider.dart';
 import '../providers/filter_provider.dart';
@@ -90,10 +91,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return AppBar(
       title: Text(
         'SIMer',
-        style: GoogleFonts.inter(
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-        ),
+        style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700),
       ),
       actions: [
         IconButton(
@@ -117,9 +115,9 @@ class _HomeScreenState extends State<HomeScreen> {
           icon: const Icon(Icons.settings_rounded),
           tooltip: '设置',
           onPressed: () {
-            Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
-            );
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
           },
         ),
       ],
@@ -165,16 +163,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final filterProvider = context.watch<FilterProvider>();
 
     if (simCardProvider.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator.adaptive(),
-      );
+      return const Center(child: CircularProgressIndicator.adaptive());
     }
 
     // 使用 SimCardProvider 内置的筛选/排序
     final filteredCards = simCardProvider.getFilteredAndSorted(filterProvider);
 
     if (filteredCards.isEmpty) {
-      final hasFilters = filterProvider.hasActiveFilters ||
+      final hasFilters =
+          filterProvider.hasActiveFilters ||
           filterProvider.searchQuery.isNotEmpty;
       return _buildEmptyState(hasFilters);
     }
@@ -231,9 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? Icons.filter_list_off_rounded
                   : Icons.sim_card_outlined,
               size: 72,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
+              color: Theme.of(context).colorScheme.onSurface
                   .withValues(alpha: 0.2),
             ),
             const SizedBox(height: 16),
@@ -242,9 +237,7 @@ class _HomeScreenState extends State<HomeScreen> {
               style: GoogleFonts.inter(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
+                color: Theme.of(context).colorScheme.onSurface
                     .withValues(alpha: 0.5),
               ),
             ),
@@ -253,9 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
               hasFilters ? '试试调整筛选条件' : '点击下方按钮添加你的第一张SIM卡',
               style: GoogleFonts.inter(
                 fontSize: 14,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
+                color: Theme.of(context).colorScheme.onSurface
                     .withValues(alpha: 0.4),
               ),
             ),
@@ -287,9 +278,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _navigateToAdd() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const AddEditSimScreen()),
-    );
+    Navigator.of(context)
+        .push(MaterialPageRoute(builder: (_) => const AddEditSimScreen()));
   }
 
   void _confirmArchive(BuildContext context, SimCard card) {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+
 import '../models/enums.dart';
 import '../theme/app_colors.dart';
 
@@ -158,10 +159,7 @@ class _ValidityCountdownState extends State<ValidityCountdown>
       return AnimatedBuilder(
         animation: _pulseAnimation,
         builder: (context, child) {
-          return Opacity(
-            opacity: _pulseAnimation.value,
-            child: child,
-          );
+          return Opacity(opacity: _pulseAnimation.value, child: child);
         },
         child: content,
       );

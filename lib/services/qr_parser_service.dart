@@ -26,9 +26,7 @@ class QrParserService {
 
     // 至少需要 3 个部分：协议版本、SM-DP+ 地址、匹配 ID
     if (parts.length < 3) {
-      return QrParseResult.failure(
-        '激活码格式不完整，需要包含 SM-DP+ 地址和匹配 ID',
-      );
+      return QrParseResult.failure('激活码格式不完整，需要包含 SM-DP+ 地址和匹配 ID');
     }
 
     // 解析协议版本（通常为 "1"）
@@ -120,10 +118,7 @@ class QrParseResult {
   }
 
   factory QrParseResult.failure(String message) {
-    return QrParseResult._(
-      isSuccess: false,
-      errorMessage: message,
-    );
+    return QrParseResult._(isSuccess: false, errorMessage: message);
   }
 
   @override
