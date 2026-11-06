@@ -47,14 +47,13 @@ abstract final class BackupService {
   /// 通过系统「保存到」对话框保存备份。返回 `true` 表示已保存，`false` 表示用户取消。
   static Future<bool> saveToFile() async {
     final json = await _buildBackupJson();
-    final path = await FilePicker.platform.saveFile(
+    final uri = await FilePicker.saveFile(
       dialogTitle: '保存 SIMer 备份',
       fileName: fileNameFor(DateTime.now()),
-      type: FileType.custom,
-      allowedExtensions: const ['json'],
+      mimeType: 'application/json',
       bytes: Uint8List.fromList(utf8.encode(json)),
     );
-    return path != null;
+    return uri != null;
   }
 
   /// 通过系统分享面板发送备份文件。
@@ -66,9 +65,12 @@ abstract final class BackupService {
     final file = File(p.join(dir.path, fileNameFor(DateTime.now())));
     await file.writeAsString(await _buildBackupJson(), flush: true);
 
-    final result = await Share.shareXFiles([
-      XFile(file.path, mimeType: 'application/json'),
-    ], subject: 'SIMer 数据备份');
+    final result = await SharePlus.instance.share(
+      ShareParams(
+        files: [XFile(file.path, mimeType: 'application/json')],
+        subject: 'SIMer 数据备份',
+      ),
+    );
     return switch (result.status) {
       ShareResultStatus.success => ShareExportStatus.shared,
       ShareResultStatus.dismissed => ShareExportStatus.dismissed,
@@ -104,18 +106,20 @@ abstract final class BackupService {
   /// 文件无法使用时抛出 [BackupFormatException]。
   static Future<ImportPreview?> pickAndPreview() async {
     // 部分文件管理器无法正确识别 .json 的 MIME 类型，因此不按扩展名过滤，改为校验内容。
-    final picked = await FilePicker.platform.pickFiles();
-    if (picked == null || picked.files.isEmpty) return null;
+    final picked = await FilePicker.pickFile();
+    if (picked == null) return null;
     try {
-      final path = picked.files.single.path;
-      if (path == null) throw const BackupFormatException('无法读取所选文件');
-      final file = File(path);
-      if (await file.length() > BackupCodec.maxFileBytes) {
+      final length = await picked.length();
+      if (length != null && length > BackupCodec.maxFileBytes) {
+        throw const BackupFormatException('文件过大（超过 10 MB），不是有效的 SIMer 备份');
+      }
+      final bytes = await picked.readAsBytes();
+      if (bytes.length > BackupCodec.maxFileBytes) {
         throw const BackupFormatException('文件过大（超过 10 MB），不是有效的 SIMer 备份');
       }
       final String text;
       try {
-        text = await file.readAsString();
+        text = utf8.decode(bytes);
       } on FormatException {
         throw const BackupFormatException('文件编码不是 UTF-8，不是有效的 SIMer 备份');
       }
@@ -127,8 +131,8 @@ abstract final class BackupService {
     } on FileSystemException {
       throw const BackupFormatException('无法读取所选文件');
     } finally {
-      // file_picker 会把所选文件复制到应用缓存，读取后立即删除该明文副本。
-      await FilePicker.platform.clearTemporaryFiles();
+      // 若 file_picker 把所选文件复制到了应用缓存，读取后立即删除该明文副本。
+      await FilePicker.clearTemporaryFiles();
     }
   }
 

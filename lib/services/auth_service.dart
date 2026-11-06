@@ -51,12 +51,9 @@ class AuthService {
 
       return await _auth.authenticate(
         localizedReason: '请验证身份以访问 SIMer',
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-          biometricOnly: false, // 允许回退到设备密码
-          useErrorDialogs: true,
-          sensitiveTransaction: false,
-        ),
+        biometricOnly: false, // 允许回退到设备密码
+        persistAcrossBackgrounding: true,
+        sensitiveTransaction: false,
       );
     } catch (_) {
       // 认证过程发生异常（如用户多次失败后被锁定），返回失败
