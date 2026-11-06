@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:path/path.dart' as p;
-import 'package:sim_keeper/database/database_helper.dart';
+import 'package:simer/database/database_helper.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 /// 为每个测试提供独立的、基于 FFI 的 SQLite 数据库文件。

@@ -4,9 +4,6 @@ import '../models/enums.dart';
 import '../data/countries.dart';
 import '../theme/app_colors.dart';
 
-/// 筛选条件回调
-typedef FilterCallback = void Function(String type, String? value);
-
 /// 水平滚动筛选条
 ///
 /// 包含状态筛选、国家筛选、标签筛选三组 chip

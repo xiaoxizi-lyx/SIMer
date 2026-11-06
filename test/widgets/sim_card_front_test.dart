@@ -1,9 +1,9 @@
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sim_keeper/models/enums.dart';
-import 'package:sim_keeper/models/sim_card.dart';
-import 'package:sim_keeper/widgets/sim_card_front.dart';
+import 'package:simer/models/enums.dart';
+import 'package:simer/models/sim_card.dart';
+import 'package:simer/widgets/sim_card_front.dart';
 
 SimCard _rolling({required int daysSinceUse}) => SimCard(
   uuid: 'u',

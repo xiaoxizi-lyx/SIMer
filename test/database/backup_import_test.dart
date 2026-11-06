@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sim_keeper/database/database_helper.dart';
-import 'package:sim_keeper/models/sim_card.dart';
-import 'package:sim_keeper/models/tag.dart';
-import 'package:sim_keeper/services/backup_codec.dart';
+import 'package:simer/database/database_helper.dart';
+import 'package:simer/models/sim_card.dart';
+import 'package:simer/models/tag.dart';
+import 'package:simer/services/backup_codec.dart';
 
 import '../support/test_db.dart';
 

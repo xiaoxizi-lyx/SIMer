@@ -33,6 +33,7 @@ class _ValidityCountdownState extends State<ValidityCountdown>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+  bool _reduceMotion = false;
 
   @override
   void initState() {
@@ -44,6 +45,13 @@ class _ValidityCountdownState extends State<ValidityCountdown>
     _pulseAnimation = Tween<double>(begin: 1.0, end: 0.4).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 尊重系统「减少动画」设置
+    _reduceMotion = MediaQuery.disableAnimationsOf(context);
     _updatePulse();
   }
 
@@ -55,7 +63,7 @@ class _ValidityCountdownState extends State<ValidityCountdown>
 
   void _updatePulse() {
     final days = widget.daysRemaining;
-    if (days != null && days >= 0 && days < 7) {
+    if (!_reduceMotion && days != null && days >= 0 && days < 7) {
       if (!_pulseController.isAnimating) {
         _pulseController.repeat(reverse: true);
       }

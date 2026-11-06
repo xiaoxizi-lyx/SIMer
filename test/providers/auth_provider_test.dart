@@ -2,8 +2,8 @@ import 'package:clock/clock.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:sim_keeper/providers/auth_provider.dart';
-import 'package:sim_keeper/services/auth_service.dart';
+import 'package:simer/providers/auth_provider.dart';
+import 'package:simer/services/auth_service.dart';
 
 class FakeAuthBackend implements AuthBackend {
   AuthAvailability availabilityResult = AuthAvailability.available;

@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sim_keeper/models/enums.dart';
-import 'package:sim_keeper/models/sim_card.dart';
-import 'package:sim_keeper/models/tag.dart';
+import 'package:simer/models/enums.dart';
+import 'package:simer/models/sim_card.dart';
+import 'package:simer/models/tag.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import '../support/test_db.dart';

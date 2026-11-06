@@ -1,14 +1,14 @@
 import 'dart:ui';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sim_keeper/data/carriers.dart';
-import 'package:sim_keeper/models/carrier.dart';
-import 'package:sim_keeper/models/enums.dart';
-import 'package:sim_keeper/models/feature_set.dart';
-import 'package:sim_keeper/models/sim_card.dart';
-import 'package:sim_keeper/screens/sim_form/sim_form_draft.dart';
-import 'package:sim_keeper/screens/sim_form/sim_form_validators.dart';
-import 'package:sim_keeper/services/qr_parser_service.dart';
+import 'package:simer/data/carriers.dart';
+import 'package:simer/models/carrier.dart';
+import 'package:simer/models/enums.dart';
+import 'package:simer/models/feature_set.dart';
+import 'package:simer/models/sim_card.dart';
+import 'package:simer/screens/sim_form/sim_form_draft.dart';
+import 'package:simer/screens/sim_form/sim_form_validators.dart';
+import 'package:simer/services/qr_parser_service.dart';
 
 void main() {
   group('SimFormValidators', () {

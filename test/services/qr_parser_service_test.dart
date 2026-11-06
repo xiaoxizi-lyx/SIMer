@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sim_keeper/services/qr_parser_service.dart';
+import 'package:simer/services/qr_parser_service.dart';
 
 void main() {
   group('QrParserService（GSMA SGP.22 §4.1）', () {

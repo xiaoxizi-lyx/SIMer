@@ -44,7 +44,7 @@ Future<void> main() async {
         ChangeNotifierProvider.value(value: reminderProvider),
         ChangeNotifierProvider(create: (_) => FilterProvider()),
       ],
-      child: const SimKeeperApp(),
+      child: const SimerApp(),
     ),
   );
 }

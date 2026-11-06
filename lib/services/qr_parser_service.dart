@@ -114,7 +114,4 @@ abstract final class QrParserService {
       raw,
     );
   }
-
-  /// 判断字符串是否为有效的 eSIM 激活码。
-  static bool isValidLpaFormat(String data) => parse(data).isSuccess;
 }

@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sim_keeper/models/sim_card.dart';
-import 'package:sim_keeper/models/tag.dart';
-import 'package:sim_keeper/services/backup_codec.dart';
+import 'package:simer/models/sim_card.dart';
+import 'package:simer/models/tag.dart';
+import 'package:simer/services/backup_codec.dart';
 
 SimCard _card(String uuid, {List<int> tagIds = const []}) => SimCard(
   uuid: uuid,

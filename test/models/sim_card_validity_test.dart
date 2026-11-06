@@ -1,8 +1,8 @@
 import 'package:clock/clock.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sim_keeper/models/calendar_date.dart';
-import 'package:sim_keeper/models/enums.dart';
-import 'package:sim_keeper/models/sim_card.dart';
+import 'package:simer/models/calendar_date.dart';
+import 'package:simer/models/enums.dart';
+import 'package:simer/models/sim_card.dart';
 
 /// 固定「现在」为 2026-11-06 15:30（本地时间）。
 final _now = DateTime(2026, 11, 6, 15, 30);

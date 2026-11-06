@@ -1,8 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sim_keeper/models/enums.dart';
-import 'package:sim_keeper/models/feature_set.dart';
-import 'package:sim_keeper/models/sim_card.dart';
-import 'package:sim_keeper/models/tag.dart';
+import 'package:simer/models/enums.dart';
+import 'package:simer/models/feature_set.dart';
+import 'package:simer/models/sim_card.dart';
+import 'package:simer/models/tag.dart';
 
 Map<String, dynamic> _legacyCard(String status) => {
   'uuid': 'legacy-$status',

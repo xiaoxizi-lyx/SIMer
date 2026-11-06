@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:sim_keeper/models/enums.dart';
-import 'package:sim_keeper/models/sim_card.dart';
-import 'package:sim_keeper/services/reminder_planner.dart';
+import 'package:simer/models/enums.dart';
+import 'package:simer/models/sim_card.dart';
+import 'package:simer/services/reminder_planner.dart';
 
 final _now = DateTime(2026, 11, 6, 10);
 

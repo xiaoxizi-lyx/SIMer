@@ -175,13 +175,6 @@ class SimCardProvider extends ChangeNotifier {
     return null;
   }
 
-  Tag? getTagById(int id) {
-    for (final tag in _tags) {
-      if (tag.id == id) return tag;
-    }
-    return null;
-  }
-
   // ── 筛选与排序 ──
 
   /// 根据筛选条件获取过滤后并排序的（未归档）卡片列表
