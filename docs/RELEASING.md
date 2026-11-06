@@ -25,7 +25,10 @@ base64 -w 0 simer-release.jks > simer-release.jks.base64
 ```
 
 - macOS：`base64 -i simer-release.jks -o simer-release.jks.base64`
-- Windows PowerShell：`[Convert]::ToBase64String([IO.File]::ReadAllBytes("simer-release.jks")) | Set-Content simer-release.jks.base64`
+- Windows PowerShell：`[Convert]::ToBase64String([IO.File]::ReadAllBytes("$PWD\simer-release.jks")) | Set-Content simer-release.jks.base64`
+
+`keytool` 随 JDK 提供；没有单独安装 JDK 时，可以使用 Android Studio 自带的
+（macOS 在 `/Applications/Android Studio.app/Contents/jbr/Contents/Home/bin/`，Windows 在 `C:\Program Files\Android\Android Studio\jbr\bin\`）。
 
 ### 3. 在 GitHub 仓库中添加 4 个 Secrets
 
@@ -45,15 +48,16 @@ base64 -w 0 simer-release.jks > simer-release.jks.base64
 1. 修改 `pubspec.yaml` 中的版本号，例如 `version: 2.0.1+3`
    - `+` 后的构建号必须**每次递增**（分 ABI 安装包的 versionCode 为 `ABI 编号 × 1000 + 构建号`）。
 2. 在 `CHANGELOG.md` 顶部新增对应版本的条目，标题格式为 `## [2.0.1] - 日期`，CI 会把这一节作为 Release 说明。
-3. 合并到 `main` 后打标签并推送：
+3. 合并到 `main` 后，在 `main` 的最新提交上打标签并推送：
 
    ```bash
+   git checkout main
+   git pull
    git tag v2.0.1
-   ```
-
-   ```bash
    git push origin v2.0.1
    ```
+
+   不需要在 GitHub 网页上手动创建 Release，标签推送后由 CI 自动发布。
 
 4. CI 会依次完成：格式检查 → 静态分析 → 测试 → 校验标签与 `pubspec.yaml` 版本一致 → 用正式密钥构建
    `arm64-v8a` / `armeabi-v7a` / `x86_64` 三个安装包 → 检查安装包**不含 INTERNET 权限**、**不是 debug 签名**
