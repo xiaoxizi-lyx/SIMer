@@ -16,6 +16,7 @@ import '../widgets/feature_toggle_tile.dart';
 import '../widgets/color_picker_dialog.dart';
 import '../widgets/carrier_picker_sheet.dart';
 import '../widgets/country_picker_sheet.dart';
+import '../services/qr_parser_service.dart';
 import 'qr_scanner_screen.dart';
 
 /// 添加 / 编辑 SIM 卡页面
@@ -68,6 +69,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
   String _rspServer = '';
   String _activationCode = '';
   String _confirmationCode = '';
+  String? _qrCodeRawData;
   final TextEditingController _rspServerController = TextEditingController();
   final TextEditingController _activationCodeController =
       TextEditingController();
@@ -132,6 +134,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
     _activationCode = card.activationCode ?? '';
     _activationCodeController.text = _activationCode;
     _confirmationCode = card.confirmationCode ?? '';
+    _qrCodeRawData = card.qrCodeRawData;
     _confirmationCodeController.text = _confirmationCode;
 
     _cardColor = Color(card.cardColor);
@@ -768,18 +771,17 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
       const SizedBox(height: 12),
       OutlinedButton.icon(
         onPressed: () async {
-          final result = await Navigator.of(context).push<Map<String, String>>(
+          final result = await Navigator.of(context).push<QrParseResult>(
             MaterialPageRoute(builder: (_) => const QrScannerScreen()),
           );
-          if (result != null) {
+          final code = result?.code;
+          if (code != null) {
             setState(() {
-              _rspServer = result['rspServer'] ?? _rspServer;
+              _rspServer = code.smdpAddress;
               _rspServerController.text = _rspServer;
-              _activationCode = result['activationCode'] ?? _activationCode;
+              _activationCode = code.matchingId;
               _activationCodeController.text = _activationCode;
-              _confirmationCode =
-                  result['confirmationCode'] ?? _confirmationCode;
-              _confirmationCodeController.text = _confirmationCode;
+              _qrCodeRawData = result!.rawData;
             });
           }
         },
@@ -957,6 +959,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
       rspServerAddress: _rspServer.isNotEmpty ? _rspServer : null,
       activationCode: _activationCode.isNotEmpty ? _activationCode : null,
       confirmationCode: _confirmationCode.isNotEmpty ? _confirmationCode : null,
+      qrCodeRawData: _qrCodeRawData,
       cardColor: _cardColor.toARGB32(),
       tagIds: _selectedTagIds,
       createdAt: widget.simCard?.createdAt,

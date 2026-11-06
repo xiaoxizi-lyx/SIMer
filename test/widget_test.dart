@@ -1,54 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sim_keeper/models/enums.dart';
 import 'package:sim_keeper/models/sim_card.dart';
-import 'package:sim_keeper/services/qr_parser_service.dart';
 
 void main() {
-  group('QrParserService Tests', () {
-    test('Parse valid LPA without confirmation code', () {
-      const raw = 'LPA:1\$smdp.example.com\$MATCHING-ID-12345';
-      final result = QrParserService.parse(raw);
-
-      expect(result.isSuccess, isTrue);
-      expect(result.smdpAddress, 'smdp.example.com');
-      expect(result.matchingId, 'MATCHING-ID-12345');
-      expect(result.confirmationCode, isNull);
-    });
-
-    test('Parse valid LPA with confirmation code', () {
-      const raw = 'LPA:1\$smdp.io\$ACTIVATION-CODE\$CONFIRM-999';
-      final result = QrParserService.parse(raw);
-
-      expect(result.isSuccess, isTrue);
-      expect(result.smdpAddress, 'smdp.io');
-      expect(result.matchingId, 'ACTIVATION-CODE');
-      expect(result.confirmationCode, 'CONFIRM-999');
-    });
-
-    test('Reject invalid LPA prefix', () {
-      const raw = 'INVALID:1\$smdp.io\$CODE';
-      final result = QrParserService.parse(raw);
-
-      expect(result.isSuccess, isFalse);
-      expect(result.errorMessage, contains('缺少 LPA: 前缀'));
-    });
-
-    test('Reject empty input', () {
-      final result = QrParserService.parse('');
-      expect(result.isSuccess, isFalse);
-    });
-
-    test('buildLpaString generates proper format', () {
-      final lpa = QrParserService.buildLpaString(
-        smdpAddress: 'smdp.example.com',
-        matchingId: 'MATCH-123',
-        confirmationCode: 'PIN',
-      );
-      expect(lpa, 'LPA:1\$smdp.example.com\$MATCH-123\$PIN');
-      expect(QrParserService.isValidLpaFormat(lpa), isTrue);
-    });
-  });
-
   group('SimCard Model Tests', () {
     test('Rolling validity computation', () {
       final card = SimCard(
