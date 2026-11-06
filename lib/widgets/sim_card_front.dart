@@ -129,12 +129,11 @@ class SimCardFront extends StatelessWidget {
   }
 
   Widget _buildMiddleSection() {
-    final days = simCard.daysRemaining;
-    final bool isRollingDanger =
+    // 滚动有效期卡在提醒窗口内或已过期时，在正面直接提供续期按钮
+    final state = simCard.validityState;
+    final showMarkUsed =
         simCard.validityType == ValidityType.rolling &&
-        days != null &&
-        days <= 7 &&
-        days >= 0;
+        (state == ValidityState.expiringSoon || state == ValidityState.expired);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -170,7 +169,7 @@ class SimCardFront extends StatelessWidget {
               textColor: _textColor,
               fontSize: 12,
             ),
-            if (isRollingDanger && onMarkAsUsed != null) ...[
+            if (showMarkUsed && onMarkAsUsed != null) ...[
               const SizedBox(width: 8),
               _buildMarkUsedButton(),
             ],

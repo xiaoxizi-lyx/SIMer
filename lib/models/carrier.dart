@@ -17,3 +17,18 @@ class Carrier {
   @override
   String toString() => 'Carrier($code: $name)';
 }
+
+/// 运营商选择结果：预置运营商，或用户输入的自定义名称。
+sealed class CarrierChoice {
+  const CarrierChoice();
+}
+
+class PresetCarrierChoice extends CarrierChoice {
+  const PresetCarrierChoice(this.carrier);
+  final Carrier carrier;
+}
+
+class CustomCarrierChoice extends CarrierChoice {
+  const CustomCarrierChoice(this.name);
+  final String name;
+}

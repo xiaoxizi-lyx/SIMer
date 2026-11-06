@@ -15,6 +15,7 @@ class SimCardBack extends StatelessWidget {
   final List<Tag> tags;
   final VoidCallback? onEdit;
   final VoidCallback? onArchive;
+  final VoidCallback? onMarkAsUsed;
 
   const SimCardBack({
     super.key,
@@ -22,6 +23,7 @@ class SimCardBack extends StatelessWidget {
     this.tags = const [],
     this.onEdit,
     this.onArchive,
+    this.onMarkAsUsed,
   });
 
   Color get _baseColor => Color(simCard.cardColor);
@@ -451,7 +453,11 @@ class SimCardBack extends StatelessWidget {
   }
 
   Widget _buildActions() {
+    final markUsed = simCard.validityType == ValidityType.rolling
+        ? onMarkAsUsed
+        : null;
     return Row(
+      spacing: 10,
       children: [
         if (onEdit != null)
           Expanded(
@@ -461,7 +467,14 @@ class SimCardBack extends StatelessWidget {
               onTap: onEdit!,
             ),
           ),
-        if (onEdit != null && onArchive != null) const SizedBox(width: 10),
+        if (markUsed != null)
+          Expanded(
+            child: _actionButton(
+              icon: Icons.check_circle_outline_rounded,
+              label: '我已使用',
+              onTap: markUsed,
+            ),
+          ),
         if (onArchive != null)
           Expanded(
             child: _actionButton(

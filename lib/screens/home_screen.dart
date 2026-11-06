@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../models/sim_card.dart';
 import '../providers/sim_card_provider.dart';
 import '../providers/filter_provider.dart';
 import '../theme/app_colors.dart';
@@ -9,6 +8,7 @@ import '../widgets/sim_card_flip.dart';
 import '../widgets/filter_chips.dart' as fc;
 import '../widgets/sort_menu.dart';
 import 'add_edit_sim_screen.dart';
+import 'card_actions.dart';
 import 'settings_screen.dart';
 
 /// 首页 – SIM卡列表
@@ -194,19 +194,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 key: ValueKey(card.uuid),
                 simCard: card,
                 tags: simCardProvider.tags,
-                onEdit: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => AddEditSimScreen(simCard: card),
-                    ),
-                  );
-                },
-                onArchive: () {
-                  _confirmArchive(context, card);
-                },
-                onMarkAsUsed: () {
-                  simCardProvider.markAsUsed(card.id!);
-                },
+                onEdit: () => CardActions.edit(context, card),
+                onArchive: () => CardActions.archive(context, card),
+                onMarkAsUsed: () => CardActions.markAsUsed(context, card),
               ),
             );
           },
@@ -279,28 +269,5 @@ class _HomeScreenState extends State<HomeScreen> {
   void _navigateToAdd() {
     Navigator.of(context)
         .push(MaterialPageRoute(builder: (_) => const AddEditSimScreen()));
-  }
-
-  void _confirmArchive(BuildContext context, SimCard card) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('归档SIM卡'),
-        content: Text('确定要将 ${card.carrierName} 的SIM卡归档吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              context.read<SimCardProvider>().archiveSimCard(card.id!);
-              Navigator.of(ctx).pop();
-            },
-            child: const Text('归档'),
-          ),
-        ],
-      ),
-    );
   }
 }

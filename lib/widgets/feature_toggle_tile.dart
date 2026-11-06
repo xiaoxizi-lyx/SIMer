@@ -6,10 +6,6 @@ import '../models/feature_set.dart';
 ///
 /// 左侧功能名，右侧开关，启用后展开文本框输入备注
 class FeatureToggleTile extends StatefulWidget {
-  final String featureName;
-  final FeatureItem featureItem;
-  final ValueChanged<FeatureItem> onChanged;
-
   const FeatureToggleTile({
     super.key,
     required this.featureName,
@@ -17,28 +13,25 @@ class FeatureToggleTile extends StatefulWidget {
     required this.onChanged,
   });
 
+  final String featureName;
+  final FeatureItem featureItem;
+  final ValueChanged<FeatureItem> onChanged;
+
   @override
   State<FeatureToggleTile> createState() => _FeatureToggleTileState();
 }
 
-class _FeatureToggleTileState extends State<FeatureToggleTile>
-    with SingleTickerProviderStateMixin {
-  late TextEditingController _noteController;
-
-  @override
-  void initState() {
-    super.initState();
-    _noteController = TextEditingController(
-      text: widget.featureItem.note ?? '',
-    );
-  }
+class _FeatureToggleTileState extends State<FeatureToggleTile> {
+  late final TextEditingController _noteController = TextEditingController(
+    text: widget.featureItem.note ?? '',
+  );
 
   @override
   void didUpdateWidget(covariant FeatureToggleTile oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.featureItem.note != widget.featureItem.note) {
-      _noteController.text = widget.featureItem.note ?? '';
-    }
+    // 只同步外部带来的变化；用户正在输入时文本相同，不能重设（否则光标会跳到末尾）
+    final note = widget.featureItem.note ?? '';
+    if (note != _noteController.text) _noteController.text = note;
   }
 
   @override
@@ -53,25 +46,21 @@ class _FeatureToggleTileState extends State<FeatureToggleTile>
 
     return Column(
       children: [
-        ListTile(
+        SwitchListTile.adaptive(
           contentPadding: const EdgeInsets.symmetric(horizontal: 4),
           title: Text(
             widget.featureName,
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
           ),
-          trailing: Switch.adaptive(
-            value: isSupported,
-            onChanged: (value) {
-              widget.onChanged(
-                widget.featureItem.copyWith(
-                  supported: value,
-                  note: value ? widget.featureItem.note : null,
-                ),
-              );
-            },
+          value: isSupported,
+          // 关闭功能时一并清除备注
+          onChanged: (value) => widget.onChanged(
+            FeatureItem(
+              supported: value,
+              note: value ? widget.featureItem.note : null,
+            ),
           ),
         ),
-        // ── 展开的备注输入框 ──
         AnimatedSize(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
@@ -91,14 +80,12 @@ class _FeatureToggleTileState extends State<FeatureToggleTile>
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    style: TextStyle(fontSize: 13),
-                    onChanged: (value) {
-                      widget.onChanged(
-                        widget.featureItem.copyWith(
-                          note: value.isEmpty ? null : value,
-                        ),
-                      );
-                    },
+                    style: const TextStyle(fontSize: 13),
+                    onChanged: (value) => widget.onChanged(
+                      widget.featureItem.copyWith(
+                        note: value.trim().isEmpty ? null : value,
+                      ),
+                    ),
                   ),
                 )
               : const SizedBox.shrink(),

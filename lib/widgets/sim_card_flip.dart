@@ -95,6 +95,7 @@ class SimCardFlipState extends State<SimCardFlip>
                       tags: widget.tags,
                       onEdit: widget.onEdit,
                       onArchive: widget.onArchive,
+                      onMarkAsUsed: widget.onMarkAsUsed,
                     ),
                   ),
           );
