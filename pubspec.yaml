@@ -1,7 +1,7 @@
 name: simer
 description: "SIMer - 离线的 SIM 卡与 eSIM 信息管理应用（Apple Wallet 风格卡片）"
 publish_to: 'none'
-version: 1.0.0+1
+version: 2.0.0+2
 homepage: https://github.com/xiaoxizi-lyx/SIMer
 repository: https://github.com/xiaoxizi-lyx/SIMer
 issue_tracker: https://github.com/xiaoxizi-lyx/SIMer/issues

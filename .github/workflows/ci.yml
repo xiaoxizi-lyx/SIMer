@@ -92,12 +92,17 @@ jobs:
       - name: Install dependencies (locked)
         run: flutter pub get --enforce-lockfile
 
-      - name: Check tag matches pubspec version
+      - name: Check tag, pubspec version and changelog entry
         if: env.IS_RELEASE == 'true'
         run: |
           version="$(sed -n 's/^version: *\([^+ ]*\).*/\1/p' pubspec.yaml)"
           if [ "v${version}" != "${GITHUB_REF_NAME}" ]; then
             echo "::error::Tag ${GITHUB_REF_NAME} does not match pubspec.yaml version ${version}"
+            exit 1
+          fi
+          # Release notes are taken from this CHANGELOG section; fail before building if it is missing.
+          if ! awk -v ver="${version}" 'index($0, "## [" ver "]") == 1 { found = 1 } END { exit !found }' CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no '## [${version}]' entry"
             exit 1
           fi
 
@@ -110,7 +115,8 @@ jobs:
             echo "::error::Repository secret SIMER_KEYSTORE_BASE64 is not configured"
             exit 1
           fi
-          printf '%s' "${SIMER_KEYSTORE_BASE64}" | base64 --decode > "${RUNNER_TEMP}/simer-release.jks"
+          # Strip whitespace so secrets pasted with line wraps or CRLF still decode.
+          printf '%s' "${SIMER_KEYSTORE_BASE64}" | tr -d '[:space:]' | base64 --decode > "${RUNNER_TEMP}/simer-release.jks"
           echo "SIMER_KEYSTORE_FILE=${RUNNER_TEMP}/simer-release.jks" >> "${GITHUB_ENV}"
 
       # 非 tag 构建拿不到签名密钥，回退到 debug 签名，产物仅用于测试，不得分发
