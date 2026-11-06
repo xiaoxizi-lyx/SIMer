@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/images/SIMer.png" width="128" height="128" alt="SIMer Logo" />
+  <img src="docs/images/SIMer.png" width="128" height="128" alt="SIMer Logo" />
 </p>
 
 <h1 align="center">SIMer</h1>

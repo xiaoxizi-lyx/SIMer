@@ -1,25 +1,24 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- 摄像头权限（QR码扫描） -->
+    <!-- 摄像头：扫描 eSIM 二维码 -->
     <uses-permission android:name="android.permission.CAMERA" />
-    <!-- 生物识别 -->
+    <!-- 生物识别 / 设备凭据解锁 -->
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
-    <uses-permission android:name="android.permission.USE_FINGERPRINT" />
-    <!-- 通知 -->
+    <!-- 到期提醒通知 -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
-    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-    <!-- 文件存储（导出JSON） -->
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"
-        android:maxSdkVersion="28" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE"
-        android:maxSdkVersion="32" />
-    <!-- 振动（通知） -->
     <uses-permission android:name="android.permission.VIBRATE" />
 
+    <!--
+        不参与任何系统级备份：禁止 Google 云备份与换机迁移（设备间传输），
+        数据迁移只能由用户在应用内手动导出/导入完成。
+        Android 12+ 上 allowBackup="false" 不会阻止换机迁移，因此另配 dataExtractionRules。
+    -->
     <application
         android:label="SIMer"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
             android:name=".MainActivity"
             android:exported="true"

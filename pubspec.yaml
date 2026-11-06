@@ -47,9 +47,6 @@ dependencies:
   # 颜色选择器
   flutter_colorpicker: ^1.1.0
   
-  # 权限
-  permission_handler: ^11.3.1
-  
   # SharedPreferences (主题/设置持久化)
   shared_preferences: ^2.3.4
 
@@ -61,7 +58,6 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/
     # 内置字体的许可证（显示在「关于 → 开源许可」中）
     - assets/fonts/OFL-Inter.txt
     - assets/fonts/OFL-RobotoMono.txt
