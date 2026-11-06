@@ -1,4 +1,4 @@
-package com.simkeeper.sim_keeper
+package io.github.xiaoxizi_lyx.simer
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 
