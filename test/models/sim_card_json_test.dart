@@ -74,6 +74,17 @@ void main() {
     });
   });
 
+  test('ICCID 每 4 位分组显示', () {
+    final card = SimCard(
+      uuid: 'iccid',
+      carrierName: '中国移动',
+      countryCode: 'CN',
+      cardColor: 0xFF0054A6,
+      iccid: '89860012345678901234',
+    );
+    expect(card.formattedIccid, '8986 0012 3456 7890 1234');
+  });
+
   test('功能备注可以清除', () {
     const item = FeatureItem(supported: true, note: 'a');
     expect(item.copyWith(note: null).note, isNull);

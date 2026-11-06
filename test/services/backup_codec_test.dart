@@ -38,7 +38,7 @@ void main() {
 
     test('识别 SIMer 1.0 导出的旧格式', () {
       final data = BackupCodec.decode(
-        jsonEncode({'version': 1, 'simCards': [], 'tags': []}),
+        jsonEncode({'version': 1, 'simCards': <Object>[], 'tags': <Object>[]}),
       );
       expect(data.formatVersion, BackupCodec.legacyFormatVersion);
     });
@@ -56,7 +56,7 @@ void main() {
         throwsA(isA<BackupFormatException>()),
       );
       expect(
-        () => BackupCodec.decode(jsonEncode({'simCards': []})),
+        () => BackupCodec.decode(jsonEncode({'simCards': <Object>[]})),
         throwsA(isA<BackupFormatException>()),
       );
     });

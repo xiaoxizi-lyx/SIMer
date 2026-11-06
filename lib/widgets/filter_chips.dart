@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../models/enums.dart';
 import '../data/countries.dart';
+import '../models/enums.dart';
 import '../theme/app_colors.dart';
 
 /// 水平滚动筛选条
@@ -150,7 +150,7 @@ class FilterChips extends StatelessWidget {
               Container(
                 width: 7,
                 height: 7,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,
                 ),

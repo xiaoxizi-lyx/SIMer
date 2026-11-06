@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -35,7 +37,7 @@ class CardDetailSheet extends StatelessWidget {
     final hostContext = Navigator.of(context).context;
     void closeThen(Future<void> Function(BuildContext) action) {
       Navigator.of(context).pop();
-      action(hostContext);
+      unawaited(action(hostContext));
     }
 
     return DraggableScrollableSheet(

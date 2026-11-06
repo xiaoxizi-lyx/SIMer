@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -166,41 +168,43 @@ class ArchiveScreen extends StatelessWidget {
     SimCard card,
     SimCardProvider provider,
   ) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('永久删除'),
-        content: Text('确定要永久删除 ${card.carrierName} 的SIM卡吗？\n\n此操作不可恢复。'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.countdownDanger,
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('永久删除'),
+          content: Text('确定要永久删除 ${card.carrierName} 的SIM卡吗？\n\n此操作不可恢复。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('取消'),
             ),
-            onPressed: () async {
-              Navigator.of(ctx).pop();
-              final messenger = ScaffoldMessenger.of(context);
-              try {
-                await provider.permanentlyDelete(card.id!);
-                messenger.showSnackBar(
-                  SnackBar(
-                    content: Text('已永久删除 ${card.carrierName}'),
-                    duration: const Duration(seconds: 2),
-                  ),
-                );
-              } on Exception catch (e) {
-                debugPrint('删除失败: $e');
-                messenger.showSnackBar(
-                  const SnackBar(content: Text('删除失败，请重试')),
-                );
-              }
-            },
-            child: const Text('删除'),
-          ),
-        ],
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.countdownDanger,
+              ),
+              onPressed: () async {
+                Navigator.of(ctx).pop();
+                final messenger = ScaffoldMessenger.of(context);
+                try {
+                  await provider.permanentlyDelete(card.id!);
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text('已永久删除 ${card.carrierName}'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                } on Exception catch (e) {
+                  debugPrint('删除失败: $e');
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('删除失败，请重试')),
+                  );
+                }
+              },
+              child: const Text('删除'),
+            ),
+          ],
+        ),
       ),
     );
   }

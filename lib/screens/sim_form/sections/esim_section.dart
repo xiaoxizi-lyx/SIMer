@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -70,7 +72,9 @@ class EsimSection extends StatelessWidget {
                   onPressed: lpa == null
                       ? null
                       : () {
-                          Clipboard.setData(ClipboardData(text: lpa));
+                          unawaited(
+                            Clipboard.setData(ClipboardData(text: lpa)),
+                          );
                           ScaffoldMessenger.of(context).showSnackBar(
                             const SnackBar(content: Text('已复制完整激活码')),
                           );

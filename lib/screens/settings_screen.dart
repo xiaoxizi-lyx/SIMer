@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/reminder_provider.dart';
+import '../providers/theme_provider.dart';
 import '../services/platform_service.dart';
 import '../theme/app_colors.dart';
-import 'tag_manage_screen.dart';
 import 'archive_screen.dart';
 import 'backup_flows.dart';
+import 'tag_manage_screen.dart';
 
 /// 设置页面
 class SettingsScreen extends StatelessWidget {
@@ -59,7 +59,7 @@ class SettingsScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
       child: Text(
         title,
-        style: TextStyle(
+        style: const TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w600,
           color: AppColors.primary,
@@ -268,16 +268,22 @@ class SettingsScreen extends StatelessWidget {
       children: [
         ListTile(
           leading: const Icon(Icons.upload_file_rounded, size: 22),
-          title: Text('导出备份', style: TextStyle(fontSize: 15)),
-          subtitle: Text('手动导出全部数据，用于迁移到新设备', style: TextStyle(fontSize: 12)),
+          title: const Text('导出备份', style: TextStyle(fontSize: 15)),
+          subtitle: const Text(
+            '手动导出全部数据，用于迁移到新设备',
+            style: TextStyle(fontSize: 12),
+          ),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
           onTap: () => _exportData(context),
         ),
         _thinDivider(context),
         ListTile(
           leading: const Icon(Icons.download_rounded, size: 22),
-          title: Text('导入备份', style: TextStyle(fontSize: 15)),
-          subtitle: Text('从 SIMer 备份文件恢复数据', style: TextStyle(fontSize: 12)),
+          title: const Text('导入备份', style: TextStyle(fontSize: 15)),
+          subtitle: const Text(
+            '从 SIMer 备份文件恢复数据',
+            style: TextStyle(fontSize: 12),
+          ),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
           onTap: () => _importData(context),
         ),
@@ -291,22 +297,23 @@ class SettingsScreen extends StatelessWidget {
       children: [
         ListTile(
           leading: const Icon(Icons.label_rounded, size: 22),
-          title: Text('标签管理', style: TextStyle(fontSize: 15)),
+          title: const Text('标签管理', style: TextStyle(fontSize: 15)),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
           onTap: () {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const TagManageScreen()));
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const TagManageScreen()),
+            );
           },
         ),
         _thinDivider(context),
         ListTile(
           leading: const Icon(Icons.archive_rounded, size: 22),
-          title: Text('归档', style: TextStyle(fontSize: 15)),
+          title: const Text('归档', style: TextStyle(fontSize: 15)),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
           onTap: () {
-            Navigator.of(context)
-                .push(MaterialPageRoute(builder: (_) => const ArchiveScreen()));
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const ArchiveScreen()),
+            );
           },
         ),
       ],
@@ -319,7 +326,7 @@ class SettingsScreen extends StatelessWidget {
       children: [
         ListTile(
           leading: const Icon(Icons.info_outline_rounded, size: 22),
-          title: Text(
+          title: const Text(
             'SIMer',
             style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
@@ -332,8 +339,8 @@ class SettingsScreen extends StatelessWidget {
           ),
         ),
         _thinDivider(context),
-        ListTile(
-          leading: const Icon(Icons.description_outlined, size: 22),
+        const ListTile(
+          leading: Icon(Icons.description_outlined, size: 22),
           title: Text('关于', style: TextStyle(fontSize: 15)),
           subtitle: Text(
             'SIM卡信息记录管理，安全存储你的SIM卡与eSIM信息。',
@@ -343,7 +350,7 @@ class SettingsScreen extends StatelessWidget {
         _thinDivider(context),
         ListTile(
           leading: const Icon(Icons.gavel_rounded, size: 22),
-          title: Text('开源许可', style: TextStyle(fontSize: 15)),
+          title: const Text('开源许可', style: TextStyle(fontSize: 15)),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
           onTap: () =>
               showLicensePage(context: context, applicationName: 'SIMer'),

@@ -1,10 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../models/sim_card.dart';
-import '../models/enums.dart';
-import '../models/tag.dart';
 import '../data/countries.dart';
+import '../models/enums.dart';
+import '../models/sim_card.dart';
+import '../models/tag.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_fonts.dart';
 import 'validity_countdown.dart';
@@ -277,7 +279,7 @@ class SimCardBack extends StatelessWidget {
           ),
           GestureDetector(
             onTap: () {
-              Clipboard.setData(ClipboardData(text: copyValue));
+              unawaited(Clipboard.setData(ClipboardData(text: copyValue)));
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('已复制 $label'),
@@ -372,7 +374,7 @@ class SimCardBack extends StatelessWidget {
         padding: const EdgeInsets.only(bottom: 4),
         child: Row(
           children: [
-            Icon(
+            const Icon(
               Icons.check_circle_rounded,
               size: 14,
               color: AppColors.statusActive,

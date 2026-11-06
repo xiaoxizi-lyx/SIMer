@@ -86,7 +86,7 @@ abstract final class BackupService {
       final dir = await _exportDir();
       final cutoff = DateTime.now().subtract(olderThan);
       await for (final entity in dir.list()) {
-        if (entity is File && (await entity.lastModified()).isBefore(cutoff)) {
+        if (entity is File && entity.lastModifiedSync().isBefore(cutoff)) {
           await entity.delete();
         }
       }

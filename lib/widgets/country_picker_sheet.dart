@@ -48,7 +48,7 @@ class _CountryPickerSheetState extends State<CountryPickerSheet> {
               ),
             ),
           ),
-          Text(
+          const Text(
             '选择国家/地区',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
@@ -71,7 +71,10 @@ class _CountryPickerSheetState extends State<CountryPickerSheet> {
                   leading: Text(emoji, style: const TextStyle(fontSize: 24)),
                   title: Text(
                     entry.value,
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   trailing: Text(
                     entry.key,

@@ -58,7 +58,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
+            const Text(
               '选择卡片颜色',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
@@ -129,7 +129,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                     color: AppColors.primary,
                   ),
                   const SizedBox(width: 4),
-                  Text(
+                  const Text(
                     '自定义颜色',
                     style: TextStyle(
                       fontSize: 13,

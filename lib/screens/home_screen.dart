@@ -1,15 +1,17 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../providers/sim_card_provider.dart';
-import '../services/notification_service.dart';
 import '../models/enums.dart';
 import '../providers/auth_provider.dart';
 import '../providers/filter_provider.dart';
+import '../providers/sim_card_provider.dart';
+import '../services/notification_service.dart';
 import '../theme/app_colors.dart';
 import '../widgets/card_detail_sheet.dart';
-import '../widgets/sim_card_flip.dart';
 import '../widgets/filter_chips.dart' as fc;
+import '../widgets/sim_card_flip.dart';
 import '../widgets/sort_menu.dart';
 import 'add_edit_sim_screen.dart';
 import 'card_actions.dart';
@@ -42,7 +44,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final uuid = NotificationService.openCardRequest.value;
     if (uuid == null || !mounted) return;
     NotificationService.openCardRequest.value = null;
-    CardDetailSheet.show(context, uuid);
+    unawaited(CardDetailSheet.show(context, uuid));
   }
 
   /// 显示应用锁的一次性提示（例如设备移除锁屏后应用锁被自动关闭）。
@@ -108,16 +110,14 @@ class _HomeScreenState extends State<HomeScreen> {
         title: TextField(
           controller: _searchController,
           autofocus: true,
-          decoration: InputDecoration(
+          decoration: const InputDecoration(
             hintText: '搜索运营商、号码、国家、标签…',
             hintStyle: TextStyle(fontSize: 15),
             border: InputBorder.none,
             filled: false,
           ),
-          style: TextStyle(fontSize: 15),
-          onChanged: (value) {
-            filterProvider.setSearchQuery(value);
-          },
+          style: const TextStyle(fontSize: 15),
+          onChanged: filterProvider.setSearchQuery,
         ),
         actions: [
           if (_searchController.text.isNotEmpty)
@@ -133,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return AppBar(
-      title: Text(
+      title: const Text(
         'SIMer',
         style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
       ),
@@ -148,20 +148,16 @@ class _HomeScreenState extends State<HomeScreen> {
         SortMenu(
           currentSortBy: filterProvider.sortBy,
           currentSortOrder: filterProvider.sortOrder,
-          onSortByChanged: (sortBy) {
-            filterProvider.setSortBy(sortBy);
-          },
-          onSortOrderChanged: (order) {
-            filterProvider.setSortOrder(order);
-          },
+          onSortByChanged: filterProvider.setSortBy,
+          onSortOrderChanged: filterProvider.setSortOrder,
         ),
         IconButton(
           icon: const Icon(Icons.settings_rounded),
           tooltip: '设置',
           onPressed: () {
-            Navigator.of(
-              context,
-            ).push(MaterialPageRoute(builder: (_) => const SettingsScreen()));
+            Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
+            );
           },
         ),
       ],
@@ -197,16 +193,10 @@ class _HomeScreenState extends State<HomeScreen> {
       availableCountries: countries.toSet(),
       availableCarriers: carriers,
       availableTags: tagEntries,
-      onStatusChanged: (status) {
-        filterProvider.setStatusFilter(status);
-      },
-      onCountryChanged: (country) {
-        filterProvider.setCountryFilter(country);
-      },
+      onStatusChanged: filterProvider.setStatusFilter,
+      onCountryChanged: filterProvider.setCountryFilter,
       onCarrierChanged: filterProvider.setCarrierFilter,
-      onTagsChanged: (tags) {
-        filterProvider.setTagFilters(tags);
-      },
+      onTagsChanged: filterProvider.setTagFilters,
     );
   }
 
@@ -310,9 +300,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildFAB() {
     return FloatingActionButton.extended(
-      onPressed: () => _navigateToAdd(),
+      onPressed: _navigateToAdd,
       icon: const Icon(Icons.add_rounded),
-      label: Text(
+      label: const Text(
         '添加SIM/eSIM信息',
         style: TextStyle(fontWeight: FontWeight.w600),
       ),
@@ -320,7 +310,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   void _navigateToAdd() {
-    Navigator.of(context)
-        .push(MaterialPageRoute(builder: (_) => const AddEditSimScreen()));
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<bool>(builder: (_) => const AddEditSimScreen()));
   }
 }

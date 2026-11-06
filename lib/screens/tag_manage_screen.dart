@@ -133,10 +133,13 @@ class _TagManageScreenState extends State<TagManageScreen> {
         ),
         title: Text(
           tag.name,
-          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
         ),
         subtitle: usageCount > 0
-            ? Text('已关联 $usageCount 张SIM卡', style: TextStyle(fontSize: 12))
+            ? Text(
+                '已关联 $usageCount 张SIM卡',
+                style: const TextStyle(fontSize: 12),
+              )
             : null,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -146,7 +149,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
               onPressed: () => _showAddEditDialog(context, tag: tag),
             ),
             IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.delete_outline_rounded,
                 size: 20,
                 color: AppColors.countdownDanger,
@@ -291,34 +294,36 @@ class _TagManageScreenState extends State<TagManageScreen> {
   }
 
   void _confirmDelete(BuildContext context, Tag tag, int usageCount) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('删除标签'),
-        content: Text(
-          usageCount > 0
-              ? '标签"${tag.name}"已被 $usageCount 张SIM卡使用。删除后将从这些卡中移除该标签。确定要删除吗？'
-              : '确定要删除标签"${tag.name}"吗？',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('删除标签'),
+          content: Text(
+            usageCount > 0
+                ? '标签"${tag.name}"已被 $usageCount 张SIM卡使用。删除后将从这些卡中移除该标签。确定要删除吗？'
+                : '确定要删除标签"${tag.name}"吗？',
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.countdownDanger,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('取消'),
             ),
-            onPressed: () {
-              Navigator.of(ctx).pop();
-              final id = tag.id!;
-              // 同时移除首页中该标签的筛选，避免残留的筛选让列表“莫名”变空
-              ctx.read<FilterProvider>().removeTagFilter(id);
-              unawaited(ctx.read<SimCardProvider>().deleteTag(id));
-            },
-            child: const Text('删除'),
-          ),
-        ],
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.countdownDanger,
+              ),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                final id = tag.id!;
+                // 同时移除首页中该标签的筛选，避免残留的筛选让列表“莫名”变空
+                ctx.read<FilterProvider>().removeTagFilter(id);
+                unawaited(ctx.read<SimCardProvider>().deleteTag(id));
+              },
+              child: const Text('删除'),
+            ),
+          ],
+        ),
       ),
     );
   }

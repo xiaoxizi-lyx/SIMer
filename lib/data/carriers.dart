@@ -397,10 +397,9 @@ class CarrierData {
 
   /// 按代码查找运营商
   static Carrier? findByCode(String code) {
-    try {
-      return carriers.firstWhere((c) => c.code == code);
-    } catch (_) {
-      return null;
+    for (final carrier in carriers) {
+      if (carrier.code == code) return carrier;
     }
+    return null;
   }
 }

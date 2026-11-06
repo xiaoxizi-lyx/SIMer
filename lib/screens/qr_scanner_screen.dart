@@ -221,9 +221,9 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
               ),
               if (denied) ...[
                 const SizedBox(height: 20),
-                FilledButton(
+                const FilledButton(
                   onPressed: PlatformService.openAppSettings,
-                  child: const Text('去设置开启相机权限'),
+                  child: Text('去设置开启相机权限'),
                 ),
               ],
             ],

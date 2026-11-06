@@ -65,7 +65,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _confirmLeave();
+        if (!didPop) unawaited(_confirmLeave());
       },
       child: Scaffold(
         appBar: AppBar(
