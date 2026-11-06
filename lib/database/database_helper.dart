@@ -1,36 +1,50 @@
-import 'dart:convert';
-
-import 'package:sqflite/sqflite.dart';
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
 import '../models/sim_card.dart';
 import '../models/tag.dart';
 import '../models/enums.dart';
+import '../services/backup_codec.dart';
 
-/// SIMer 数据库管理器（单例）
+/// SIMer 数据库管理器。
+///
+/// 应用中通过 [instance] 使用单例；测试可用 [DatabaseHelper.forTesting]
+/// 打开独立的（内存）数据库。
 class DatabaseHelper {
-  DatabaseHelper._();
-  static final DatabaseHelper instance = DatabaseHelper._();
+  DatabaseHelper._(this._path) : _factory = null;
 
-  static Database? _database;
+  /// 测试专用：用指定的数据库工厂（如 sqflite FFI）在 [path] 打开独立数据库。
+  @visibleForTesting
+  DatabaseHelper.forTesting(String this._path, {this._factory});
+
+  static final DatabaseHelper instance = DatabaseHelper._(null);
+
   static const String _dbName = 'sim_keeper.db';
   static const int _dbVersion = 1;
 
-  Future<Database> get database async {
-    _database ??= await _initDatabase();
-    return _database!;
-  }
+  /// 为 null 时使用系统数据库目录下的 [_dbName]。
+  final String? _path;
+
+  /// 为 null 时使用 sqflite 默认工厂。
+  final DatabaseFactory? _factory;
+  Future<Database>? _database;
+
+  /// 并发首次访问时只会打开一次数据库。
+  Future<Database> get database => _database ??= _initDatabase();
 
   Future<Database> _initDatabase() async {
-    final dbPath = await getDatabasesPath();
-    final path = join(dbPath, _dbName);
-    return await openDatabase(
+    final factory = _factory ?? databaseFactory;
+    final path = _path ?? join(await factory.getDatabasesPath(), _dbName);
+    return factory.openDatabase(
       path,
-      version: _dbVersion,
-      onCreate: _onCreate,
-      onConfigure: (db) async {
-        await db.execute('PRAGMA foreign_keys = ON');
-      },
+      options: OpenDatabaseOptions(
+        version: _dbVersion,
+        onCreate: _onCreate,
+        onConfigure: (db) async {
+          await db.execute('PRAGMA foreign_keys = ON');
+        },
+      ),
     );
   }
 
@@ -126,35 +140,17 @@ class DatabaseHelper {
   /// 插入SIM卡（含电话号码和标签，使用事务）
   Future<int> insertSimCard(SimCard card) async {
     final db = await database;
-    late int cardId;
-
-    await db.transaction((txn) async {
-      cardId = await txn.insert('sim_cards', card.toMap());
-
-      // 插入电话号码
-      for (final number in card.phoneNumbers) {
-        await txn.insert('phone_numbers', {
-          'sim_card_id': cardId,
-          'number': number,
-        });
-      }
-
-      // 插入标签关联
-      for (final tagId in card.tagIds) {
-        await txn.insert('sim_card_tags', {
-          'sim_card_id': cardId,
-          'tag_id': tagId,
-        });
-      }
+    return db.transaction((txn) async {
+      final map = card.toMap()..remove('id');
+      final cardId = await txn.insert('sim_cards', map);
+      await _replaceRelations(txn, cardId, card.phoneNumbers, card.tagIds);
+      return cardId;
     });
-
-    return cardId;
   }
 
   /// 更新SIM卡（重建电话号码和标签关联）
   Future<void> updateSimCard(SimCard card) async {
     final db = await database;
-
     await db.transaction((txn) async {
       await txn.update(
         'sim_cards',
@@ -162,33 +158,27 @@ class DatabaseHelper {
         where: 'id = ?',
         whereArgs: [card.id],
       );
-
-      // 删除旧电话号码，重新插入
-      await txn.delete(
-        'phone_numbers',
-        where: 'sim_card_id = ?',
-        whereArgs: [card.id],
-      );
-      for (final number in card.phoneNumbers) {
-        await txn.insert('phone_numbers', {
-          'sim_card_id': card.id,
-          'number': number,
-        });
-      }
-
-      // 删除旧标签关联，重新插入
-      await txn.delete(
-        'sim_card_tags',
-        where: 'sim_card_id = ?',
-        whereArgs: [card.id],
-      );
-      for (final tagId in card.tagIds) {
-        await txn.insert('sim_card_tags', {
-          'sim_card_id': card.id,
-          'tag_id': tagId,
-        });
-      }
+      await _replaceRelations(txn, card.id!, card.phoneNumbers, card.tagIds);
     });
+  }
+
+  /// 以给定列表整体替换一张卡片的电话号码与标签关联。
+  Future<void> _replaceRelations(
+    DatabaseExecutor txn,
+    int cardId,
+    List<String> phoneNumbers,
+    List<int> tagIds,
+  ) async {
+    final batch = txn.batch()
+      ..delete('phone_numbers', where: 'sim_card_id = ?', whereArgs: [cardId])
+      ..delete('sim_card_tags', where: 'sim_card_id = ?', whereArgs: [cardId]);
+    for (final number in phoneNumbers) {
+      batch.insert('phone_numbers', {'sim_card_id': cardId, 'number': number});
+    }
+    for (final tagId in tagIds.toSet()) {
+      batch.insert('sim_card_tags', {'sim_card_id': cardId, 'tag_id': tagId});
+    }
+    await batch.commit(noResult: true);
   }
 
   /// 获取单张SIM卡（含电话号码和标签）
@@ -351,98 +341,100 @@ class DatabaseHelper {
   // 导出 / 导入
   // ══════════════════════════════════════════
 
-  /// 将所有数据导出为 JSON 字符串
-  Future<String> exportToJson() async {
-    final simCards = await _getAllSimCardsIncludingArchived();
+  /// 导出用的全量快照（含已归档卡片）。
+  Future<({List<SimCard> cards, List<Tag> tags})> exportSnapshot() async {
+    final cards = await _getAllSimCardsIncludingArchived();
     final tags = await getAllTags();
-
-    final data = {
-      'version': _dbVersion,
-      'exportedAt': DateTime.now().toIso8601String(),
-      'simCards': simCards.map((c) => c.toJson()).toList(),
-      'tags': tags.map((t) => t.toJson()).toList(),
-    };
-
-    return const JsonEncoder.withIndent('  ').convert(data);
+    return (cards: cards, tags: tags);
   }
 
-  /// 从 JSON 字符串导入数据（使用 UUID 去重）
-  Future<ImportResult> importFromJson(String jsonString) async {
-    final data = jsonDecode(jsonString) as Map<String, dynamic>;
+  /// 返回 [uuids] 中本机已存在的卡片 UUID。
+  Future<Set<String>> findExistingUuids(Iterable<String> uuids) async {
+    final wanted = uuids.toSet();
+    if (wanted.isEmpty) return <String>{};
     final db = await database;
+    final rows = await db.query('sim_cards', columns: ['uuid']);
+    return rows.map((r) => r['uuid']! as String).where(wanted.contains).toSet();
+  }
 
-    int importedCards = 0;
-    int skippedCards = 0;
-    int importedTags = 0;
-
-    await db.transaction((txn) async {
-      // 导入标签
-      if (data['tags'] != null) {
-        final tagList = (data['tags'] as List)
-            .map((t) => Tag.fromJson(t as Map<String, dynamic>))
-            .toList();
-
-        final existingTags = await txn.query('tags');
-        final existingTagNames = existingTags
-            .map((t) => t['name'] as String)
-            .toSet();
-
-        for (final tag in tagList) {
-          if (!existingTagNames.contains(tag.name)) {
-            final tagMap = tag.toMap();
-            tagMap.remove('id'); // 让数据库自动分配 ID
-            await txn.insert('tags', tagMap);
-            importedTags++;
-          }
+  /// 在一个事务中导入备份。
+  ///
+  /// - 标签按名称（忽略大小写）合并，并据此把卡片引用的「来源标签 id」映射为本机 id；
+  /// - UUID 已存在的卡片按 [policy] 跳过或覆盖；
+  /// - 解析失败的记录（[BackupData.errors]）不会进入此方法，只计入结果。
+  Future<ImportResult> importBackup(
+    BackupData data, {
+    required ImportConflictPolicy policy,
+  }) async {
+    final db = await database;
+    return db.transaction((txn) async {
+      final existingTags = await txn.query('tags', columns: ['id', 'name']);
+      final tagIdByName = <String, int>{
+        for (final row in existingTags)
+          (row['name']! as String).trim().toLowerCase(): row['id']! as int,
+      };
+      final localTagIdBySourceId = <int, int>{};
+      var importedTags = 0;
+      for (final backupTag in data.tags) {
+        final key = backupTag.tag.name.trim().toLowerCase();
+        var localId = tagIdByName[key];
+        if (localId == null) {
+          final map = backupTag.tag.toMap()..remove('id');
+          localId = await txn.insert('tags', map);
+          tagIdByName[key] = localId;
+          importedTags++;
         }
+        final sourceId = backupTag.sourceId;
+        if (sourceId != null) localTagIdBySourceId[sourceId] = localId;
       }
 
-      // 导入 SIM 卡
-      if (data['simCards'] != null) {
-        final cardList = (data['simCards'] as List)
-            .map((c) => SimCard.fromJson(c as Map<String, dynamic>))
+      final existingCards = await txn.query(
+        'sim_cards',
+        columns: ['id', 'uuid'],
+      );
+      final cardIdByUuid = <String, int>{
+        for (final row in existingCards)
+          row['uuid']! as String: row['id']! as int,
+      };
+      var importedCards = 0;
+      var overwrittenCards = 0;
+      var skippedCards = 0;
+      for (final card in data.cards) {
+        final tagIds = card.tagIds
+            .map((sourceId) => localTagIdBySourceId[sourceId])
+            .whereType<int>()
             .toList();
-
-        // 获取所有已有的 UUID
-        final existingCards = await txn.query('sim_cards', columns: ['uuid']);
-        final existingUuids = existingCards
-            .map((c) => c['uuid'] as String)
-            .toSet();
-
-        for (final card in cardList) {
-          if (existingUuids.contains(card.uuid)) {
+        final map = card.toMap()..remove('id');
+        final existingId = cardIdByUuid[card.uuid];
+        if (existingId != null) {
+          if (policy == ImportConflictPolicy.skip) {
             skippedCards++;
             continue;
           }
-
-          // 插入卡片
-          final cardMap = card.toMap();
-          cardMap.remove('id');
-          final cardId = await txn.insert('sim_cards', cardMap);
-
-          // 插入电话号码
-          for (final number in card.phoneNumbers) {
-            await txn.insert('phone_numbers', {
-              'sim_card_id': cardId,
-              'number': number,
-            });
-          }
-
-          // 标签关联：根据名称查找新的 tag ID
-          // 导入时 tagIds 引用的是原始数据库的 ID，需要重新映射
-          // 由于我们无法可靠映射旧 ID，这里跳过标签关联
-          // 用户可以在导入后手动重新分配标签
-
+          await txn.update(
+            'sim_cards',
+            map,
+            where: 'id = ?',
+            whereArgs: [existingId],
+          );
+          await _replaceRelations(txn, existingId, card.phoneNumbers, tagIds);
+          overwrittenCards++;
+        } else {
+          final newId = await txn.insert('sim_cards', map);
+          await _replaceRelations(txn, newId, card.phoneNumbers, tagIds);
+          cardIdByUuid[card.uuid] = newId;
           importedCards++;
         }
       }
-    });
 
-    return ImportResult(
-      importedCards: importedCards,
-      skippedCards: skippedCards,
-      importedTags: importedTags,
-    );
+      return ImportResult(
+        importedCards: importedCards,
+        overwrittenCards: overwrittenCards,
+        skippedCards: skippedCards,
+        importedTags: importedTags,
+        failedRecords: data.errors,
+      );
+    });
   }
 
   // ══════════════════════════════════════════
@@ -489,24 +481,39 @@ class DatabaseHelper {
 
   /// 关闭数据库
   Future<void> close() async {
-    final db = await database;
-    await db.close();
+    final pending = _database;
+    if (pending == null) return;
     _database = null;
+    await (await pending).close();
   }
 }
 
 /// 导入操作的结果
 class ImportResult {
+  const ImportResult({
+    required this.importedCards,
+    required this.overwrittenCards,
+    required this.skippedCards,
+    required this.importedTags,
+    this.failedRecords = const [],
+  });
+
   final int importedCards;
+  final int overwrittenCards;
   final int skippedCards;
   final int importedTags;
 
-  const ImportResult({
-    required this.importedCards,
-    required this.skippedCards,
-    required this.importedTags,
-  });
+  /// 备份中无法解析而被跳过的记录。
+  final List<BackupRecordError> failedRecords;
 
-  String get summary =>
-      '导入完成：新增 $importedCards 张卡片，跳过 $skippedCards 张重复卡片，新增 $importedTags 个标签';
+  String get summary {
+    final parts = <String>[
+      '新增 $importedCards 张卡片',
+      if (overwrittenCards > 0) '覆盖 $overwrittenCards 张',
+      if (skippedCards > 0) '跳过 $skippedCards 张重复卡片',
+      if (importedTags > 0) '新增 $importedTags 个标签',
+      if (failedRecords.isNotEmpty) '${failedRecords.length} 条记录无法解析',
+    ];
+    return '导入完成：${parts.join('，')}';
+  }
 }

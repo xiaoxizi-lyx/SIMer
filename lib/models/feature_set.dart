@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'json_utils.dart';
+
 /// 单个功能项：是否支持 + 可选备注
 class FeatureItem {
   bool supported;
@@ -13,8 +15,8 @@ class FeatureItem {
   };
 
   factory FeatureItem.fromJson(Map<String, dynamic> json) => FeatureItem(
-    supported: json['supported'] as bool? ?? false,
-    note: json['note'] as String?,
+    supported: json.optBool('supported') ?? false,
+    note: json.optString('note'),
   );
 
   FeatureItem copyWith({bool? supported, String? note}) => FeatureItem(
@@ -80,24 +82,20 @@ class FeatureSet {
 
   String toJsonString() => jsonEncode(toJson());
 
-  factory FeatureSet.fromJson(Map<String, dynamic> json) => FeatureSet(
-    voice: FeatureItem.fromJson(json['voice'] as Map<String, dynamic>? ?? {}),
-    sms: FeatureItem.fromJson(json['sms'] as Map<String, dynamic>? ?? {}),
-    data: FeatureItem.fromJson(json['data'] as Map<String, dynamic>? ?? {}),
-    wifiCalling: FeatureItem.fromJson(
-      json['wifiCalling'] as Map<String, dynamic>? ?? {},
-    ),
-    volte: FeatureItem.fromJson(json['volte'] as Map<String, dynamic>? ?? {}),
-    hotspot: FeatureItem.fromJson(
-      json['hotspot'] as Map<String, dynamic>? ?? {},
-    ),
-    esimTransfer: FeatureItem.fromJson(
-      json['esimTransfer'] as Map<String, dynamic>? ?? {},
-    ),
-    intlRoaming: FeatureItem.fromJson(
-      json['intlRoaming'] as Map<String, dynamic>? ?? {},
-    ),
-  );
+  factory FeatureSet.fromJson(Map<String, dynamic> json) {
+    FeatureItem item(String key) =>
+        FeatureItem.fromJson(json.optMap(key) ?? const <String, dynamic>{});
+    return FeatureSet(
+      voice: item('voice'),
+      sms: item('sms'),
+      data: item('data'),
+      wifiCalling: item('wifiCalling'),
+      volte: item('volte'),
+      hotspot: item('hotspot'),
+      esimTransfer: item('esimTransfer'),
+      intlRoaming: item('intlRoaming'),
+    );
+  }
 
   factory FeatureSet.fromJsonString(String jsonString) {
     if (jsonString.isEmpty) return FeatureSet();

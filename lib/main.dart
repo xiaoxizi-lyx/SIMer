@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -8,11 +10,14 @@ import 'providers/sim_card_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/filter_provider.dart';
 import 'providers/auth_provider.dart';
+import 'services/backup_service.dart';
 import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   registerBundledLicenses();
+  // 清理上次分享导出时留在缓存中的明文备份
+  unawaited(BackupService.purgeExportCache());
 
   // 设置状态栏样式
   SystemChrome.setSystemUIOverlayStyle(

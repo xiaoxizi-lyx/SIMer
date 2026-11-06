@@ -1,8 +1,12 @@
 import 'enums.dart';
 import 'feature_set.dart';
+import 'json_utils.dart';
 
 /// SIM卡主数据模型
 class SimCard {
+  /// 备份中缺少卡片颜色时使用的默认色（靛蓝紫）。
+  static const int defaultCardColor = 0xFF5E5CE6;
+
   int? id;
   final String uuid;
   SimType type;
@@ -300,59 +304,48 @@ class SimCard {
     'updatedAt': updatedAt.toIso8601String(),
   };
 
-  factory SimCard.fromJson(Map<String, dynamic> json) => SimCard(
-    uuid: json['uuid'] as String,
-    type: SimType.fromString(json['type'] as String),
-    status: SimStatus.fromString(json['status'] as String),
-    iccid: json['iccid'] as String?,
-    carrierName: json['carrierName'] as String,
-    carrierCode: json['carrierCode'] as String?,
-    countryCode: json['countryCode'] as String,
-    phoneNumbers:
-        (json['phoneNumbers'] as List<dynamic>?)
-            ?.map((e) => e as String)
-            .toList() ??
-        [],
-    source: json['source'] as String?,
-    notes: json['notes'] as String?,
-    validityType: ValidityType.fromString(json['validityType'] as String),
-    activationDate: json['activationDate'] != null
-        ? DateTime.parse(json['activationDate'] as String)
-        : null,
-    expirationDate: json['expirationDate'] != null
-        ? DateTime.parse(json['expirationDate'] as String)
-        : null,
-    rollingDays: json['rollingDays'] as int?,
-    lastUsedDate: json['lastUsedDate'] != null
-        ? DateTime.parse(json['lastUsedDate'] as String)
-        : null,
-    reminderDaysBefore: json['reminderDaysBefore'] as int? ?? 7,
-    dataBalanceMB: (json['dataBalanceMB'] as num?)?.toDouble(),
-    dataTotalMB: (json['dataTotalMB'] as num?)?.toDouble(),
-    voiceMinutesRemaining: (json['voiceMinutesRemaining'] as num?)?.toDouble(),
-    voiceMinutesTotal: (json['voiceMinutesTotal'] as num?)?.toDouble(),
-    smsRemaining: json['smsRemaining'] as int?,
-    smsTotal: json['smsTotal'] as int?,
-    balance: (json['balance'] as num?)?.toDouble(),
-    balanceCurrency: json['balanceCurrency'] as String?,
-    features: json['features'] != null
-        ? FeatureSet.fromJson(json['features'] as Map<String, dynamic>)
-        : null,
-    rspServerAddress: json['rspServerAddress'] as String?,
-    activationCode: json['activationCode'] as String?,
-    confirmationCode: json['confirmationCode'] as String?,
-    qrCodeRawData: json['qrCodeRawData'] as String?,
-    cardColor: json['cardColor'] as int,
-    tagIds:
-        (json['tagIds'] as List<dynamic>?)?.map((e) => e as int).toList() ?? [],
-    photoPath: json['photoPath'] as String?,
-    createdAt: json['createdAt'] != null
-        ? DateTime.parse(json['createdAt'] as String)
-        : null,
-    updatedAt: json['updatedAt'] != null
-        ? DateTime.parse(json['updatedAt'] as String)
-        : null,
-  );
+  /// 从备份 JSON 解析。字段缺失时使用默认值，类型错误抛出 [FormatException]。
+  factory SimCard.fromJson(Map<String, dynamic> json) {
+    final features = json.optMap('features');
+    return SimCard(
+      uuid: json.reqString('uuid'),
+      type: SimType.fromString(json.optString('type') ?? ''),
+      status: SimStatus.fromString(json.optString('status') ?? ''),
+      iccid: json.optString('iccid'),
+      carrierName: json.reqString('carrierName'),
+      carrierCode: json.optString('carrierCode'),
+      countryCode: json.optString('countryCode') ?? '',
+      phoneNumbers: json.stringList('phoneNumbers'),
+      source: json.optString('source'),
+      notes: json.optString('notes'),
+      validityType: ValidityType.fromString(
+        json.optString('validityType') ?? '',
+      ),
+      activationDate: json.optDateTime('activationDate'),
+      expirationDate: json.optDateTime('expirationDate'),
+      rollingDays: json.optInt('rollingDays'),
+      lastUsedDate: json.optDateTime('lastUsedDate'),
+      reminderDaysBefore: json.optInt('reminderDaysBefore') ?? 7,
+      dataBalanceMB: json.optDouble('dataBalanceMB'),
+      dataTotalMB: json.optDouble('dataTotalMB'),
+      voiceMinutesRemaining: json.optDouble('voiceMinutesRemaining'),
+      voiceMinutesTotal: json.optDouble('voiceMinutesTotal'),
+      smsRemaining: json.optInt('smsRemaining'),
+      smsTotal: json.optInt('smsTotal'),
+      balance: json.optDouble('balance'),
+      balanceCurrency: json.optString('balanceCurrency'),
+      features: features != null ? FeatureSet.fromJson(features) : null,
+      rspServerAddress: json.optString('rspServerAddress'),
+      activationCode: json.optString('activationCode'),
+      confirmationCode: json.optString('confirmationCode'),
+      qrCodeRawData: json.optString('qrCodeRawData'),
+      cardColor: json.optInt('cardColor') ?? defaultCardColor,
+      tagIds: json.intList('tagIds'),
+      photoPath: json.optString('photoPath'),
+      createdAt: json.optDateTime('createdAt'),
+      updatedAt: json.optDateTime('updatedAt'),
+    );
+  }
 
   SimCard copyWith({
     int? id,

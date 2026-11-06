@@ -1,5 +1,10 @@
+import 'json_utils.dart';
+
 /// 用户自定义标签模型
 class Tag {
+  /// 备份中缺少标签颜色时使用的默认色。
+  static const int defaultColor = 0xFF5E5CE6;
+
   int? id;
   String name;
   int color; // ARGB 颜色值
@@ -29,13 +34,12 @@ class Tag {
     'createdAt': createdAt.toIso8601String(),
   };
 
+  /// 从备份 JSON 解析。缺少颜色时使用默认色，类型错误抛出 [FormatException]。
   factory Tag.fromJson(Map<String, dynamic> json) => Tag(
-    id: json['id'] as int?,
-    name: json['name'] as String,
-    color: json['color'] as int,
-    createdAt: json['createdAt'] != null
-        ? DateTime.parse(json['createdAt'] as String)
-        : DateTime.now(),
+    id: json.optInt('id'),
+    name: json.reqString('name').trim(),
+    color: json.optInt('color') ?? defaultColor,
+    createdAt: json.optDateTime('createdAt'),
   );
 
   Tag copyWith({String? name, int? color}) => Tag(

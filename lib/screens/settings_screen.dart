@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:file_picker/file_picker.dart';
 
 import '../providers/theme_provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/sim_card_provider.dart';
-import '../services/backup_service.dart';
 import '../theme/app_colors.dart';
 import 'tag_manage_screen.dart';
 import 'archive_screen.dart';
+import 'backup_flows.dart';
 
 /// 设置页面
 class SettingsScreen extends StatelessWidget {
@@ -167,16 +165,16 @@ class SettingsScreen extends StatelessWidget {
       children: [
         ListTile(
           leading: const Icon(Icons.upload_file_rounded, size: 22),
-          title: Text('导出JSON', style: TextStyle(fontSize: 15)),
-          subtitle: Text('将所有SIM卡数据导出为JSON文件', style: TextStyle(fontSize: 12)),
+          title: Text('导出备份', style: TextStyle(fontSize: 15)),
+          subtitle: Text('手动导出全部数据，用于迁移到新设备', style: TextStyle(fontSize: 12)),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
           onTap: () => _exportData(context),
         ),
         _thinDivider(context),
         ListTile(
           leading: const Icon(Icons.download_rounded, size: 22),
-          title: Text('导入JSON', style: TextStyle(fontSize: 15)),
-          subtitle: Text('从JSON文件导入SIM卡数据', style: TextStyle(fontSize: 12)),
+          title: Text('导入备份', style: TextStyle(fontSize: 15)),
+          subtitle: Text('从 SIMer 备份文件恢复数据', style: TextStyle(fontSize: 12)),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
           onTap: () => _importData(context),
         ),
@@ -268,97 +266,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _exportData(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('导出数据'),
-        content: const Text(
-          '将所有SIM卡及标签数据导出为JSON文件。导出后可通过系统分享面板发送到其他设备或保存到本地文件。',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('导出'),
-          ),
-        ],
-      ),
-    );
+  Future<void> _exportData(BuildContext context) => runExportFlow(context);
 
-    if (confirmed == true && context.mounted) {
-      final result = await BackupService.exportToJson();
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result.message),
-            behavior: SnackBarBehavior.floating,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _importData(BuildContext context) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('导入数据'),
-        content: const Text(
-          '从JSON备份文件导入SIM卡及标签数据。注意：相同UUID的记录将被更新覆盖，不存在的记录将被新增。',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('选择文件'),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true && context.mounted) {
-      try {
-        final pickResult = await FilePicker.platform.pickFiles(
-          type: FileType.custom,
-          allowedExtensions: ['json'],
-        );
-
-        if (pickResult != null &&
-            pickResult.files.single.path != null &&
-            context.mounted) {
-          final filePath = pickResult.files.single.path!;
-          final importResult = await BackupService.importFromJson(filePath);
-
-          if (context.mounted) {
-            final messenger = ScaffoldMessenger.of(context);
-            if (importResult.isSuccess) {
-              await context.read<SimCardProvider>().loadAll();
-            }
-            messenger.showSnackBar(
-              SnackBar(
-                content: Text(importResult.message),
-                behavior: SnackBarBehavior.floating,
-              ),
-            );
-          }
-        }
-      } catch (e) {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('选择文件失败: $e'),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
-      }
-    }
-  }
+  Future<void> _importData(BuildContext context) => runImportFlow(context);
 }
