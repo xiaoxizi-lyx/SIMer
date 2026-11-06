@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/sim_card.dart';
 import '../models/enums.dart';
 import '../models/tag.dart';
 import '../data/countries.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_fonts.dart';
 import 'validity_countdown.dart';
 
 /// SIM卡背面 – 完整详情视图
@@ -179,7 +179,7 @@ class SimCardBack extends StatelessWidget {
         Expanded(
           child: Text(
             simCard.carrierName,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w700,
               color: _textColor,
@@ -197,7 +197,7 @@ class SimCardBack extends StatelessWidget {
       children: [
         Text(
           title,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
             color: _secondaryColor,
@@ -220,13 +220,13 @@ class SimCardBack extends StatelessWidget {
             width: 72,
             child: Text(
               label,
-              style: GoogleFonts.inter(fontSize: 12, color: _secondaryColor),
+              style: TextStyle(fontSize: 12, color: _secondaryColor),
             ),
           ),
           Expanded(
             child: Text(
               value,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: _textColor,
@@ -253,19 +253,20 @@ class SimCardBack extends StatelessWidget {
             width: 72,
             child: Text(
               label,
-              style: GoogleFonts.inter(fontSize: 12, color: _secondaryColor),
+              style: TextStyle(fontSize: 12, color: _secondaryColor),
             ),
           ),
           Expanded(
             child: Text(
               displayValue,
               style: label == 'ICCID'
-                  ? GoogleFonts.robotoMono(
+                  ? TextStyle(
+                      fontFamily: AppFonts.mono,
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
                       color: _textColor,
                     )
-                  : GoogleFonts.inter(
+                  : TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: _textColor,
@@ -377,7 +378,7 @@ class SimCardBack extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               e.key,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: _textColor,
@@ -388,10 +389,7 @@ class SimCardBack extends StatelessWidget {
               Expanded(
                 child: Text(
                   note,
-                  style: GoogleFonts.inter(
-                    fontSize: 11,
-                    color: _secondaryColor,
-                  ),
+                  style: TextStyle(fontSize: 11, color: _secondaryColor),
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
@@ -439,7 +437,7 @@ class SimCardBack extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 tag.name,
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w500,
                   color: _textColor,
@@ -498,7 +496,7 @@ class SimCardBack extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: _textColor,

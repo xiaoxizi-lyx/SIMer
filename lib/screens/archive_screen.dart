@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../models/sim_card.dart';
@@ -47,7 +46,7 @@ class ArchiveScreen extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             '没有已归档的SIM卡',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.onSurface
@@ -57,7 +56,7 @@ class ArchiveScreen extends StatelessWidget {
           const SizedBox(height: 8),
           Text(
             '已归档的SIM卡会显示在这里',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 14,
               color: Theme.of(context).colorScheme.onSurface
                   .withValues(alpha: 0.4),
@@ -142,7 +141,7 @@ class ArchiveScreen extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: color,

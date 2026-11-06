@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/carrier.dart';
 import '../data/carriers.dart';
@@ -63,7 +62,7 @@ class _CarrierPickerSheetState extends State<CarrierPickerSheet> {
           ),
           Text(
             '选择运营商',
-            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           // 搜索框
@@ -145,15 +144,12 @@ class _CarrierPickerSheetState extends State<CarrierPickerSheet> {
                   ),
                   title: Text(
                     carrier.name,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                   subtitle: Text(
                     CountryData.countries[carrier.countryCode] ??
                         carrier.countryCode,
-                    style: GoogleFonts.inter(fontSize: 12),
+                    style: TextStyle(fontSize: 12),
                   ),
                   trailing: Container(
                     width: 14,

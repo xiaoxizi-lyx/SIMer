@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../models/tag.dart';
@@ -68,7 +67,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
           const SizedBox(height: 16),
           Text(
             '还没有标签',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
               color: Theme.of(context).colorScheme.onSurface
@@ -78,7 +77,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
           const SizedBox(height: 8),
           Text(
             '点击右上角添加你的第一个标签',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 14,
               color: Theme.of(context).colorScheme.onSurface
                   .withValues(alpha: 0.4),
@@ -130,13 +129,10 @@ class _TagManageScreenState extends State<TagManageScreen> {
         ),
         title: Text(
           tag.name,
-          style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500),
+          style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
         ),
         subtitle: usageCount > 0
-            ? Text(
-                '已关联 $usageCount 张SIM卡',
-                style: GoogleFonts.inter(fontSize: 12),
-              )
+            ? Text('已关联 $usageCount 张SIM卡', style: TextStyle(fontSize: 12))
             : null,
         trailing: Row(
           mainAxisSize: MainAxisSize.min,
@@ -192,7 +188,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       '标签颜色',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                         color: Theme.of(ctx).colorScheme.onSurface

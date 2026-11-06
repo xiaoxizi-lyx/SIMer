@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../data/countries.dart';
 
@@ -51,7 +50,7 @@ class _CountryPickerSheetState extends State<CountryPickerSheet> {
           ),
           Text(
             '选择国家/地区',
-            style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -72,14 +71,11 @@ class _CountryPickerSheetState extends State<CountryPickerSheet> {
                   leading: Text(emoji, style: const TextStyle(fontSize: 24)),
                   title: Text(
                     entry.value,
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                   trailing: Text(
                     entry.key,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 12,
                       color: Theme.of(context).colorScheme.onSurface
                           .withValues(alpha: 0.4),

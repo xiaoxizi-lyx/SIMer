@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/enums.dart';
 import '../data/countries.dart';
@@ -155,7 +154,7 @@ class FilterChips extends StatelessWidget {
         selected: isSelected,
         onSelected: (_) => onTap(),
         showCheckmark: false,
-        labelStyle: GoogleFonts.inter(
+        labelStyle: TextStyle(
           fontSize: 13,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           color: isSelected ? Colors.white : chipTextColor,

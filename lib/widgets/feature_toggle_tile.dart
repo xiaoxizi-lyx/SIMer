@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/feature_set.dart';
 
@@ -58,7 +57,7 @@ class _FeatureToggleTileState extends State<FeatureToggleTile>
           contentPadding: const EdgeInsets.symmetric(horizontal: 4),
           title: Text(
             widget.featureName,
-            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w500),
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
           ),
           trailing: Switch.adaptive(
             value: isSupported,
@@ -92,7 +91,7 @@ class _FeatureToggleTileState extends State<FeatureToggleTile>
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
-                    style: GoogleFonts.inter(fontSize: 13),
+                    style: TextStyle(fontSize: 13),
                     onChanged: (value) {
                       widget.onChanged(
                         widget.featureItem.copyWith(

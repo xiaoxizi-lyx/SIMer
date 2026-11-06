@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/sim_card.dart';
 import '../models/enums.dart';
 import '../models/tag.dart';
 import '../data/countries.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_fonts.dart';
 import 'validity_countdown.dart';
 
 /// SIM卡正面 – Apple Wallet 风格
@@ -80,7 +80,7 @@ class SimCardFront extends StatelessWidget {
         Expanded(
           child: Text(
             simCard.carrierName,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
               color: _textColor,
@@ -115,7 +115,7 @@ class SimCardFront extends StatelessWidget {
       ),
       child: Text(
         simCard.status.label,
-        style: GoogleFonts.inter(
+        style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
           color: _textColor == Colors.white ? Colors.white : badgeColor,
@@ -139,7 +139,7 @@ class SimCardFront extends StatelessWidget {
         if (simCard.primaryNumber != null)
           Text(
             simCard.primaryNumber!,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
               color: _textColor,
@@ -151,7 +151,7 @@ class SimCardFront extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             simCard.phoneNumbers.skip(1).join(' · '),
-            style: GoogleFonts.inter(fontSize: 12, color: _secondaryTextColor),
+            style: TextStyle(fontSize: 12, color: _secondaryTextColor),
             overflow: TextOverflow.ellipsis,
           ),
         ],
@@ -196,7 +196,7 @@ class SimCardFront extends StatelessWidget {
             const SizedBox(width: 4),
             Text(
               '我已使用',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: _textColor,
@@ -226,7 +226,8 @@ class SimCardFront extends StatelessWidget {
         Expanded(
           child: Text(
             simCard.formattedIccid ?? '',
-            style: GoogleFonts.robotoMono(
+            style: TextStyle(
+              fontFamily: AppFonts.mono,
               fontSize: 11,
               fontWeight: FontWeight.w400,
               color: _secondaryTextColor,
@@ -255,7 +256,7 @@ class SimCardFront extends StatelessWidget {
             ),
             child: Text(
               firstTag.name,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w500,
                 color: _secondaryTextColor,

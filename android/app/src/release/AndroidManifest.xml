@@ -1,0 +1,12 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!--
+        SIMer 正式版不具备任何联网能力（系统层面强制离线）：
+        移除依赖库（ML Kit / Google datatransport 等）合并进来的 INTERNET 权限。
+        debug / profile 构建仍保留该权限，供 Flutter 调试与热重载使用。
+        CI 会检查发布包中不存在 INTERNET 权限。
+    -->
+    <uses-permission
+        android:name="android.permission.INTERNET"
+        tools:node="remove" />
+</manifest>

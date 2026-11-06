@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:file_picker/file_picker.dart';
 
@@ -56,7 +55,7 @@ class SettingsScreen extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
       child: Text(
         title,
-        style: GoogleFonts.inter(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w600,
           color: AppColors.primary,
@@ -111,7 +110,7 @@ class SettingsScreen extends StatelessWidget {
       leading: Icon(icon, size: 22),
       title: Text(
         title,
-        style: GoogleFonts.inter(
+        style: TextStyle(
           fontSize: 15,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
         ),
@@ -131,11 +130,11 @@ class SettingsScreen extends StatelessWidget {
       children: [
         ListTile(
           leading: const Icon(Icons.fingerprint_rounded, size: 22),
-          title: Text('启用生物识别锁', style: GoogleFonts.inter(fontSize: 15)),
+          title: Text('启用生物识别锁', style: TextStyle(fontSize: 15)),
           subtitle: !authProvider.biometricAvailable
               ? Text(
                   '设备不支持生物识别',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 12,
                     color: AppColors.countdownDanger,
                   ),
@@ -168,22 +167,16 @@ class SettingsScreen extends StatelessWidget {
       children: [
         ListTile(
           leading: const Icon(Icons.upload_file_rounded, size: 22),
-          title: Text('导出JSON', style: GoogleFonts.inter(fontSize: 15)),
-          subtitle: Text(
-            '将所有SIM卡数据导出为JSON文件',
-            style: GoogleFonts.inter(fontSize: 12),
-          ),
+          title: Text('导出JSON', style: TextStyle(fontSize: 15)),
+          subtitle: Text('将所有SIM卡数据导出为JSON文件', style: TextStyle(fontSize: 12)),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
           onTap: () => _exportData(context),
         ),
         _thinDivider(context),
         ListTile(
           leading: const Icon(Icons.download_rounded, size: 22),
-          title: Text('导入JSON', style: GoogleFonts.inter(fontSize: 15)),
-          subtitle: Text(
-            '从JSON文件导入SIM卡数据',
-            style: GoogleFonts.inter(fontSize: 12),
-          ),
+          title: Text('导入JSON', style: TextStyle(fontSize: 15)),
+          subtitle: Text('从JSON文件导入SIM卡数据', style: TextStyle(fontSize: 12)),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
           onTap: () => _importData(context),
         ),
@@ -197,7 +190,7 @@ class SettingsScreen extends StatelessWidget {
       children: [
         ListTile(
           leading: const Icon(Icons.label_rounded, size: 22),
-          title: Text('标签管理', style: GoogleFonts.inter(fontSize: 15)),
+          title: Text('标签管理', style: TextStyle(fontSize: 15)),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
           onTap: () {
             Navigator.of(
@@ -208,7 +201,7 @@ class SettingsScreen extends StatelessWidget {
         _thinDivider(context),
         ListTile(
           leading: const Icon(Icons.archive_rounded, size: 22),
-          title: Text('归档', style: GoogleFonts.inter(fontSize: 15)),
+          title: Text('归档', style: TextStyle(fontSize: 15)),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
           onTap: () {
             Navigator.of(context)
@@ -227,18 +220,26 @@ class SettingsScreen extends StatelessWidget {
           leading: const Icon(Icons.info_outline_rounded, size: 22),
           title: Text(
             'SIMer',
-            style: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
-          subtitle: Text('版本 1.0.0', style: GoogleFonts.inter(fontSize: 12)),
+          subtitle: Text('版本 1.0.0', style: TextStyle(fontSize: 12)),
         ),
         _thinDivider(context),
         ListTile(
           leading: const Icon(Icons.description_outlined, size: 22),
-          title: Text('关于', style: GoogleFonts.inter(fontSize: 15)),
+          title: Text('关于', style: TextStyle(fontSize: 15)),
           subtitle: Text(
             'SIM卡信息记录管理，安全存储你的SIM卡与eSIM信息。',
-            style: GoogleFonts.inter(fontSize: 12),
+            style: TextStyle(fontSize: 12),
           ),
+        ),
+        _thinDivider(context),
+        ListTile(
+          leading: const Icon(Icons.gavel_rounded, size: 22),
+          title: Text('开源许可', style: TextStyle(fontSize: 15)),
+          trailing: const Icon(Icons.chevron_right_rounded, size: 22),
+          onTap: () =>
+              showLicensePage(context: context, applicationName: 'SIMer'),
         ),
       ],
     );

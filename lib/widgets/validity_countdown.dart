@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../models/enums.dart';
 import '../theme/app_colors.dart';
@@ -146,7 +145,7 @@ class _ValidityCountdownState extends State<ValidityCountdown>
         const SizedBox(width: 4),
         Text(
           text,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: widget.fontSize,
             fontWeight: FontWeight.w600,
             color: color,

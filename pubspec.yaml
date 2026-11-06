@@ -35,9 +35,6 @@ dependencies:
   # 生物识别
   local_auth: ^2.3.0
   
-  # 字体
-  google_fonts: ^6.2.1
-  
   # 分享/导出
   share_plus: ^10.1.4
   
@@ -65,3 +62,23 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    # 内置字体的许可证（显示在「关于 → 开源许可」中）
+    - assets/fonts/OFL-Inter.txt
+    - assets/fonts/OFL-RobotoMono.txt
+
+  # 字体随应用打包，运行时不联网下载
+  fonts:
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Inter-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Inter-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700
+    - family: RobotoMono
+      fonts:
+        - asset: assets/fonts/RobotoMono-Regular.ttf
+        - asset: assets/fonts/RobotoMono-Medium.ttf
+          weight: 500

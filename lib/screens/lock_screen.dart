@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/auth_provider.dart';
@@ -125,7 +124,7 @@ class _LockScreenState extends State<LockScreen>
               // ── App 名称 ──
               Text(
                 'SIMer',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
                   color: textColor,
@@ -136,7 +135,7 @@ class _LockScreenState extends State<LockScreen>
               // ── 提示信息 ──
               Text(
                 '请验证身份',
-                style: GoogleFonts.inter(fontSize: 15, color: secondaryColor),
+                style: TextStyle(fontSize: 15, color: secondaryColor),
               ),
               const SizedBox(height: 48),
 
@@ -177,7 +176,7 @@ class _LockScreenState extends State<LockScreen>
               if (!_isAuthenticating)
                 Text(
                   '点击验证',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 13,
                     color: secondaryColor.withValues(alpha: 0.7),
                   ),

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
 import '../theme/app_colors.dart';
@@ -61,10 +60,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
           children: [
             Text(
               '选择卡片颜色',
-              style: GoogleFonts.inter(
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
 
@@ -72,7 +68,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
             if (widget.carrierDefaultColor != null) ...[
               Text(
                 '${widget.carrierName ?? '运营商'}推荐',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).colorScheme.onSurface
                       .withValues(alpha: 0.6),
@@ -94,7 +90,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
             // ── 预设颜色池 ──
             Text(
               '预设颜色',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 12,
                 color: Theme.of(context).colorScheme.onSurface
                     .withValues(alpha: 0.6),
@@ -135,7 +131,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                   const SizedBox(width: 4),
                   Text(
                     '自定义颜色',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: AppColors.primary,

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 
 import '../models/sim_card.dart';
@@ -66,11 +65,11 @@ class _HomeScreenState extends State<HomeScreen> {
           autofocus: true,
           decoration: InputDecoration(
             hintText: '搜索运营商、号码、ICCID…',
-            hintStyle: GoogleFonts.inter(fontSize: 15),
+            hintStyle: TextStyle(fontSize: 15),
             border: InputBorder.none,
             filled: false,
           ),
-          style: GoogleFonts.inter(fontSize: 15),
+          style: TextStyle(fontSize: 15),
           onChanged: (value) {
             filterProvider.setSearchQuery(value);
           },
@@ -91,7 +90,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return AppBar(
       title: Text(
         'SIMer',
-        style: GoogleFonts.inter(fontSize: 20, fontWeight: FontWeight.w700),
+        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
       ),
       actions: [
         IconButton(
@@ -234,7 +233,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 16),
             Text(
               hasFilters ? '没有匹配的SIM卡' : '还没有SIM卡记录',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
                 color: Theme.of(context).colorScheme.onSurface
@@ -244,7 +243,7 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 8),
             Text(
               hasFilters ? '试试调整筛选条件' : '点击下方按钮添加你的第一张SIM卡',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 14,
                 color: Theme.of(context).colorScheme.onSurface
                     .withValues(alpha: 0.4),
@@ -272,7 +271,7 @@ class _HomeScreenState extends State<HomeScreen> {
       icon: const Icon(Icons.add_rounded),
       label: Text(
         '添加SIM/eSIM信息',
-        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        style: TextStyle(fontWeight: FontWeight.w600),
       ),
     );
   }

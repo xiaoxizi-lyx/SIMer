@@ -1,6 +1,5 @@
 // ignore_for_file: deprecated_member_use
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
@@ -12,6 +11,7 @@ import '../providers/sim_card_provider.dart';
 import '../data/carriers.dart';
 import '../data/countries.dart';
 import '../theme/app_colors.dart';
+import '../theme/app_fonts.dart';
 import '../widgets/feature_toggle_tile.dart';
 import '../widgets/color_picker_dialog.dart';
 import '../widgets/carrier_picker_sheet.dart';
@@ -159,10 +159,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
             onPressed: _save,
             child: Text(
               '保存',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-              ),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
           ),
         ],
@@ -258,10 +255,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
                   const SizedBox(width: 10),
                   Text(
                     title,
-                    style: GoogleFonts.inter(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
                   ),
                   const Spacer(),
                   AnimatedRotation(
@@ -307,7 +301,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
         segments: SimType.values.map((t) {
           return ButtonSegment(
             value: t,
-            label: Text(t.label, style: GoogleFonts.inter(fontSize: 13)),
+            label: Text(t.label, style: TextStyle(fontSize: 13)),
             icon: Icon(
               t == SimType.esim
                   ? Icons.qr_code_rounded
@@ -348,7 +342,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
         ),
         keyboardType: TextInputType.number,
         maxLength: 22,
-        style: GoogleFonts.robotoMono(fontSize: 14),
+        style: TextStyle(fontFamily: AppFonts.mono, fontSize: 14),
         validator: (value) {
           if (value != null && value.isNotEmpty) {
             if (!RegExp(r'^\d{18,22}$').hasMatch(value)) {
@@ -421,7 +415,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
         ),
         child: Text(
           _carrierName.isEmpty ? '选择运营商' : _carrierName,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 14,
             color: _carrierName.isEmpty
                 ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)
@@ -456,7 +450,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
         ),
         child: Text(
           CountryData.displayName(_countryCode),
-          style: GoogleFonts.inter(fontSize: 14),
+          style: TextStyle(fontSize: 14),
         ),
       ),
     );
@@ -479,10 +473,10 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
       _label('有效期类型'),
       ...ValidityType.values.map((type) {
         return RadioListTile<ValidityType>(
-          title: Text(type.label, style: GoogleFonts.inter(fontSize: 14)),
+          title: Text(type.label, style: TextStyle(fontSize: 14)),
           subtitle: Text(
             type.description,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 11,
               color: Theme.of(context).colorScheme.onSurface
                   .withValues(alpha: 0.5),
@@ -570,7 +564,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
         ),
         child: Text(
           date != null ? dateFormat.format(date) : hint,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 14,
             color: date == null
                 ? Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)
@@ -849,7 +843,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
                 ),
               ),
               const SizedBox(width: 12),
-              Text('更改颜色', style: GoogleFonts.inter(fontSize: 14)),
+              Text('更改颜色', style: TextStyle(fontSize: 14)),
             ],
           ),
         ),
@@ -986,7 +980,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Text(
         text,
-        style: GoogleFonts.inter(
+        style: TextStyle(
           fontSize: 13,
           fontWeight: FontWeight.w600,
           color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 import '../services/qr_parser_service.dart';
+import '../theme/app_fonts.dart';
 
 /// QR 码扫描页面
 ///
@@ -118,7 +118,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
               child: Text(
                 '将eSIM QR码放入框内',
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 15,
                   color: Colors.white.withValues(alpha: 0.8),
                   fontWeight: FontWeight.w500,
@@ -145,7 +145,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
             const Spacer(),
             Text(
               '扫描eSIM QR码',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
                 color: Colors.white,
@@ -279,10 +279,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                   const SizedBox(width: 8),
                   Text(
                     '扫描成功',
-                    style: GoogleFonts.inter(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                   ),
                 ],
               ),
@@ -333,7 +330,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
       children: [
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 12,
             color: Theme.of(context).colorScheme.onSurface
                 .withValues(alpha: 0.6),
@@ -342,7 +339,8 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         const SizedBox(height: 2),
         Text(
           value,
-          style: GoogleFonts.robotoMono(
+          style: TextStyle(
+            fontFamily: AppFonts.mono,
             fontSize: 13,
             fontWeight: FontWeight.w500,
           ),

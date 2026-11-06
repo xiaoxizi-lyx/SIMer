@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import 'app.dart';
+import 'licenses.dart';
 import 'providers/sim_card_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/filter_provider.dart';
@@ -11,6 +12,7 @@ import 'services/notification_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  registerBundledLicenses();
 
   // 设置状态栏样式
   SystemChrome.setSystemUIOverlayStyle(
