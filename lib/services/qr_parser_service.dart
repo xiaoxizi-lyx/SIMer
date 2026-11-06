@@ -1,137 +1,117 @@
-/// eSIM QR码解析服务
+/// eSIM 激活码（GSMA SGP.22 §4.1 Activation Code）。
 ///
-/// 解析 LPA 格式的 eSIM 激活码：
-/// `LPA:1$<SM-DP+ 地址>$<匹配 ID>[$<确认码>]`
-class QrParserService {
-  QrParserService._();
-
-  /// 解析 QR 码原始数据
-  static QrParseResult parse(String rawData) {
-    if (rawData.isEmpty) {
-      return QrParseResult.failure('QR码数据为空');
-    }
-
-    final trimmed = rawData.trim();
-
-    // 检查 LPA 前缀（不区分大小写）
-    if (!trimmed.toUpperCase().startsWith('LPA:')) {
-      return QrParseResult.failure('不是有效的 eSIM 激活码格式（缺少 LPA: 前缀）');
-    }
-
-    // 移除 "LPA:" 前缀
-    final afterPrefix = trimmed.substring(4);
-
-    // 按 '$' 分割
-    final parts = afterPrefix.split(r'$');
-
-    // 至少需要 3 个部分：协议版本、SM-DP+ 地址、匹配 ID
-    if (parts.length < 3) {
-      return QrParseResult.failure(
-        '激活码格式不完整，需要包含 SM-DP+ 地址和匹配 ID',
-      );
-    }
-
-    // 解析协议版本（通常为 "1"）
-    final protocolVersion = parts[0].trim();
-    if (protocolVersion.isEmpty) {
-      return QrParseResult.failure('缺少协议版本号');
-    }
-
-    // SM-DP+ 地址
-    final smdpAddress = parts[1].trim();
-    if (smdpAddress.isEmpty) {
-      return QrParseResult.failure('SM-DP+ 地址为空');
-    }
-
-    // 匹配 ID
-    final matchingId = parts[2].trim();
-    if (matchingId.isEmpty) {
-      return QrParseResult.failure('匹配 ID 为空');
-    }
-
-    // 可选的确认码（第4个部分）
-    String? confirmationCode;
-    if (parts.length > 3) {
-      final code = parts[3].trim();
-      if (code.isNotEmpty) {
-        confirmationCode = code;
-      }
-    }
-
-    return QrParseResult.success(
-      smdpAddress: smdpAddress,
-      matchingId: matchingId,
-      confirmationCode: confirmationCode,
-      rawData: trimmed,
-    );
-  }
-
-  /// 验证一个字符串是否为有效的 LPA 格式
-  static bool isValidLpaFormat(String data) {
-    final result = parse(data);
-    return result.isSuccess;
-  }
-
-  /// 从解析结果构建 LPA 字符串
-  static String buildLpaString({
-    required String smdpAddress,
-    required String matchingId,
-    String? confirmationCode,
-  }) {
-    final buffer = StringBuffer('LPA:1\$$smdpAddress\$$matchingId');
-    if (confirmationCode != null && confirmationCode.isNotEmpty) {
-      buffer.write('\$$confirmationCode');
-    }
-    return buffer.toString();
-  }
-}
-
-/// QR码解析结果
-class QrParseResult {
-  final bool isSuccess;
-  final String? errorMessage;
-  final String? smdpAddress;
-  final String? matchingId;
-  final String? confirmationCode;
-  final String? rawData;
-
-  const QrParseResult._({
-    required this.isSuccess,
-    this.errorMessage,
-    this.smdpAddress,
-    this.matchingId,
-    this.confirmationCode,
-    this.rawData,
+/// 二维码内容为 `LPA:` 加上以 `$` 分隔的字段：
+///
+/// | 序号 | 字段 | 说明 |
+/// | --- | --- | --- |
+/// | 1 | AC_Format | 固定为 `1` |
+/// | 2 | SM-DP+ 地址 | 主机名，如 `smdp.example.com` |
+/// | 3 | AC_Token（匹配 ID） | 运营商分配的 Matching ID |
+/// | 4 | SM-DP+ OID | 可选 |
+/// | 5 | 确认码必需标志 | 可选，`1` 表示安装时需要运营商另行提供的确认码 |
+///
+/// 注意：确认码本身从不出现在激活码中。
+class LpaActivationCode {
+  const LpaActivationCode({
+    required this.smdpAddress,
+    required this.matchingId,
+    this.smdpOid,
+    this.confirmationCodeRequired = false,
   });
 
-  factory QrParseResult.success({
-    required String smdpAddress,
-    required String matchingId,
-    String? confirmationCode,
-    required String rawData,
-  }) {
-    return QrParseResult._(
-      isSuccess: true,
-      smdpAddress: smdpAddress,
-      matchingId: matchingId,
-      confirmationCode: confirmationCode,
-      rawData: rawData,
-    );
-  }
+  final String smdpAddress;
+  final String matchingId;
+  final String? smdpOid;
+  final bool confirmationCodeRequired;
 
-  factory QrParseResult.failure(String message) {
-    return QrParseResult._(
-      isSuccess: false,
-      errorMessage: message,
-    );
+  /// 规范化的激活码文本（带 `LPA:` 前缀），可用于复制或重新生成二维码。
+  String toLpaString() {
+    final fields = <String>['1', smdpAddress, matchingId];
+    if (smdpOid != null || confirmationCodeRequired) fields.add(smdpOid ?? '');
+    if (confirmationCodeRequired) fields.add('1');
+    return 'LPA:${fields.join(r'$')}';
   }
 
   @override
-  String toString() {
-    if (isSuccess) {
-      return 'QrParseResult(SM-DP+: $smdpAddress, matchingId: $matchingId, '
-          'confirmationCode: $confirmationCode)';
+  String toString() => toLpaString();
+}
+
+/// 二维码 / 激活码文本的解析结果。
+class QrParseResult {
+  const QrParseResult._({required this.rawData, this.code, this.errorMessage});
+
+  factory QrParseResult.success(LpaActivationCode code, String rawData) =>
+      QrParseResult._(rawData: rawData, code: code);
+
+  factory QrParseResult.failure(String message, String rawData) =>
+      QrParseResult._(rawData: rawData, errorMessage: message);
+
+  /// 去除首尾空白后的原始内容。
+  final String rawData;
+  final LpaActivationCode? code;
+  final String? errorMessage;
+
+  bool get isSuccess => code != null;
+
+  @override
+  String toString() => isSuccess
+      ? 'QrParseResult($code)'
+      : 'QrParseResult(error: $errorMessage)';
+}
+
+/// eSIM 激活码解析（GSMA SGP.22 v2.2.2 §4.1）。
+abstract final class QrParserService {
+  static final RegExp _hostname = RegExp(
+    r'^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?'
+    r'(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*(?::\d{1,5})?$',
+  );
+
+  /// 解析二维码内容或手动输入的激活码文本。
+  ///
+  /// 同时接受带 `LPA:` 前缀（二维码）与不带前缀（如邮件中给出的 `1$...`）的写法。
+  static QrParseResult parse(String input) {
+    final raw = input.trim();
+    if (raw.isEmpty) return QrParseResult.failure('内容为空', raw);
+
+    var body = raw;
+    if (body.toUpperCase().startsWith('LPA:')) {
+      body = body.substring(4);
+    } else if (!body.startsWith(r'1$')) {
+      return QrParseResult.failure(r'不是 eSIM 激活码（应以 LPA:1$ 开头）', raw);
     }
-    return 'QrParseResult(error: $errorMessage)';
+
+    final fields = body.split(r'$').map((f) => f.trim()).toList();
+    if (fields.first != '1') {
+      return QrParseResult.failure('不支持的激活码格式版本「${fields.first}」', raw);
+    }
+    if (fields.length < 3) {
+      return QrParseResult.failure('激活码不完整，缺少 SM-DP+ 地址或匹配 ID', raw);
+    }
+
+    final smdpAddress = fields[1];
+    if (smdpAddress.isEmpty) {
+      return QrParseResult.failure('SM-DP+ 地址为空', raw);
+    }
+    if (!_hostname.hasMatch(smdpAddress)) {
+      return QrParseResult.failure('SM-DP+ 地址格式不正确：$smdpAddress', raw);
+    }
+
+    final matchingId = fields[2];
+    if (matchingId.isEmpty) {
+      return QrParseResult.failure('匹配 ID 为空', raw);
+    }
+
+    final oid = fields.length > 3 && fields[3].isNotEmpty ? fields[3] : null;
+    final confirmationCodeRequired = fields.length > 4 && fields[4] == '1';
+
+    return QrParseResult.success(
+      LpaActivationCode(
+        smdpAddress: smdpAddress,
+        matchingId: matchingId,
+        smdpOid: oid,
+        confirmationCodeRequired: confirmationCodeRequired,
+      ),
+      raw,
+    );
   }
 }

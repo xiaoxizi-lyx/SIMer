@@ -1,9 +1,10 @@
 import 'package:flutter/foundation.dart';
+
 import '../models/enums.dart';
 
 /// 筛选与排序状态管理
 class FilterProvider extends ChangeNotifier {
-  SimStatus? _statusFilter;
+  StatusFilter? _statusFilter;
   String? _countryFilter;
   String? _carrierFilter;
   List<int> _tagFilters = [];
@@ -13,7 +14,7 @@ class FilterProvider extends ChangeNotifier {
 
   // ── Getters ──
 
-  SimStatus? get statusFilter => _statusFilter;
+  StatusFilter? get statusFilter => _statusFilter;
   String? get countryFilter => _countryFilter;
   String? get carrierFilter => _carrierFilter;
   List<int> get tagFilters => List.unmodifiable(_tagFilters);
@@ -28,19 +29,9 @@ class FilterProvider extends ChangeNotifier {
       _carrierFilter != null ||
       _tagFilters.isNotEmpty;
 
-  /// 激活的筛选条件总数（用于显示角标）
-  int get activeFilterCount {
-    int count = 0;
-    if (_statusFilter != null) count++;
-    if (_countryFilter != null) count++;
-    if (_carrierFilter != null) count++;
-    count += _tagFilters.length;
-    return count;
-  }
-
   // ── 设置筛选条件 ──
 
-  void setStatusFilter(SimStatus? status) {
+  void setStatusFilter(StatusFilter? status) {
     if (_statusFilter == status) return;
     _statusFilter = status;
     notifyListeners();
@@ -63,26 +54,10 @@ class FilterProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void addTagFilter(int tagId) {
-    if (!_tagFilters.contains(tagId)) {
-      _tagFilters.add(tagId);
-      notifyListeners();
-    }
-  }
-
   void removeTagFilter(int tagId) {
     if (_tagFilters.remove(tagId)) {
       notifyListeners();
     }
-  }
-
-  void toggleTagFilter(int tagId) {
-    if (_tagFilters.contains(tagId)) {
-      _tagFilters.remove(tagId);
-    } else {
-      _tagFilters.add(tagId);
-    }
-    notifyListeners();
   }
 
   // ── 排序 ──
@@ -96,11 +71,6 @@ class FilterProvider extends ChangeNotifier {
   void setSortOrder(SortOrder order) {
     if (_sortOrder == order) return;
     _sortOrder = order;
-    notifyListeners();
-  }
-
-  void toggleSortOrder() {
-    _sortOrder = _sortOrder.toggled;
     notifyListeners();
   }
 
@@ -119,15 +89,6 @@ class FilterProvider extends ChangeNotifier {
   }
 
   // ── 清除 ──
-
-  /// 清除所有筛选条件（不清除搜索和排序）
-  void clearFilters() {
-    _statusFilter = null;
-    _countryFilter = null;
-    _carrierFilter = null;
-    _tagFilters = [];
-    notifyListeners();
-  }
 
   /// 清除所有（筛选 + 搜索 + 排序重置）
   void clearAll() {

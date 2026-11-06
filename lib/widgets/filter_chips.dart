@@ -1,39 +1,44 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
-import '../models/enums.dart';
-import '../data/countries.dart';
-import '../theme/app_colors.dart';
 
-/// 筛选条件回调
-typedef FilterCallback = void Function(String type, String? value);
+import '../data/countries.dart';
+import '../models/enums.dart';
+import '../theme/app_colors.dart';
 
 /// 水平滚动筛选条
 ///
 /// 包含状态筛选、国家筛选、标签筛选三组 chip
 class FilterChips extends StatelessWidget {
   // 当前筛选状态
-  final SimStatus? statusFilter;
+  final StatusFilter? statusFilter;
   final String? countryFilter;
+  final String? carrierFilter;
   final List<int> tagFilters;
 
   // 可用选项
+  final Map<StatusFilter, int> statusCounts;
   final Set<String> availableCountries;
+  final List<String> availableCarriers;
   final List<MapEntry<int, String>> availableTags; // id → name
 
   // 回调
-  final ValueChanged<SimStatus?> onStatusChanged;
+  final ValueChanged<StatusFilter?> onStatusChanged;
   final ValueChanged<String?> onCountryChanged;
+  final ValueChanged<String?> onCarrierChanged;
   final ValueChanged<List<int>> onTagsChanged;
 
   const FilterChips({
     super.key,
     required this.statusFilter,
     required this.countryFilter,
+    required this.carrierFilter,
     required this.tagFilters,
+    required this.statusCounts,
     required this.availableCountries,
+    required this.availableCarriers,
     required this.availableTags,
     required this.onStatusChanged,
     required this.onCountryChanged,
+    required this.onCarrierChanged,
     required this.onTagsChanged,
   });
 
@@ -56,16 +61,14 @@ class FilterChips extends StatelessWidget {
             onTap: () => onStatusChanged(null),
             chipTextColor: chipTextColor,
           ),
-          ...SimStatus.values
-              .where((s) => s != SimStatus.archived)
-              .map((status) {
+          ...StatusFilter.values.map((status) {
+            final count = statusCounts[status] ?? 0;
             return _buildChip(
               context: context,
-              label: status.label,
+              label: count > 0 ? '${status.label} $count' : status.label,
               isSelected: statusFilter == status,
-              onTap: () => onStatusChanged(
-                statusFilter == status ? null : status,
-              ),
+              onTap: () =>
+                  onStatusChanged(statusFilter == status ? null : status),
               statusColor: _statusColor(status),
               chipTextColor: chipTextColor,
             );
@@ -81,12 +84,26 @@ class FilterChips extends StatelessWidget {
               context: context,
               label: '$emoji ${CountryData.countries[code] ?? code}',
               isSelected: countryFilter == code,
-              onTap: () => onCountryChanged(
-                countryFilter == code ? null : code,
-              ),
+              onTap: () =>
+                  onCountryChanged(countryFilter == code ? null : code),
               chipTextColor: chipTextColor,
             );
           }),
+
+          // ── 运营商筛选（至少两家运营商时才有意义） ──
+          if (availableCarriers.length > 1) ...[
+            _chipDivider(),
+            ...availableCarriers.map(
+              (carrier) => _buildChip(
+                context: context,
+                label: carrier,
+                isSelected: carrierFilter == carrier,
+                onTap: () =>
+                    onCarrierChanged(carrierFilter == carrier ? null : carrier),
+                chipTextColor: chipTextColor,
+              ),
+            ),
+          ],
 
           // ── 标签筛选 ──
           if (availableTags.isNotEmpty) _chipDivider(),
@@ -133,7 +150,7 @@ class FilterChips extends StatelessWidget {
               Container(
                 width: 7,
                 height: 7,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,
                 ),
@@ -156,7 +173,7 @@ class FilterChips extends StatelessWidget {
         selected: isSelected,
         onSelected: (_) => onTap(),
         showCheckmark: false,
-        labelStyle: GoogleFonts.inter(
+        labelStyle: TextStyle(
           fontSize: 13,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
           color: isSelected ? Colors.white : chipTextColor,
@@ -168,9 +185,7 @@ class FilterChips extends StatelessWidget {
               ? Colors.transparent
               : Theme.of(context).dividerTheme.color ?? AppColors.lightDivider,
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 0),
         materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
         visualDensity: VisualDensity.compact,
@@ -185,16 +200,10 @@ class FilterChips extends StatelessWidget {
     );
   }
 
-  Color _statusColor(SimStatus status) {
-    switch (status) {
-      case SimStatus.active:
-        return AppColors.statusActive;
-      case SimStatus.inactive:
-        return AppColors.statusInactive;
-      case SimStatus.expired:
-        return AppColors.statusExpired;
-      case SimStatus.archived:
-        return AppColors.statusArchived;
-    }
-  }
+  Color _statusColor(StatusFilter status) => switch (status) {
+    StatusFilter.active => AppColors.statusActive,
+    StatusFilter.inactive => AppColors.statusInactive,
+    StatusFilter.expiringSoon => AppColors.countdownWarning,
+    StatusFilter.expired => AppColors.statusExpired,
+  };
 }

@@ -40,6 +40,6 @@ body:
       placeholder: |
         - 设备型号: 例如 Pixel 7 / Xiaomi 13
         - Android 版本: 例如 Android 14
-        - SIMer 版本: 例如 v1.0.1
+        - SIMer 版本: 例如 v2.0.0（设置 → 关于）
     validations:
       required: true

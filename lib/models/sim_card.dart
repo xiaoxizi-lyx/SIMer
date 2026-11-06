@@ -1,17 +1,83 @@
+import 'package:clock/clock.dart';
+
+import 'calendar_date.dart';
 import 'enums.dart';
 import 'feature_set.dart';
+import 'json_utils.dart';
 
 /// SIM卡主数据模型
+///
+/// 日期约定：
+/// - [activationDate] / [expirationDate] / [lastUsedDate] 是日历日（本地 00:00），
+///   存储为 `yyyy-MM-dd`；
+/// - [createdAt] / [updatedAt] / [archivedAt] 是时间点，统一以 UTC 保存。
 class SimCard {
+  SimCard({
+    this.id,
+    required this.uuid,
+    this.type = SimType.physicalSim,
+    this.activationStatus = ActivationStatus.active,
+    DateTime? archivedAt,
+    this.iccid,
+    required this.carrierName,
+    this.carrierCode,
+    required this.countryCode,
+    List<String>? phoneNumbers,
+    this.source,
+    this.notes,
+    this.validityType = ValidityType.noExpiration,
+    DateTime? activationDate,
+    DateTime? expirationDate,
+    this.rollingDays,
+    DateTime? lastUsedDate,
+    this.reminderDaysBefore = defaultReminderDays,
+    this.dataBalanceMB,
+    this.dataTotalMB,
+    this.voiceMinutesRemaining,
+    this.voiceMinutesTotal,
+    this.smsRemaining,
+    this.smsTotal,
+    this.balance,
+    this.balanceCurrency,
+    FeatureSet? features,
+    this.rspServerAddress,
+    this.activationCode,
+    this.confirmationCode,
+    this.qrCodeRawData,
+    required this.cardColor,
+    List<int>? tagIds,
+    DateTime? createdAt,
+    DateTime? updatedAt,
+  }) : archivedAt = archivedAt?.toUtc(),
+       phoneNumbers = phoneNumbers ?? [],
+       activationDate = _calendarDate(activationDate),
+       expirationDate = _calendarDate(expirationDate),
+       lastUsedDate = _calendarDate(lastUsedDate),
+       features = features ?? FeatureSet(),
+       tagIds = tagIds ?? [],
+       createdAt = (createdAt ?? clock.now()).toUtc(),
+       updatedAt = (updatedAt ?? clock.now()).toUtc();
+
+  /// 默认提前提醒天数。
+  static const int defaultReminderDays = 7;
+
+  /// 备份中缺少卡片颜色时使用的默认色（靛蓝紫）。
+  static const int defaultCardColor = 0xFF5E5CE6;
+
   int? id;
   final String uuid;
   SimType type;
-  SimStatus status;
+
+  /// 用户设置的激活状态。
+  ActivationStatus activationStatus;
+
+  /// 归档时间；为 null 表示未归档。
+  DateTime? archivedAt;
 
   // ── 基本信息 ──
   String? iccid;
   String carrierName;
-  String? carrierCode; // 预置运营商代码，自定义运营商为 null
+  String? carrierCode; // 预置运营商代码，自定义运营商为 null 或 custom_*
   String countryCode; // ISO 3166-1 alpha-2
   List<String> phoneNumbers;
   String? source; // 来源渠道
@@ -22,7 +88,7 @@ class SimCard {
   DateTime? activationDate;
   DateTime? expirationDate; // fixedDate 模式
   int? rollingDays; // rolling 模式的天数
-  DateTime? lastUsedDate; // rolling 模式的上次使用时间
+  DateTime? lastUsedDate; // rolling 模式的上次使用日
   int reminderDaysBefore; // 提前提醒天数
 
   // ── 手动记录的用量 ──
@@ -40,7 +106,7 @@ class SimCard {
 
   // ── eSIM 特有 ──
   String? rspServerAddress; // SM-DP+ 地址
-  String? activationCode; // 匹配 ID
+  String? activationCode; // 匹配 ID（AC_Token）
   String? confirmationCode;
   String? qrCodeRawData;
 
@@ -50,99 +116,63 @@ class SimCard {
   // ── 标签 ──
   List<int> tagIds;
 
-  // ── 照片 ──
-  String? photoPath;
-
   // ── 元数据 ──
-  DateTime createdAt;
+  final DateTime createdAt;
   DateTime updatedAt;
 
-  SimCard({
-    this.id,
-    required this.uuid,
-    this.type = SimType.physicalSim,
-    this.status = SimStatus.inactive,
-    this.iccid,
-    required this.carrierName,
-    this.carrierCode,
-    required this.countryCode,
-    List<String>? phoneNumbers,
-    this.source,
-    this.notes,
-    this.validityType = ValidityType.noExpiration,
-    this.activationDate,
-    this.expirationDate,
-    this.rollingDays,
-    this.lastUsedDate,
-    this.reminderDaysBefore = 7,
-    this.dataBalanceMB,
-    this.dataTotalMB,
-    this.voiceMinutesRemaining,
-    this.voiceMinutesTotal,
-    this.smsRemaining,
-    this.smsTotal,
-    this.balance,
-    this.balanceCurrency,
-    FeatureSet? features,
-    this.rspServerAddress,
-    this.activationCode,
-    this.confirmationCode,
-    this.qrCodeRawData,
-    required this.cardColor,
-    List<int>? tagIds,
-    this.photoPath,
-    DateTime? createdAt,
-    DateTime? updatedAt,
-  })  : phoneNumbers = phoneNumbers ?? [],
-        features = features ?? FeatureSet(),
-        tagIds = tagIds ?? [],
-        createdAt = createdAt ?? DateTime.now(),
-        updatedAt = updatedAt ?? DateTime.now();
+  // ══════════════════════════════════════════
+  // 计算属性
+  // ══════════════════════════════════════════
 
-  // ── 计算属性 ──
+  bool get isArchived => archivedAt != null;
 
-  /// 实际到期日（根据有效期类型计算）
+  /// 滚动有效期的计算基准日：上次使用日 → 激活日 → 添加日。
+  DateTime get rollingBaseDate =>
+      lastUsedDate ?? activationDate ?? CalendarDate.of(createdAt);
+
+  /// 实际到期日（日历日，到期日当天仍然有效）。无期限或缺少日期时为 null。
   DateTime? get effectiveExpirationDate {
     switch (validityType) {
       case ValidityType.fixedDate:
         return expirationDate;
       case ValidityType.rolling:
-        if (lastUsedDate != null && rollingDays != null) {
-          return lastUsedDate!.add(Duration(days: rollingDays!));
-        }
-        if (activationDate != null && rollingDays != null) {
-          return activationDate!.add(Duration(days: rollingDays!));
-        }
-        return null;
+        final days = rollingDays;
+        if (days == null || days <= 0) return null;
+        return CalendarDate.addDays(rollingBaseDate, days);
       case ValidityType.noExpiration:
         return null;
     }
   }
 
-  /// 剩余天数（null = 无期限，基于日历天对齐计算）
-  int? get daysRemaining {
-    final expDate = effectiveExpirationDate;
-    if (expDate == null) return null;
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final target = DateTime(expDate.year, expDate.month, expDate.day);
-    return target.difference(today).inDays;
+  /// 在 [today] 这天距到期日的天数：0 表示当天到期（仍有效），负数表示已过期天数。
+  int? daysRemainingOn(DateTime today) {
+    final expiration = effectiveExpirationDate;
+    if (expiration == null) return null;
+    return CalendarDate.daysBetween(today, expiration);
   }
 
-  /// 是否已过期（根据精确时间戳比较，避免整除小时导致的截断偏差）
-  bool get isExpired {
-    final expDate = effectiveExpirationDate;
-    if (expDate == null) return false;
-    return expDate.isBefore(DateTime.now());
+  /// 距到期日的天数（以今天为准）。
+  int? get daysRemaining => daysRemainingOn(CalendarDate.today());
+
+  ValidityState validityStateOn(DateTime today) {
+    if (validityType == ValidityType.noExpiration) {
+      return ValidityState.unlimited;
+    }
+    final days = daysRemainingOn(today);
+    if (days == null) return ValidityState.unknown;
+    if (days < 0) return ValidityState.expired;
+    if (days <= reminderDaysBefore.clamp(0, 3650)) {
+      return ValidityState.expiringSoon;
+    }
+    return ValidityState.valid;
   }
 
-  /// 是否需要提醒
-  bool get needsReminder {
-    if (isExpired) return true;
-    final days = daysRemaining;
-    if (days == null) return false;
-    return days >= 0 && days <= reminderDaysBefore;
-  }
+  /// 当前有效性（以今天为准）。
+  ValidityState get validityState => validityStateOn(CalendarDate.today());
+
+  bool get isExpired => validityState == ValidityState.expired;
+
+  bool get isExpiringSoon => validityState == ValidityState.expiringSoon;
 
   /// 主号码（用于卡片显示）
   String? get primaryNumber =>
@@ -150,288 +180,216 @@ class SimCard {
 
   /// 格式化 ICCID（每4位一空格，类似银行卡号）
   String? get formattedIccid {
-    if (iccid == null || iccid!.isEmpty) return null;
+    final value = iccid;
+    if (value == null || value.isEmpty) return null;
     final buffer = StringBuffer();
-    for (int i = 0; i < iccid!.length; i++) {
+    for (var i = 0; i < value.length; i++) {
       if (i > 0 && i % 4 == 0) buffer.write(' ');
-      buffer.write(iccid![i]);
+      buffer.write(value[i]);
     }
     return buffer.toString();
   }
 
-  // ── 滚动有效期操作 ──
+  /// 更新修改时间。
+  void touch() => updatedAt = clock.now().toUtc();
 
-  /// 标记为"已使用"，更新 lastUsedDate 并重置到期日
-  void markAsUsed() {
-    if (validityType == ValidityType.rolling) {
-      lastUsedDate = DateTime.now();
-      updatedAt = DateTime.now();
-      // 如果之前过期了，恢复为激活
-      if (status == SimStatus.expired) {
-        status = SimStatus.active;
-      }
-    }
-  }
+  // ══════════════════════════════════════════
+  // 序列化
+  // ══════════════════════════════════════════
 
-  // ── 序列化 ──
+  static DateTime? _calendarDate(DateTime? value) =>
+      value == null ? null : CalendarDate.of(value);
+
+  static String? _formatDate(DateTime? value) =>
+      value == null ? null : CalendarDate.format(value);
+
+  static DateTime? _parseTimestamp(Object? value) =>
+      value is String ? DateTime.tryParse(value)?.toUtc() : null;
 
   /// 转为数据库 Map（不含 phoneNumbers 和 tagIds，这些在关联表中）
-  Map<String, dynamic> toMap() => {
-        if (id != null) 'id': id,
-        'uuid': uuid,
-        'type': type.name,
-        'status': status.name,
-        'iccid': iccid,
-        'carrier_name': carrierName,
-        'carrier_code': carrierCode,
-        'country_code': countryCode,
-        'source': source,
-        'notes': notes,
-        'validity_type': validityType.name,
-        'activation_date': activationDate?.toIso8601String(),
-        'expiration_date': expirationDate?.toIso8601String(),
-        'rolling_days': rollingDays,
-        'last_used_date': lastUsedDate?.toIso8601String(),
-        'reminder_days_before': reminderDaysBefore,
-        'data_balance_mb': dataBalanceMB,
-        'data_total_mb': dataTotalMB,
-        'voice_minutes_remaining': voiceMinutesRemaining,
-        'voice_minutes_total': voiceMinutesTotal,
-        'sms_remaining': smsRemaining,
-        'sms_total': smsTotal,
-        'balance': balance,
-        'balance_currency': balanceCurrency,
-        'features': features.toJsonString(),
-        'rsp_server_address': rspServerAddress,
-        'activation_code': activationCode,
-        'confirmation_code': confirmationCode,
-        'qr_code_raw_data': qrCodeRawData,
-        'card_color': cardColor,
-        'photo_path': photoPath,
-        'created_at': createdAt.toIso8601String(),
-        'updated_at': updatedAt.toIso8601String(),
-      };
+  Map<String, Object?> toMap() => {
+    if (id != null) 'id': id,
+    'uuid': uuid,
+    'type': type.name,
+    'activation_status': activationStatus.name,
+    'archived_at': archivedAt?.toIso8601String(),
+    'iccid': iccid,
+    'carrier_name': carrierName,
+    'carrier_code': carrierCode,
+    'country_code': countryCode,
+    'source': source,
+    'notes': notes,
+    'validity_type': validityType.name,
+    'activation_date': _formatDate(activationDate),
+    'expiration_date': _formatDate(expirationDate),
+    'rolling_days': rollingDays,
+    'last_used_date': _formatDate(lastUsedDate),
+    'reminder_days_before': reminderDaysBefore,
+    'data_balance_mb': dataBalanceMB,
+    'data_total_mb': dataTotalMB,
+    'voice_minutes_remaining': voiceMinutesRemaining,
+    'voice_minutes_total': voiceMinutesTotal,
+    'sms_remaining': smsRemaining,
+    'sms_total': smsTotal,
+    'balance': balance,
+    'balance_currency': balanceCurrency,
+    'features': features.toJsonString(),
+    'rsp_server_address': rspServerAddress,
+    'activation_code': activationCode,
+    'confirmation_code': confirmationCode,
+    'qr_code_raw_data': qrCodeRawData,
+    'card_color': cardColor,
+    'created_at': createdAt.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
+  };
 
   factory SimCard.fromMap(
-    Map<String, dynamic> map, {
+    Map<String, Object?> map, {
     List<String>? phoneNumbers,
     List<int>? tagIds,
-  }) =>
-      SimCard(
-        id: map['id'] as int?,
-        uuid: map['uuid'] as String,
-        type: SimType.fromString(map['type'] as String),
-        status: SimStatus.fromString(map['status'] as String),
-        iccid: map['iccid'] as String?,
-        carrierName: map['carrier_name'] as String,
-        carrierCode: map['carrier_code'] as String?,
-        countryCode: map['country_code'] as String,
-        phoneNumbers: phoneNumbers,
-        source: map['source'] as String?,
-        notes: map['notes'] as String?,
-        validityType: ValidityType.fromString(map['validity_type'] as String),
-        activationDate: map['activation_date'] != null
-            ? DateTime.parse(map['activation_date'] as String)
-            : null,
-        expirationDate: map['expiration_date'] != null
-            ? DateTime.parse(map['expiration_date'] as String)
-            : null,
-        rollingDays: map['rolling_days'] as int?,
-        lastUsedDate: map['last_used_date'] != null
-            ? DateTime.parse(map['last_used_date'] as String)
-            : null,
-        reminderDaysBefore: map['reminder_days_before'] as int? ?? 7,
-        dataBalanceMB: (map['data_balance_mb'] as num?)?.toDouble(),
-        dataTotalMB: (map['data_total_mb'] as num?)?.toDouble(),
-        voiceMinutesRemaining:
-            (map['voice_minutes_remaining'] as num?)?.toDouble(),
-        voiceMinutesTotal: (map['voice_minutes_total'] as num?)?.toDouble(),
-        smsRemaining: map['sms_remaining'] as int?,
-        smsTotal: map['sms_total'] as int?,
-        balance: (map['balance'] as num?)?.toDouble(),
-        balanceCurrency: map['balance_currency'] as String?,
-        features: map['features'] != null
-            ? FeatureSet.fromJsonString(map['features'] as String)
-            : null,
-        rspServerAddress: map['rsp_server_address'] as String?,
-        activationCode: map['activation_code'] as String?,
-        confirmationCode: map['confirmation_code'] as String?,
-        qrCodeRawData: map['qr_code_raw_data'] as String?,
-        cardColor: map['card_color'] as int,
-        tagIds: tagIds,
-        photoPath: map['photo_path'] as String?,
-        createdAt: DateTime.parse(map['created_at'] as String),
-        updatedAt: DateTime.parse(map['updated_at'] as String),
-      );
+  }) {
+    final features = map['features'];
+    return SimCard(
+      id: map['id'] as int?,
+      uuid: map['uuid']! as String,
+      type: SimType.fromString(map['type'] as String?),
+      activationStatus: ActivationStatus.fromString(
+        map['activation_status'] as String?,
+      ),
+      archivedAt: _parseTimestamp(map['archived_at']),
+      iccid: map['iccid'] as String?,
+      carrierName: map['carrier_name']! as String,
+      carrierCode: map['carrier_code'] as String?,
+      countryCode: map['country_code']! as String,
+      phoneNumbers: phoneNumbers,
+      source: map['source'] as String?,
+      notes: map['notes'] as String?,
+      validityType: ValidityType.fromString(map['validity_type'] as String?),
+      activationDate: CalendarDate.tryParse(map['activation_date'] as String?),
+      expirationDate: CalendarDate.tryParse(map['expiration_date'] as String?),
+      rollingDays: map['rolling_days'] as int?,
+      lastUsedDate: CalendarDate.tryParse(map['last_used_date'] as String?),
+      reminderDaysBefore:
+          map['reminder_days_before'] as int? ?? defaultReminderDays,
+      dataBalanceMB: (map['data_balance_mb'] as num?)?.toDouble(),
+      dataTotalMB: (map['data_total_mb'] as num?)?.toDouble(),
+      voiceMinutesRemaining: (map['voice_minutes_remaining'] as num?)
+          ?.toDouble(),
+      voiceMinutesTotal: (map['voice_minutes_total'] as num?)?.toDouble(),
+      smsRemaining: map['sms_remaining'] as int?,
+      smsTotal: map['sms_total'] as int?,
+      balance: (map['balance'] as num?)?.toDouble(),
+      balanceCurrency: map['balance_currency'] as String?,
+      features: features is String && features.isNotEmpty
+          ? FeatureSet.fromJsonString(features)
+          : null,
+      rspServerAddress: map['rsp_server_address'] as String?,
+      activationCode: map['activation_code'] as String?,
+      confirmationCode: map['confirmation_code'] as String?,
+      qrCodeRawData: map['qr_code_raw_data'] as String?,
+      cardColor: map['card_color']! as int,
+      tagIds: tagIds,
+      createdAt: _parseTimestamp(map['created_at']),
+      updatedAt: _parseTimestamp(map['updated_at']),
+    );
+  }
 
-  /// 转为 JSON（用于导出，包含所有关联数据）
-  Map<String, dynamic> toJson() => {
-        'uuid': uuid,
-        'type': type.name,
-        'status': status.name,
-        'iccid': iccid,
-        'carrierName': carrierName,
-        'carrierCode': carrierCode,
-        'countryCode': countryCode,
-        'phoneNumbers': phoneNumbers,
-        'source': source,
-        'notes': notes,
-        'validityType': validityType.name,
-        'activationDate': activationDate?.toIso8601String(),
-        'expirationDate': expirationDate?.toIso8601String(),
-        'rollingDays': rollingDays,
-        'lastUsedDate': lastUsedDate?.toIso8601String(),
-        'reminderDaysBefore': reminderDaysBefore,
-        'dataBalanceMB': dataBalanceMB,
-        'dataTotalMB': dataTotalMB,
-        'voiceMinutesRemaining': voiceMinutesRemaining,
-        'voiceMinutesTotal': voiceMinutesTotal,
-        'smsRemaining': smsRemaining,
-        'smsTotal': smsTotal,
-        'balance': balance,
-        'balanceCurrency': balanceCurrency,
-        'features': features.toJson(),
-        'rspServerAddress': rspServerAddress,
-        'activationCode': activationCode,
-        'confirmationCode': confirmationCode,
-        'qrCodeRawData': qrCodeRawData,
-        'cardColor': cardColor,
-        'tagIds': tagIds,
-        'photoPath': photoPath,
-        'createdAt': createdAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-      };
+  /// 转为 JSON（用于导出备份，包含号码与标签引用）
+  Map<String, Object?> toJson() => {
+    'uuid': uuid,
+    'type': type.name,
+    'activationStatus': activationStatus.name,
+    'archivedAt': archivedAt?.toIso8601String(),
+    'iccid': iccid,
+    'carrierName': carrierName,
+    'carrierCode': carrierCode,
+    'countryCode': countryCode,
+    'phoneNumbers': phoneNumbers,
+    'source': source,
+    'notes': notes,
+    'validityType': validityType.name,
+    'activationDate': _formatDate(activationDate),
+    'expirationDate': _formatDate(expirationDate),
+    'rollingDays': rollingDays,
+    'lastUsedDate': _formatDate(lastUsedDate),
+    'reminderDaysBefore': reminderDaysBefore,
+    'dataBalanceMB': dataBalanceMB,
+    'dataTotalMB': dataTotalMB,
+    'voiceMinutesRemaining': voiceMinutesRemaining,
+    'voiceMinutesTotal': voiceMinutesTotal,
+    'smsRemaining': smsRemaining,
+    'smsTotal': smsTotal,
+    'balance': balance,
+    'balanceCurrency': balanceCurrency,
+    'features': features.toJson(),
+    'rspServerAddress': rspServerAddress,
+    'activationCode': activationCode,
+    'confirmationCode': confirmationCode,
+    'qrCodeRawData': qrCodeRawData,
+    'cardColor': cardColor,
+    'tagIds': tagIds,
+    'createdAt': createdAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+  };
 
-  factory SimCard.fromJson(Map<String, dynamic> json) => SimCard(
-        uuid: json['uuid'] as String,
-        type: SimType.fromString(json['type'] as String),
-        status: SimStatus.fromString(json['status'] as String),
-        iccid: json['iccid'] as String?,
-        carrierName: json['carrierName'] as String,
-        carrierCode: json['carrierCode'] as String?,
-        countryCode: json['countryCode'] as String,
-        phoneNumbers: (json['phoneNumbers'] as List<dynamic>?)
-                ?.map((e) => e as String)
-                .toList() ??
-            [],
-        source: json['source'] as String?,
-        notes: json['notes'] as String?,
-        validityType: ValidityType.fromString(json['validityType'] as String),
-        activationDate: json['activationDate'] != null
-            ? DateTime.parse(json['activationDate'] as String)
-            : null,
-        expirationDate: json['expirationDate'] != null
-            ? DateTime.parse(json['expirationDate'] as String)
-            : null,
-        rollingDays: json['rollingDays'] as int?,
-        lastUsedDate: json['lastUsedDate'] != null
-            ? DateTime.parse(json['lastUsedDate'] as String)
-            : null,
-        reminderDaysBefore: json['reminderDaysBefore'] as int? ?? 7,
-        dataBalanceMB: (json['dataBalanceMB'] as num?)?.toDouble(),
-        dataTotalMB: (json['dataTotalMB'] as num?)?.toDouble(),
-        voiceMinutesRemaining:
-            (json['voiceMinutesRemaining'] as num?)?.toDouble(),
-        voiceMinutesTotal: (json['voiceMinutesTotal'] as num?)?.toDouble(),
-        smsRemaining: json['smsRemaining'] as int?,
-        smsTotal: json['smsTotal'] as int?,
-        balance: (json['balance'] as num?)?.toDouble(),
-        balanceCurrency: json['balanceCurrency'] as String?,
-        features: json['features'] != null
-            ? FeatureSet.fromJson(json['features'] as Map<String, dynamic>)
-            : null,
-        rspServerAddress: json['rspServerAddress'] as String?,
-        activationCode: json['activationCode'] as String?,
-        confirmationCode: json['confirmationCode'] as String?,
-        qrCodeRawData: json['qrCodeRawData'] as String?,
-        cardColor: json['cardColor'] as int,
-        tagIds: (json['tagIds'] as List<dynamic>?)
-                ?.map((e) => e as int)
-                .toList() ??
-            [],
-        photoPath: json['photoPath'] as String?,
-        createdAt: json['createdAt'] != null
-            ? DateTime.parse(json['createdAt'] as String)
-            : null,
-        updatedAt: json['updatedAt'] != null
-            ? DateTime.parse(json['updatedAt'] as String)
-            : null,
-      );
+  /// 从备份 JSON 解析（兼容 SIMer 1.0 格式）。
+  ///
+  /// 字段缺失时使用默认值；字段类型错误时抛出 [FormatException]。
+  factory SimCard.fromJson(Map<String, dynamic> json) {
+    final features = json.optMap('features');
+    final updatedAt = json.optDateTime('updatedAt');
 
-  SimCard copyWith({
-    int? id,
-    String? uuid,
-    SimType? type,
-    SimStatus? status,
-    String? iccid,
-    String? carrierName,
-    String? carrierCode,
-    String? countryCode,
-    List<String>? phoneNumbers,
-    String? source,
-    String? notes,
-    ValidityType? validityType,
-    DateTime? activationDate,
-    DateTime? expirationDate,
-    int? rollingDays,
-    DateTime? lastUsedDate,
-    int? reminderDaysBefore,
-    double? dataBalanceMB,
-    double? dataTotalMB,
-    double? voiceMinutesRemaining,
-    double? voiceMinutesTotal,
-    int? smsRemaining,
-    int? smsTotal,
-    double? balance,
-    String? balanceCurrency,
-    FeatureSet? features,
-    String? rspServerAddress,
-    String? activationCode,
-    String? confirmationCode,
-    String? qrCodeRawData,
-    int? cardColor,
-    List<int>? tagIds,
-    String? photoPath,
-  }) =>
-      SimCard(
-        id: id ?? this.id,
-        uuid: uuid ?? this.uuid,
-        type: type ?? this.type,
-        status: status ?? this.status,
-        iccid: iccid ?? this.iccid,
-        carrierName: carrierName ?? this.carrierName,
-        carrierCode: carrierCode ?? this.carrierCode,
-        countryCode: countryCode ?? this.countryCode,
-        phoneNumbers: phoneNumbers ?? List.from(this.phoneNumbers),
-        source: source ?? this.source,
-        notes: notes ?? this.notes,
-        validityType: validityType ?? this.validityType,
-        activationDate: activationDate ?? this.activationDate,
-        expirationDate: expirationDate ?? this.expirationDate,
-        rollingDays: rollingDays ?? this.rollingDays,
-        lastUsedDate: lastUsedDate ?? this.lastUsedDate,
-        reminderDaysBefore: reminderDaysBefore ?? this.reminderDaysBefore,
-        dataBalanceMB: dataBalanceMB ?? this.dataBalanceMB,
-        dataTotalMB: dataTotalMB ?? this.dataTotalMB,
-        voiceMinutesRemaining:
-            voiceMinutesRemaining ?? this.voiceMinutesRemaining,
-        voiceMinutesTotal: voiceMinutesTotal ?? this.voiceMinutesTotal,
-        smsRemaining: smsRemaining ?? this.smsRemaining,
-        smsTotal: smsTotal ?? this.smsTotal,
-        balance: balance ?? this.balance,
-        balanceCurrency: balanceCurrency ?? this.balanceCurrency,
-        features: features ?? this.features.copyWith(),
-        rspServerAddress: rspServerAddress ?? this.rspServerAddress,
-        activationCode: activationCode ?? this.activationCode,
-        confirmationCode: confirmationCode ?? this.confirmationCode,
-        qrCodeRawData: qrCodeRawData ?? this.qrCodeRawData,
-        cardColor: cardColor ?? this.cardColor,
-        tagIds: tagIds ?? List.from(this.tagIds),
-        photoPath: photoPath ?? this.photoPath,
-        createdAt: createdAt,
-        updatedAt: DateTime.now(),
-      );
+    // SIMer 1.0 把「已过期 / 已归档」也混在 status 字段里：
+    // 过期改为按日期实时计算；归档改用归档时间，原激活状态已无法得知，按未激活处理。
+    final legacyStatus = json.optString('status');
+    final activationStatus = json.containsKey('activationStatus')
+        ? ActivationStatus.fromString(json.optString('activationStatus'))
+        : (legacyStatus == 'inactive' || legacyStatus == 'archived'
+              ? ActivationStatus.inactive
+              : ActivationStatus.active);
+    final archivedAt = json.containsKey('archivedAt')
+        ? json.optDateTime('archivedAt')
+        : (legacyStatus == 'archived' ? (updatedAt ?? clock.now()) : null);
+
+    return SimCard(
+      uuid: json.reqString('uuid'),
+      type: SimType.fromString(json.optString('type')),
+      activationStatus: activationStatus,
+      archivedAt: archivedAt,
+      iccid: json.optString('iccid'),
+      carrierName: json.reqString('carrierName'),
+      carrierCode: json.optString('carrierCode'),
+      countryCode: json.optString('countryCode') ?? '',
+      phoneNumbers: json.stringList('phoneNumbers'),
+      source: json.optString('source'),
+      notes: json.optString('notes'),
+      validityType: ValidityType.fromString(json.optString('validityType')),
+      activationDate: json.optCalendarDate('activationDate'),
+      expirationDate: json.optCalendarDate('expirationDate'),
+      rollingDays: json.optInt('rollingDays'),
+      lastUsedDate: json.optCalendarDate('lastUsedDate'),
+      reminderDaysBefore:
+          json.optInt('reminderDaysBefore') ?? defaultReminderDays,
+      dataBalanceMB: json.optDouble('dataBalanceMB'),
+      dataTotalMB: json.optDouble('dataTotalMB'),
+      voiceMinutesRemaining: json.optDouble('voiceMinutesRemaining'),
+      voiceMinutesTotal: json.optDouble('voiceMinutesTotal'),
+      smsRemaining: json.optInt('smsRemaining'),
+      smsTotal: json.optInt('smsTotal'),
+      balance: json.optDouble('balance'),
+      balanceCurrency: json.optString('balanceCurrency'),
+      features: features != null ? FeatureSet.fromJson(features) : null,
+      rspServerAddress: json.optString('rspServerAddress'),
+      activationCode: json.optString('activationCode'),
+      confirmationCode: json.optString('confirmationCode'),
+      qrCodeRawData: json.optString('qrCodeRawData'),
+      cardColor: json.optInt('cardColor') ?? defaultCardColor,
+      tagIds: json.intList('tagIds'),
+      createdAt: json.optDateTime('createdAt'),
+      updatedAt: updatedAt,
+    );
+  }
 
   @override
-  String toString() => 'SimCard(id: $id, carrier: $carrierName, iccid: $iccid)';
+  String toString() => 'SimCard(id: $id, uuid: $uuid, carrier: $carrierName)';
 }

@@ -1,36 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+
 import 'providers/theme_provider.dart';
-import 'providers/auth_provider.dart';
-import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/lock_screen.dart';
+import 'theme/app_theme.dart';
 
-/// SIM Keeper 主应用
-class SimKeeperApp extends StatelessWidget {
-  const SimKeeperApp({super.key});
+/// SIMer 主应用
+class SimerApp extends StatelessWidget {
+  const SimerApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<ThemeProvider, AuthProvider>(
-      builder: (context, themeProvider, authProvider, _) {
-        return MaterialApp(
-          title: 'SIMer',
-          debugShowCheckedModeBanner: false,
-          theme: AppTheme.light,
-          darkTheme: AppTheme.dark,
-          themeMode: themeProvider.themeMode,
-          home: _buildHome(authProvider),
-        );
-      },
+    // 只在主题模式变化时重建 MaterialApp
+    final themeMode = context.select<ThemeProvider, ThemeMode>(
+      (p) => p.themeMode,
     );
-  }
-
-  Widget _buildHome(AuthProvider authProvider) {
-    // 如果启用了生物识别且未认证，显示锁屏
-    if (authProvider.biometricEnabled && !authProvider.isAuthenticated) {
-      return const LockScreen();
-    }
-    return const HomeScreen();
+    return MaterialApp(
+      title: 'SIMer',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: themeMode,
+      // 界面文字为中文：系统组件（日期选择器、复制粘贴菜单等）也使用中文
+      locale: const Locale('zh', 'CN'),
+      supportedLocales: const [Locale('zh', 'CN')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      home: const HomeScreen(),
+      // 锁屏覆盖在所有页面之上（包括后来打开的页面、对话框与底部弹窗）
+      builder: (context, child) => AppLockGate(child: child!),
+    );
   }
 }

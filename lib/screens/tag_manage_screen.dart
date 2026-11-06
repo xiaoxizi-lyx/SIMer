@@ -1,13 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+
 import '../models/tag.dart';
+import '../providers/filter_provider.dart';
 import '../providers/sim_card_provider.dart';
 import '../theme/app_colors.dart';
 
 /// 标签管理页面
 ///
-/// CRUD 操作：添加、编辑、删除、重排序
+/// 添加、编辑、删除标签
 class TagManageScreen extends StatefulWidget {
   const TagManageScreen({super.key});
 
@@ -61,31 +64,25 @@ class _TagManageScreenState extends State<TagManageScreen> {
           Icon(
             Icons.label_off_rounded,
             size: 64,
-            color: Theme.of(context)
-                .colorScheme
-                .onSurface
+            color: Theme.of(context).colorScheme.onSurface
                 .withValues(alpha: 0.2),
           ),
           const SizedBox(height: 16),
           Text(
             '还没有标签',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
+              color: Theme.of(context).colorScheme.onSurface
                   .withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             '点击右上角添加你的第一个标签',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 14,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
+              color: Theme.of(context).colorScheme.onSurface
                   .withValues(alpha: 0.4),
             ),
           ),
@@ -98,10 +95,11 @@ class _TagManageScreenState extends State<TagManageScreen> {
     final tagColor = Color(tag.color);
     final provider = context.read<SimCardProvider>();
 
-    // 统计使用该标签的卡数量
-    final usageCount = provider.simCards
-        .where((c) => c.tagIds.contains(tag.id))
-        .length;
+    // 统计使用该标签的卡数量（含已归档的卡片，删除时它们同样会失去该标签）
+    final usageCount = [
+      ...provider.simCards,
+      ...provider.archivedCards,
+    ].where((c) => c.tagIds.contains(tag.id)).length;
 
     return Container(
       key: ValueKey(tag.id),
@@ -110,8 +108,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
         color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color:
-              Theme.of(context).dividerTheme.color ?? AppColors.lightDivider,
+          color: Theme.of(context).dividerTheme.color ?? AppColors.lightDivider,
           width: 0.5,
         ),
       ),
@@ -136,15 +133,12 @@ class _TagManageScreenState extends State<TagManageScreen> {
         ),
         title: Text(
           tag.name,
-          style: GoogleFonts.inter(
-            fontSize: 15,
-            fontWeight: FontWeight.w500,
-          ),
+          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
         ),
         subtitle: usageCount > 0
             ? Text(
                 '已关联 $usageCount 张SIM卡',
-                style: GoogleFonts.inter(fontSize: 12),
+                style: const TextStyle(fontSize: 12),
               )
             : null,
         trailing: Row(
@@ -155,7 +149,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
               onPressed: () => _showAddEditDialog(context, tag: tag),
             ),
             IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.delete_outline_rounded,
                 size: 20,
                 color: AppColors.countdownDanger,
@@ -174,8 +168,8 @@ class _TagManageScreenState extends State<TagManageScreen> {
     final provider = context.read<SimCardProvider>();
     Color selectedColor = tag != null
         ? Color(tag.color)
-        : AppColors.cardColorPool[
-            provider.tags.length % AppColors.cardColorPool.length];
+        : AppColors.cardColorPool[provider.tags.length %
+              AppColors.cardColorPool.length];
 
     final result = await showDialog<Map<String, dynamic>>(
       context: context,
@@ -201,12 +195,10 @@ class _TagManageScreenState extends State<TagManageScreen> {
                     alignment: Alignment.centerLeft,
                     child: Text(
                       '标签颜色',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: Theme.of(ctx)
-                            .colorScheme
-                            .onSurface
+                        color: Theme.of(ctx).colorScheme.onSurface
                             .withValues(alpha: 0.7),
                       ),
                     ),
@@ -215,8 +207,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children:
-                        AppColors.cardColorPool.take(10).map((color) {
+                    children: AppColors.cardColorPool.take(10).map((color) {
                       final isSelected = selectedColor == color;
                       return GestureDetector(
                         onTap: () {
@@ -230,14 +221,12 @@ class _TagManageScreenState extends State<TagManageScreen> {
                             color: color,
                             shape: BoxShape.circle,
                             border: isSelected
-                                ? Border.all(
-                                    color: Colors.white, width: 2)
+                                ? Border.all(color: Colors.white, width: 2)
                                 : null,
                             boxShadow: isSelected
                                 ? [
                                     BoxShadow(
-                                      color:
-                                          color.withValues(alpha: 0.5),
+                                      color: color.withValues(alpha: 0.5),
                                       blurRadius: 6,
                                     ),
                                   ]
@@ -265,10 +254,14 @@ class _TagManageScreenState extends State<TagManageScreen> {
                   onPressed: () {
                     final name = _nameController.text.trim();
                     if (name.isEmpty) return;
-                    Navigator.of(ctx).pop({
-                      'name': name,
-                      'color': selectedColor.toARGB32(),
-                    });
+                    if (provider.isTagNameTaken(name, exceptId: tag?.id)) {
+                      ScaffoldMessenger.of(
+                        context,
+                      ).showSnackBar(SnackBar(content: Text('已有名为「$name」的标签')));
+                      return;
+                    }
+                    Navigator.of(ctx)
+                        .pop({'name': name, 'color': selectedColor.toARGB32()});
                   },
                   child: Text(isEditing ? '保存' : '添加'),
                 ),
@@ -279,49 +272,58 @@ class _TagManageScreenState extends State<TagManageScreen> {
       },
     );
 
-    if (result != null && mounted) {
+    if (result == null || !context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    try {
       if (isEditing) {
-        final updated = tag.copyWith(
-          name: result['name'] as String,
-          color: result['color'] as int,
+        await provider.updateTag(
+          tag.copyWith(
+            name: result['name'] as String,
+            color: result['color'] as int,
+          ),
         );
-        await provider.updateTag(updated);
       } else {
-        final newTag = Tag(
-          name: result['name'] as String,
-          color: result['color'] as int,
+        await provider.addTag(
+          Tag(name: result['name'] as String, color: result['color'] as int),
         );
-        await provider.addTag(newTag);
       }
+    } on Exception catch (e) {
+      debugPrint('保存标签失败: $e');
+      messenger.showSnackBar(const SnackBar(content: Text('保存标签失败，请重试')));
     }
   }
 
   void _confirmDelete(BuildContext context, Tag tag, int usageCount) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('删除标签'),
-        content: Text(
-          usageCount > 0
-              ? '标签"${tag.name}"已被 $usageCount 张SIM卡使用。删除后将从这些卡中移除该标签。确定要删除吗？'
-              : '确定要删除标签"${tag.name}"吗？',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('删除标签'),
+          content: Text(
+            usageCount > 0
+                ? '标签"${tag.name}"已被 $usageCount 张SIM卡使用。删除后将从这些卡中移除该标签。确定要删除吗？'
+                : '确定要删除标签"${tag.name}"吗？',
           ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.countdownDanger,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('取消'),
             ),
-            onPressed: () {
-              ctx.read<SimCardProvider>().deleteTag(tag.id!);
-              Navigator.of(ctx).pop();
-            },
-            child: const Text('删除'),
-          ),
-        ],
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.countdownDanger,
+              ),
+              onPressed: () {
+                Navigator.of(ctx).pop();
+                final id = tag.id!;
+                // 同时移除首页中该标签的筛选，避免残留的筛选让列表“莫名”变空
+                ctx.read<FilterProvider>().removeTagFilter(id);
+                unawaited(ctx.read<SimCardProvider>().deleteTag(id));
+              },
+              child: const Text('删除'),
+            ),
+          ],
+        ),
       ),
     );
   }

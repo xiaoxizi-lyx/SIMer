@@ -52,6 +52,7 @@ app.*.map.json
 **/android/app/build/
 **/*.jks
 **/*.keystore
+**/*.jks.base64
 
 # Local databases & Environment
 *.db

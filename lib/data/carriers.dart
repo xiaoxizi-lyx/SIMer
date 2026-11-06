@@ -1,4 +1,5 @@
 import 'dart:ui';
+
 import '../models/carrier.dart';
 
 /// 预置运营商数据
@@ -396,29 +397,9 @@ class CarrierData {
 
   /// 按代码查找运营商
   static Carrier? findByCode(String code) {
-    try {
-      return carriers.firstWhere((c) => c.code == code);
-    } catch (_) {
-      return null;
+    for (final carrier in carriers) {
+      if (carrier.code == code) return carrier;
     }
+    return null;
   }
-
-  /// 按名称搜索运营商
-  static List<Carrier> search(String query) {
-    if (query.isEmpty) return carriers;
-    final lowerQuery = query.toLowerCase();
-    return carriers.where((c) {
-      return c.name.toLowerCase().contains(lowerQuery) ||
-          c.code.toLowerCase().contains(lowerQuery);
-    }).toList();
-  }
-
-  /// 获取指定国家的运营商列表
-  static List<Carrier> byCountry(String countryCode) {
-    return carriers.where((c) => c.countryCode == countryCode).toList();
-  }
-
-  /// 获取所有有运营商的国家代码
-  static Set<String> get countryCodes =>
-      carriers.map((c) => c.countryCode).toSet();
 }

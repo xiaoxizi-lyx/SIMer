@@ -1,14 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
-import '../models/sim_card.dart';
-import '../providers/sim_card_provider.dart';
+
+import '../models/enums.dart';
+import '../providers/auth_provider.dart';
 import '../providers/filter_provider.dart';
+import '../providers/sim_card_provider.dart';
+import '../services/notification_service.dart';
 import '../theme/app_colors.dart';
-import '../widgets/sim_card_flip.dart';
+import '../widgets/card_detail_sheet.dart';
 import '../widgets/filter_chips.dart' as fc;
+import '../widgets/sim_card_flip.dart';
 import '../widgets/sort_menu.dart';
 import 'add_edit_sim_screen.dart';
+import 'card_actions.dart';
 import 'settings_screen.dart';
 
 /// 首页 – SIM卡列表
@@ -24,25 +30,71 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController _searchController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    NotificationService.openCardRequest.addListener(_openRequestedCard);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showAuthNotice();
+      _openRequestedCard();
+    });
+  }
+
+  /// 点击到期提醒通知后，打开对应卡片的详情。
+  void _openRequestedCard() {
+    final uuid = NotificationService.openCardRequest.value;
+    if (uuid == null || !mounted) return;
+    NotificationService.openCardRequest.value = null;
+    unawaited(CardDetailSheet.show(context, uuid));
+  }
+
+  /// 显示应用锁的一次性提示（例如设备移除锁屏后应用锁被自动关闭）。
+  void _showAuthNotice() {
+    if (!mounted) return;
+    final auth = context.read<AuthProvider>();
+    final notice = auth.notice;
+    if (notice == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(notice), duration: const Duration(seconds: 6)),
+    );
+    auth.dismissNotice();
+  }
+
+  @override
   void dispose() {
+    NotificationService.openCardRequest.removeListener(_openRequestedCard);
     _searchController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: Column(
-        children: [
-          // ── 筛选栏 ──
-          _buildFilterBar(),
-          // ── 卡片列表 ──
-          Expanded(child: _buildBody()),
-        ],
+    // 搜索中按系统返回键先关闭搜索，而不是退出应用
+    return PopScope(
+      canPop: !_isSearching,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _closeSearch();
+      },
+      child: Scaffold(
+        appBar: _buildAppBar(),
+        body: Column(
+          children: [
+            // ── 筛选栏 ──
+            _buildFilterBar(),
+            // ── 卡片列表 ──
+            Expanded(child: _buildBody()),
+          ],
+        ),
+        floatingActionButton: _buildFAB(),
       ),
-      floatingActionButton: _buildFAB(),
     );
+  }
+
+  void _closeSearch() {
+    setState(() {
+      _isSearching = false;
+      _searchController.clear();
+    });
+    context.read<FilterProvider>().clearSearch();
   }
 
   PreferredSizeWidget _buildAppBar() {
@@ -52,27 +104,20 @@ class _HomeScreenState extends State<HomeScreen> {
       return AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          onPressed: () {
-            setState(() {
-              _isSearching = false;
-              _searchController.clear();
-              filterProvider.setSearchQuery('');
-            });
-          },
+          tooltip: '关闭搜索',
+          onPressed: _closeSearch,
         ),
         title: TextField(
           controller: _searchController,
           autofocus: true,
-          decoration: InputDecoration(
-            hintText: '搜索运营商、号码、ICCID…',
-            hintStyle: GoogleFonts.inter(fontSize: 15),
+          decoration: const InputDecoration(
+            hintText: '搜索运营商、号码、国家、标签…',
+            hintStyle: TextStyle(fontSize: 15),
             border: InputBorder.none,
             filled: false,
           ),
-          style: GoogleFonts.inter(fontSize: 15),
-          onChanged: (value) {
-            filterProvider.setSearchQuery(value);
-          },
+          style: const TextStyle(fontSize: 15),
+          onChanged: filterProvider.setSearchQuery,
         ),
         actions: [
           if (_searchController.text.isNotEmpty)
@@ -88,12 +133,9 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return AppBar(
-      title: Text(
+      title: const Text(
         'SIMer',
-        style: GoogleFonts.inter(
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
-        ),
+        style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700),
       ),
       actions: [
         IconButton(
@@ -106,19 +148,15 @@ class _HomeScreenState extends State<HomeScreen> {
         SortMenu(
           currentSortBy: filterProvider.sortBy,
           currentSortOrder: filterProvider.sortOrder,
-          onSortByChanged: (sortBy) {
-            filterProvider.setSortBy(sortBy);
-          },
-          onSortOrderChanged: (order) {
-            filterProvider.setSortOrder(order);
-          },
+          onSortByChanged: filterProvider.setSortBy,
+          onSortOrderChanged: filterProvider.setSortOrder,
         ),
         IconButton(
           icon: const Icon(Icons.settings_rounded),
           tooltip: '设置',
           onPressed: () {
             Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SettingsScreen()),
+              MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
             );
           },
         ),
@@ -130,11 +168,12 @@ class _HomeScreenState extends State<HomeScreen> {
     final simCardProvider = context.watch<SimCardProvider>();
     final filterProvider = context.watch<FilterProvider>();
 
-    // 统计可用的国家（不含归档）
-    final countries = <String>{};
-    for (final card in simCardProvider.simCards) {
-      countries.add(card.countryCode);
-    }
+    // 可选的国家与运营商（不含归档），按名称排序
+    final cards = simCardProvider.simCards;
+    final countries = {for (final card in cards) card.countryCode}.toList()
+      ..sort();
+    final carriers = {for (final card in cards) card.carrierName}.toList()
+      ..sort();
 
     // 可用标签
     final tagEntries = simCardProvider.tags
@@ -145,18 +184,19 @@ class _HomeScreenState extends State<HomeScreen> {
     return fc.FilterChips(
       statusFilter: filterProvider.statusFilter,
       countryFilter: filterProvider.countryFilter,
+      carrierFilter: filterProvider.carrierFilter,
       tagFilters: filterProvider.tagFilters,
-      availableCountries: countries,
+      statusCounts: {
+        for (final status in StatusFilter.values)
+          status: simCardProvider.countFor(status),
+      },
+      availableCountries: countries.toSet(),
+      availableCarriers: carriers,
       availableTags: tagEntries,
-      onStatusChanged: (status) {
-        filterProvider.setStatusFilter(status);
-      },
-      onCountryChanged: (country) {
-        filterProvider.setCountryFilter(country);
-      },
-      onTagsChanged: (tags) {
-        filterProvider.setTagFilters(tags);
-      },
+      onStatusChanged: filterProvider.setStatusFilter,
+      onCountryChanged: filterProvider.setCountryFilter,
+      onCarrierChanged: filterProvider.setCarrierFilter,
+      onTagsChanged: filterProvider.setTagFilters,
     );
   }
 
@@ -165,16 +205,15 @@ class _HomeScreenState extends State<HomeScreen> {
     final filterProvider = context.watch<FilterProvider>();
 
     if (simCardProvider.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator.adaptive(),
-      );
+      return const Center(child: CircularProgressIndicator.adaptive());
     }
 
     // 使用 SimCardProvider 内置的筛选/排序
     final filteredCards = simCardProvider.getFilteredAndSorted(filterProvider);
 
     if (filteredCards.isEmpty) {
-      final hasFilters = filterProvider.hasActiveFilters ||
+      final hasFilters =
+          filterProvider.hasActiveFilters ||
           filterProvider.searchQuery.isNotEmpty;
       return _buildEmptyState(hasFilters);
     }
@@ -198,19 +237,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 key: ValueKey(card.uuid),
                 simCard: card,
                 tags: simCardProvider.tags,
-                onEdit: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) => AddEditSimScreen(simCard: card),
-                    ),
-                  );
-                },
-                onArchive: () {
-                  _confirmArchive(context, card);
-                },
-                onMarkAsUsed: () {
-                  simCardProvider.markAsUsed(card.id!);
-                },
+                onEdit: () => CardActions.edit(context, card),
+                onArchive: () => CardActions.archive(context, card),
+                onMarkAsUsed: () => CardActions.markAsUsed(context, card),
               ),
             );
           },
@@ -231,31 +260,25 @@ class _HomeScreenState extends State<HomeScreen> {
                   ? Icons.filter_list_off_rounded
                   : Icons.sim_card_outlined,
               size: 72,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
+              color: Theme.of(context).colorScheme.onSurface
                   .withValues(alpha: 0.2),
             ),
             const SizedBox(height: 16),
             Text(
               hasFilters ? '没有匹配的SIM卡' : '还没有SIM卡记录',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
+                color: Theme.of(context).colorScheme.onSurface
                     .withValues(alpha: 0.5),
               ),
             ),
             const SizedBox(height: 8),
             Text(
               hasFilters ? '试试调整筛选条件' : '点击下方按钮添加你的第一张SIM卡',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 14,
-                color: Theme.of(context)
-                    .colorScheme
-                    .onSurface
+                color: Theme.of(context).colorScheme.onSurface
                     .withValues(alpha: 0.4),
               ),
             ),
@@ -277,41 +300,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildFAB() {
     return FloatingActionButton.extended(
-      onPressed: () => _navigateToAdd(),
+      onPressed: _navigateToAdd,
       icon: const Icon(Icons.add_rounded),
-      label: Text(
+      label: const Text(
         '添加SIM/eSIM信息',
-        style: GoogleFonts.inter(fontWeight: FontWeight.w600),
+        style: TextStyle(fontWeight: FontWeight.w600),
       ),
     );
   }
 
   void _navigateToAdd() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const AddEditSimScreen()),
-    );
-  }
-
-  void _confirmArchive(BuildContext context, SimCard card) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('归档SIM卡'),
-        content: Text('确定要将 ${card.carrierName} 的SIM卡归档吗？'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              context.read<SimCardProvider>().archiveSimCard(card.id!);
-              Navigator.of(ctx).pop();
-            },
-            child: const Text('归档'),
-          ),
-        ],
-      ),
-    );
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute<bool>(builder: (_) => const AddEditSimScreen()));
   }
 }

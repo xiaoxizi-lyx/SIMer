@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import '../models/enums.dart';
 import '../theme/app_colors.dart';
 
@@ -33,6 +33,7 @@ class _ValidityCountdownState extends State<ValidityCountdown>
     with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+  bool _reduceMotion = false;
 
   @override
   void initState() {
@@ -44,6 +45,13 @@ class _ValidityCountdownState extends State<ValidityCountdown>
     _pulseAnimation = Tween<double>(begin: 1.0, end: 0.4).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 尊重系统「减少动画」设置
+    _reduceMotion = MediaQuery.disableAnimationsOf(context);
     _updatePulse();
   }
 
@@ -55,7 +63,7 @@ class _ValidityCountdownState extends State<ValidityCountdown>
 
   void _updatePulse() {
     final days = widget.daysRemaining;
-    if (days != null && days >= 0 && days < 7) {
+    if (!_reduceMotion && days != null && days >= 0 && days < 7) {
       if (!_pulseController.isAnimating) {
         _pulseController.repeat(reverse: true);
       }
@@ -121,7 +129,11 @@ class _ValidityCountdownState extends State<ValidityCountdown>
     }
 
     // 正常倒计时
-    final text = days != null ? '剩余 $days 天$rollingHint' : '未设定';
+    final text = switch (days) {
+      null => '未设定',
+      0 => '今天到期$rollingHint',
+      _ => '剩余 $days 天$rollingHint',
+    };
     final shouldPulse = days != null && days >= 0 && days < 7;
 
     return _buildRow(
@@ -138,17 +150,20 @@ class _ValidityCountdownState extends State<ValidityCountdown>
     required Color color,
     required bool animate,
   }) {
+    // 文字可换行：系统字体放大时不会横向溢出
     final content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: widget.fontSize + 2, color: color),
         const SizedBox(width: 4),
-        Text(
-          text,
-          style: GoogleFonts.inter(
-            fontSize: widget.fontSize,
-            fontWeight: FontWeight.w600,
-            color: color,
+        Flexible(
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: widget.fontSize,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
           ),
         ),
       ],
@@ -158,10 +173,7 @@ class _ValidityCountdownState extends State<ValidityCountdown>
       return AnimatedBuilder(
         animation: _pulseAnimation,
         builder: (context, child) {
-          return Opacity(
-            opacity: _pulseAnimation.value,
-            child: child,
-          );
+          return Opacity(opacity: _pulseAnimation.value, child: child);
         },
         child: content,
       );

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+
 import '../models/enums.dart';
 import '../theme/app_colors.dart';
 
@@ -56,10 +56,9 @@ class SortMenu extends StatelessWidget {
                 const SizedBox(width: 8),
                 Text(
                   sortBy.label,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 14,
-                    fontWeight:
-                        isSelected ? FontWeight.w600 : FontWeight.w400,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                     color: isSelected
                         ? AppColors.primary
                         : Theme.of(context).colorScheme.onSurface,

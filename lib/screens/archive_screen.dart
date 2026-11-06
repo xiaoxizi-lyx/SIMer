@@ -1,6 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
+
 import '../models/sim_card.dart';
 import '../providers/sim_card_provider.dart';
 import '../theme/app_colors.dart';
@@ -18,9 +20,7 @@ class ArchiveScreen extends StatelessWidget {
     final archivedCards = provider.archivedCards;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('归档'),
-      ),
+      appBar: AppBar(title: const Text('归档')),
       body: archivedCards.isEmpty
           ? _buildEmptyState(context)
           : ListView.builder(
@@ -42,31 +42,25 @@ class ArchiveScreen extends StatelessWidget {
           Icon(
             Icons.archive_outlined,
             size: 72,
-            color: Theme.of(context)
-                .colorScheme
-                .onSurface
+            color: Theme.of(context).colorScheme.onSurface
                 .withValues(alpha: 0.2),
           ),
           const SizedBox(height: 16),
           Text(
             '没有已归档的SIM卡',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
+              color: Theme.of(context).colorScheme.onSurface
                   .withValues(alpha: 0.5),
             ),
           ),
           const SizedBox(height: 8),
           Text(
             '已归档的SIM卡会显示在这里',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 14,
-              color: Theme.of(context)
-                  .colorScheme
-                  .onSurface
+              color: Theme.of(context).colorScheme.onSurface
                   .withValues(alpha: 0.4),
             ),
           ),
@@ -87,10 +81,7 @@ class ArchiveScreen extends StatelessWidget {
           // 卡片正面（略灰化）
           Opacity(
             opacity: 0.75,
-            child: SimCardFront(
-              simCard: card,
-              tags: provider.tags,
-            ),
+            child: SimCardFront(simCard: card, tags: provider.tags),
           ),
           const SizedBox(height: 8),
           // 操作按钮行
@@ -103,14 +94,22 @@ class ArchiveScreen extends StatelessWidget {
                 icon: Icons.unarchive_rounded,
                 label: '恢复',
                 color: AppColors.primary,
-                onTap: () {
-                  provider.restoreSimCard(card.id!);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('已恢复 ${card.carrierName}'),
-                      duration: const Duration(seconds: 2),
-                    ),
-                  );
+                onTap: () async {
+                  final messenger = ScaffoldMessenger.of(context);
+                  try {
+                    await provider.restoreSimCard(card.id!);
+                    messenger.showSnackBar(
+                      SnackBar(
+                        content: Text('已恢复 ${card.carrierName}'),
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  } on Exception catch (e) {
+                    debugPrint('恢复失败: $e');
+                    messenger.showSnackBar(
+                      const SnackBar(content: Text('恢复失败，请重试')),
+                    );
+                  }
                 },
               ),
               const SizedBox(width: 12),
@@ -120,8 +119,7 @@ class ArchiveScreen extends StatelessWidget {
                 icon: Icons.delete_forever_rounded,
                 label: '永久删除',
                 color: AppColors.countdownDanger,
-                onTap: () =>
-                    _confirmPermanentDelete(context, card, provider),
+                onTap: () => _confirmPermanentDelete(context, card, provider),
               ),
             ],
           ),
@@ -144,10 +142,7 @@ class ArchiveScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: color.withValues(alpha: 0.3),
-            width: 1,
-          ),
+          border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -156,7 +151,7 @@ class ArchiveScreen extends StatelessWidget {
             const SizedBox(width: 6),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: color,
@@ -173,35 +168,43 @@ class ArchiveScreen extends StatelessWidget {
     SimCard card,
     SimCardProvider provider,
   ) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('永久删除'),
-        content: Text(
-          '确定要永久删除 ${card.carrierName} 的SIM卡吗？\n\n此操作不可恢复。',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('取消'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.countdownDanger,
+    unawaited(
+      showDialog<void>(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          title: const Text('永久删除'),
+          content: Text('确定要永久删除 ${card.carrierName} 的SIM卡吗？\n\n此操作不可恢复。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('取消'),
             ),
-            onPressed: () {
-              provider.permanentlyDelete(card.id!);
-              Navigator.of(ctx).pop();
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('已永久删除 ${card.carrierName}'),
-                  duration: const Duration(seconds: 2),
-                ),
-              );
-            },
-            child: const Text('删除'),
-          ),
-        ],
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.countdownDanger,
+              ),
+              onPressed: () async {
+                Navigator.of(ctx).pop();
+                final messenger = ScaffoldMessenger.of(context);
+                try {
+                  await provider.permanentlyDelete(card.id!);
+                  messenger.showSnackBar(
+                    SnackBar(
+                      content: Text('已永久删除 ${card.carrierName}'),
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
+                } on Exception catch (e) {
+                  debugPrint('删除失败: $e');
+                  messenger.showSnackBar(
+                    const SnackBar(content: Text('删除失败，请重试')),
+                  );
+                }
+              },
+              child: const Text('删除'),
+            ),
+          ],
+        ),
       ),
     );
   }

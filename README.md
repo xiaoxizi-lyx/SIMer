@@ -1,118 +1,168 @@
 <p align="center">
-  <img src="assets/images/SIMer.png" width="128" height="128" alt="SIMer Logo" />
+  <img src="docs/images/SIMer.png" width="128" height="128" alt="SIMer Logo" />
 </p>
 
 <h1 align="center">SIMer</h1>
 
 <p align="center">
-  <strong>现代化、优雅的 SIM 卡与 eSIM 卡信息记录管理应用</strong><br>
-  灵感汲取自 Apple Wallet 风格卡片交互，专为多卡用户、海外漫游卡玩家及 eSIM 爱好者打造。
+  <strong>完全离线的 SIM 卡与 eSIM 信息管理应用</strong><br>
+  Apple Wallet 风格的卡片交互，为多卡用户、海外保号卡玩家和 eSIM 爱好者打造。
 </p>
 
 <p align="center">
-  <a href="https://github.com/xiaoxizi-lyx/SIMer/actions"><img src="https://github.com/xiaoxizi-lyx/SIMer/actions/workflows/ci.yml/badge.svg" alt="SIMer CI" /></a>
-  <img src="https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter&logoColor=white" alt="Flutter" />
-  <img src="https://img.shields.io/badge/Platform-Android-3DDC84?logo=android&logoColor=white" alt="Android" />
+  <a href="https://github.com/xiaoxizi-lyx/SIMer/actions/workflows/ci.yml"><img src="https://github.com/xiaoxizi-lyx/SIMer/actions/workflows/ci.yml/badge.svg" alt="SIMer CI" /></a>
+  <img src="https://img.shields.io/badge/Flutter-3.47.9-02569B?logo=flutter&logoColor=white" alt="Flutter 3.47.9" />
+  <img src="https://img.shields.io/badge/Android-7.0%2B-3DDC84?logo=android&logoColor=white" alt="Android 7.0+" />
   <img src="https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite&logoColor=white" alt="SQLite" />
-  <img src="https://img.shields.io/badge/Privacy-100%25%20Offline-green" alt="Offline First" />
-  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License" />
+  <img src="https://img.shields.io/badge/Privacy-100%25%20Offline-green" alt="100% Offline" />
+  <img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" />
 </p>
 
 ---
 
 ## ✨ 核心特性
 
-- 📇 **Apple Wallet 风格卡片**：拟物感卡片流光渐变视觉，支持丝滑流畅的 **3D 沿 Y 轴翻转动画**，正反面分层查看摘要与完整技术细节。
-- 📱 **物理 SIM 与 eSIM 兼顾**：全字段记录 ICCID（等宽卡号排版）、多手机号、运营商名称、归属国家/地区、SIM 来源及备注。
-- 📷 **LPA 智能扫码解析**：原生集成相机扫描器，精准解析 eSIM 的 LPA 格式二维码（`LPA:1$<SM-DP+>$<MatchingID>[$<ConfirmCode>]`），一键自动填充。
-- ⏳ **灵活的多模式有效期管理**：
-  - **固定到期日**：适用于充值按期续订卡。
-  - **滚动有效期（N 天一用）**：针对英国 Giffgaff、新西兰 One NZ 等需定期活跃的保号卡，到期前倒计时预警，支持在卡片上点击“✅ 我已使用”一键按周期顺延。
-  - **无期限**：适用于长期有效卡。
-- 🌍 **丰富的预置运营商**：内置覆盖 20+ 国家地区、55+ 常见运营商的专属品牌主色调；若用户自定义添加未收录运营商，系统将从美观调色盘中动态分配互不冲突的主题色。
-- 🏷️ **标签管理与多维筛选**：支持用户自定义标签分类，支持按卡片状态（激活/未激活/已过期）、国家地区、运营商及标签快速筛选，配备全文模糊搜索与动态排序。
-- 🔒 **生物识别安全锁**：原生接入 Android `BiometricPrompt`（指纹识别 / 面容识别），提供私密凭据安全门控。
-- 💾 **本地离线优先与数据备份**：
-  - 数据持久化保存在本地 SQLite 数据库，无任何后台隐式网络上报。
-  - 支持全量导出为格式化 JSON 文件，并支持随时导入（支持 UUID 自动排重）。
-- 🌙 **深浅色自适应主题**：浅色模式选用舒适米白质感（#FAF8F5），深色模式选用细腻深灰（#1C1C1E），告别纯黑刺眼。
+- 📇 **钱包风格卡片**：渐变拟物卡片，点击沿 Y 轴 3D 翻转，正面看摘要，背面看完整信息。
+- 📱 **实体 SIM 与 eSIM 全字段记录**：ICCID（等宽分组显示）、多个号码、运营商、国家/地区、来源渠道和备注；流量、通话、短信与话费余额；通话、短信、数据、VoLTE、Wi-Fi Calling、热点共享、eSIM 转移、国际漫游等功能的支持情况。
+- 📷 **eSIM 激活码识别**：相机扫码、从相册截图识别或粘贴激活码文本，按 GSMA SGP.22 规范解析 `LPA:1$<SM-DP+ 地址>$<Matching ID>[$<SM-DP+ OID>[$<确认码要求标志>]]`。确认码不包含在二维码中，需要时应用会提醒你手动填写。可一键复制完整激活码。
+- ⏳ **三种有效期模式**：
+  - **固定到期日**：适合按期充值续订的卡，到期当天仍算有效。
+  - **滚动有效期（N 天内需使用一次）**：适合 giffgaff 等需要定期使用才能保号的卡。即将到期或已过期时，在卡片上点「我已使用」即可续期，支持撤销。
+  - **无期限**：长期有效的卡。
+- 🔔 **到期提醒**：为每张卡预约系统通知（提前 N 天、到期当天、过期次日），可设置提醒时间。不需要后台常驻，重启手机后自动恢复；点击通知直接打开对应卡片。
+- 🌍 **预置运营商**：内置 16 个国家和地区的 59 家常见运营商及其品牌色；自定义运营商会自动分配不冲突的颜色。
+- 🏷️ **标签、筛选与搜索**：自定义标签；按状态（激活 / 未激活 / 即将到期 / 已过期，显示数量）、国家/地区、运营商和标签筛选；搜索运营商、号码、ICCID、国家名、标签、SM-DP+ 地址、来源和备注，号码与 ICCID 忽略空格和分隔符；按添加时间、到期时间、运营商或国家/地区排序。
+- 🗃️ **归档**：暂时不用的卡可以归档，之后恢复或彻底删除。
+- 🔒 **应用锁与防窥**：用指纹、面容或设备密码解锁；离开应用超过设定时间（立即 / 30 秒 / 1 分钟 / 5 分钟）后自动重新上锁，锁屏覆盖所有页面和弹窗；「防窥保护」在最近任务中隐藏应用内容。
+- 💾 **手动备份与恢复**：导出为 JSON 文件（保存到文件或分享），导入前可预览内容并选择如何处理重复的卡片；兼容 1.x 导出的备份。
+- 🌙 **深浅色主题**：浅色米白（#FAF8F5）、深色深灰（#1C1C1E），可跟随系统；适配大字体和系统「移除动画」设置。
+
+---
+
+## 🛡️ 隐私与安全
+
+SIMer 是纯本地应用：没有账户、没有服务器，也没有统计、崩溃上报或广告 SDK。
+
+- **系统层面禁止联网**：正式版安装包不申请 `INTERNET` 权限，Android 不允许它建立任何网络连接。CI 会检查每个发布的安装包，一旦带有该权限就构建失败。字体随应用内置；二维码识别使用打包在应用内的 Google ML Kit 模型，在本机离线运行。
+- **不参与系统备份和换机迁移**：关闭了 Android 云备份和设备间迁移（`allowBackup="false"` 加 `dataExtractionRules`），数据不会在你不知情的情况下被复制到其他地方。
+- **数据只由你带走**：换机时，在「设置 → 导出备份」中手动导出，自己把文件传到新设备，再「导入备份」。
+- **备份文件是明文**：导出的 JSON 包含 ICCID、号码、eSIM 激活码等敏感信息，请妥善保管，用完及时删除。通过「分享」导出时生成的临时文件会在下次导出或下次启动时自动清理。
+
+正式版安装包申请的权限：
+
+| 权限 | 用途 |
+| --- | --- |
+| `CAMERA` | 扫描 eSIM 二维码；拒绝后仍可用相册识别或粘贴激活码 |
+| `USE_BIOMETRIC`、`USE_FINGERPRINT` | 应用锁的指纹 / 面容验证 |
+| `POST_NOTIFICATIONS` | 到期提醒通知 |
+| `RECEIVE_BOOT_COMPLETED` | 重启手机后恢复已预约的提醒 |
+| `VIBRATE` | 提醒通知振动 |
+| `ACCESS_NETWORK_STATE` | 由扫码组件（ML Kit）引入，只能查询是否有网络，不能联网 |
+
+> 调试版（`flutter run`）保留了网络权限，用于热重载；只有正式版是离线的。
+
+---
+
+## 📦 下载与安装
+
+在 [Releases](https://github.com/xiaoxizi-lyx/SIMer/releases) 页面下载对应设备的安装包，需要 Android 7.0 及以上：
+
+| 安装包 | 适用设备 |
+| --- | --- |
+| `SIMer-v<版本>-arm64-v8a.apk` | 绝大多数 Android 手机（推荐） |
+| `SIMer-v<版本>-armeabi-v7a.apk` | 较旧的 32 位 ARM 设备 |
+| `SIMer-v<版本>-x86_64.apk` | x86_64 平板、模拟器与 ChromeOS |
+
+每个版本都附有 `SHA256SUMS.txt`，可以校验下载的安装包是否完整：
+
+```bash
+sha256sum -c SHA256SUMS.txt --ignore-missing
+```
+
+### 从 1.x 升级
+
+2.0 起应用包名改为 `io.github.xiaoxizi_lyx.simer`，并开始使用固定的正式签名，因此**不能覆盖安装 1.x**（1.x 的安装包使用临时调试签名，本来也无法覆盖升级）。安装 2.0 后，桌面上会同时出现新旧两个 SIMer，请按以下步骤迁移数据：
+
+1. 打开旧版 SIMer，在「设置 → 导出数据」中导出 JSON 备份，通过分享面板保存到「文件」或发给自己。
+2. 打开 2.0，在「设置 → 导入备份」中选择这个文件，确认预览内容后导入。
+3. 核对卡片和标签无误后卸载旧版。旧版的包名是 `com.simkeeper.sim_keeper`，可以在系统「设置 → 应用」中区分。
+4. 删除导出的备份文件。
+
+从 2.0 起，之后的版本都可以直接覆盖升级，数据会保留。
 
 ---
 
 ## 🛠️ 技术栈
 
-| 模块 | 实现方案 |
+| 模块 | 实现 |
 | --- | --- |
-| 跨平台框架 | **Flutter** (Dart 3.x) |
-| 状态管理 | **Provider** (MVVM 风格) |
-| 本地数据库 | **SQLite** (`sqflite` 事务与级联存储) |
-| 扫码组件 | **Mobile Scanner** (`mobile_scanner`) |
-| 安全认证 | **Local Auth** (`local_auth` + `FlutterFragmentActivity`) |
-| 后台保活与提醒 | `flutter_local_notifications` + `workmanager` |
-| 持久化偏好 | `shared_preferences` |
+| 框架 | Flutter 3.47.9 / Dart 3.13 |
+| 状态管理 | `provider` |
+| 本地数据库 | `sqflite`（SQLite，按版本迁移） |
+| 扫码 | `mobile_scanner`（Google ML Kit，模型随应用内置） |
+| 应用锁 | `local_auth`（Android `BiometricPrompt`，配合 `FlutterFragmentActivity`） |
+| 到期提醒 | `flutter_local_notifications` + `timezone`（系统预约通知） |
+| 备份导入导出 | `file_picker`（系统存储访问框架）、`share_plus` |
+| 偏好设置 | `shared_preferences` |
+| 测试 | `flutter_test`、`sqflite_common_ffi` |
 
 ---
 
-## 📂 项目结构规范
+## 📂 项目结构
 
 ```text
-sim_keeper/
-├── android/            # Android 原生平台配置与清单
-├── assets/
-│   └── images/         # 品牌与高清图标资源 (SIMer.png)
+SIMer/
+├── android/              # Android 工程：签名配置、正式版去除网络权限的清单
+├── assets/fonts/         # 内置字体（Inter、Roboto Mono）及其 OFL 许可证
+├── docs/                 # README 图片与发布流程（RELEASING.md）
 ├── lib/
-│   ├── data/           # 静态数据源 (55+ 运营商预置色、70+ 国家Emoji)
-│   ├── database/       # SQLite Helper 与数据结构事务处理
-│   ├── models/         # 核心领域实体 (SimCard, FeatureSet, Tag, Carrier, Enums)
-│   ├── providers/      # 状态管理层 (SimCardProvider, FilterProvider, ThemeProvider, AuthProvider)
-│   ├── screens/        # 各业务页面 (首页、表单、LPA扫码、设置、标签管理、归档回收站、锁屏)
-│   ├── services/       # 业务服务层 (二维码解析、备份导入导出、本地通知、生物识别)
-│   ├── theme/          # 调色盘、组件样式与全局主题定义
-│   └── widgets/        # 卡片正面/背面/3D翻转等可复用组件
-└── test/               # 核心服务与业务模型单元测试
+│   ├── data/             # 预置运营商与国家/地区数据
+│   ├── database/         # SQLite 数据库、迁移与备份导入
+│   ├── models/           # 领域模型（SimCard、CalendarDate、FeatureSet、Tag、Carrier 等）
+│   ├── providers/        # 状态管理（卡片、筛选、主题、应用锁、提醒）
+│   ├── screens/          # 页面：首页、添加/编辑表单（sim_form/）、扫码、设置、标签、归档、锁屏
+│   ├── services/         # 激活码解析、备份编解码与导入导出、提醒规划与通知、生物识别、平台通道
+│   ├── theme/            # 颜色、字体与主题
+│   └── widgets/          # 卡片正反面、翻转、倒计时、筛选栏等组件
+└── test/                 # 单元测试与组件测试
 ```
 
 ---
 
-## 🚀 编译与本地运行
+## 🚀 本地开发
 
 ### 前置要求
 
-- 安装 [Flutter SDK](https://docs.flutter.dev/get-started/install) (>= 3.2.0)
-- Android SDK (推荐 Build-Tools 34+)
+- [Flutter SDK](https://docs.flutter.dev/get-started/install) **3.47.9**（stable 渠道，与 CI 一致）
+- Android SDK，JDK 17 或更高版本
 
-### 启动运行
+### 运行与检查
 
-1. 克隆代码仓库：
-   ```bash
-   git clone git@github.com:xiaoxizi-lyx/SIMer.git
-   cd SIMer
-   ```
+```bash
+git clone https://github.com/xiaoxizi-lyx/SIMer.git
+cd SIMer
+flutter pub get
+flutter run
+```
 
-2. 安装依赖：
-   ```bash
-   flutter pub get
-   ```
+提交前请确保以下检查全部通过（CI 会执行同样的检查）：
 
-3. 运行项目（调试模式）：
-   ```bash
-   flutter run
-   ```
+```bash
+dart format --output=none --set-exit-if-changed lib test
+flutter analyze
+flutter test
+```
 
-4. 构建 Android APK：
-   ```bash
-   flutter build apk --release
-   ```
+### 构建安装包
 
----
+```bash
+flutter build apk --release --split-per-abi
+```
 
-## 🛡️ 隐私与安全声明
-
-1. **零网络追踪**：SIMer 是完全基于本地运行的单机记录工具，没有用户账户体系，不收集、不上传任何个人通讯凭据、ICCID 或网络流量。
-2. **敏感信息提示**：在进行 JSON 明文导出与备份分享时，请妥善保管导出的文件，防止包含未激活 eSIM 确认码及卡号的信息外泄。
+没有配置签名时，本地 release 构建会使用调试签名，只能自己测试，不能分发。正式签名和发布流程见 [docs/RELEASING.md](docs/RELEASING.md)。
 
 ---
 
-## 📄 开源许可证
+## 📄 开源许可
 
-本项目基于 [MIT License](LICENSE) 开源。
+本项目基于 [MIT License](LICENSE) 开源。内置字体 [Inter](assets/fonts/OFL-Inter.txt) 与 [Roboto Mono](assets/fonts/OFL-RobotoMono.txt) 采用 SIL Open Font License 1.1。

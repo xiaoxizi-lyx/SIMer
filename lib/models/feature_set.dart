@@ -1,146 +1,92 @@
 import 'dart:convert';
 
-/// 单个功能项：是否支持 + 可选备注
+import 'json_utils.dart';
+
+/// SIM 卡可能支持的功能。枚举名同时是备份 JSON 中的键，不可随意修改。
+enum Feature {
+  voice('通话'),
+  sms('短信'),
+  data('数据流量'),
+  wifiCalling('Wi-Fi Calling'),
+  volte('VoLTE'),
+  hotspot('热点共享'),
+  esimTransfer('eSIM转移'),
+  intlRoaming('国际漫游');
+
+  const Feature(this.label);
+  final String label;
+}
+
+/// 单个功能项：是否支持 + 可选备注（不可变）。
 class FeatureItem {
-  bool supported;
-  String? note;
+  const FeatureItem({this.supported = false, this.note});
 
-  FeatureItem({this.supported = false, this.note});
+  final bool supported;
+  final String? note;
 
-  Map<String, dynamic> toJson() => {
-        'supported': supported,
-        if (note != null && note!.isNotEmpty) 'note': note,
-      };
+  static const Object _unset = Object();
+
+  /// 复制并修改。与常见的 `??` 写法不同，显式传入 `note: null` 会清除备注。
+  FeatureItem copyWith({bool? supported, Object? note = _unset}) => FeatureItem(
+    supported: supported ?? this.supported,
+    note: identical(note, _unset) ? this.note : note as String?,
+  );
+
+  Map<String, Object?> toJson() => {
+    'supported': supported,
+    if (note != null && note!.isNotEmpty) 'note': note,
+  };
 
   factory FeatureItem.fromJson(Map<String, dynamic> json) => FeatureItem(
-        supported: json['supported'] as bool? ?? false,
-        note: json['note'] as String?,
-      );
-
-  FeatureItem copyWith({bool? supported, String? note}) => FeatureItem(
-        supported: supported ?? this.supported,
-        note: note ?? this.note,
-      );
+    supported: json.optBool('supported') ?? false,
+    note: json.optString('note'),
+  );
 }
 
 /// SIM卡功能集合
 class FeatureSet {
-  FeatureItem voice; // 通话
-  FeatureItem sms; // 短信
-  FeatureItem data; // 数据流量
-  FeatureItem wifiCalling; // Wi-Fi Calling
-  FeatureItem volte; // VoLTE
-  FeatureItem hotspot; // 热点共享
-  FeatureItem esimTransfer; // eSIM转移
-  FeatureItem intlRoaming; // 国际漫游
+  FeatureSet([Map<Feature, FeatureItem>? items])
+    : _items = {
+        for (final feature in Feature.values)
+          feature: items?[feature] ?? const FeatureItem(),
+      };
 
-  FeatureSet({
-    FeatureItem? voice,
-    FeatureItem? sms,
-    FeatureItem? data,
-    FeatureItem? wifiCalling,
-    FeatureItem? volte,
-    FeatureItem? hotspot,
-    FeatureItem? esimTransfer,
-    FeatureItem? intlRoaming,
-  })  : voice = voice ?? FeatureItem(),
-        sms = sms ?? FeatureItem(),
-        data = data ?? FeatureItem(),
-        wifiCalling = wifiCalling ?? FeatureItem(),
-        volte = volte ?? FeatureItem(),
-        hotspot = hotspot ?? FeatureItem(),
-        esimTransfer = esimTransfer ?? FeatureItem(),
-        intlRoaming = intlRoaming ?? FeatureItem();
+  final Map<Feature, FeatureItem> _items;
 
-  /// 所有功能项的有序列表，用于 UI 遍历
-  List<MapEntry<String, FeatureItem>> get entries => [
-        MapEntry('通话', voice),
-        MapEntry('短信', sms),
-        MapEntry('数据流量', data),
-        MapEntry('Wi-Fi Calling', wifiCalling),
-        MapEntry('VoLTE', volte),
-        MapEntry('热点共享', hotspot),
-        MapEntry('eSIM转移', esimTransfer),
-        MapEntry('国际漫游', intlRoaming),
-      ];
+  FeatureItem operator [](Feature feature) => _items[feature]!;
+
+  void operator []=(Feature feature, FeatureItem item) =>
+      _items[feature] = item;
+
+  /// 按固定顺序遍历所有功能项，用于 UI。
+  Iterable<MapEntry<Feature, FeatureItem>> get entries =>
+      Feature.values.map((f) => MapEntry(f, _items[f]!));
 
   /// 已支持的功能数量
-  int get supportedCount =>
-      entries.where((e) => e.value.supported).length;
+  int get supportedCount => _items.values.where((i) => i.supported).length;
 
-  Map<String, dynamic> toJson() => {
-        'voice': voice.toJson(),
-        'sms': sms.toJson(),
-        'data': data.toJson(),
-        'wifiCalling': wifiCalling.toJson(),
-        'volte': volte.toJson(),
-        'hotspot': hotspot.toJson(),
-        'esimTransfer': esimTransfer.toJson(),
-        'intlRoaming': intlRoaming.toJson(),
-      };
+  /// 独立副本（编辑表单使用，取消编辑时不影响原卡片）。
+  FeatureSet copy() => FeatureSet(_items);
+
+  Map<String, Object?> toJson() => {
+    for (final feature in Feature.values)
+      feature.name: _items[feature]!.toJson(),
+  };
 
   String toJsonString() => jsonEncode(toJson());
 
-  factory FeatureSet.fromJson(Map<String, dynamic> json) => FeatureSet(
-        voice: FeatureItem.fromJson(json['voice'] as Map<String, dynamic>? ?? {}),
-        sms: FeatureItem.fromJson(json['sms'] as Map<String, dynamic>? ?? {}),
-        data: FeatureItem.fromJson(json['data'] as Map<String, dynamic>? ?? {}),
-        wifiCalling:
-            FeatureItem.fromJson(json['wifiCalling'] as Map<String, dynamic>? ?? {}),
-        volte: FeatureItem.fromJson(json['volte'] as Map<String, dynamic>? ?? {}),
-        hotspot:
-            FeatureItem.fromJson(json['hotspot'] as Map<String, dynamic>? ?? {}),
-        esimTransfer:
-            FeatureItem.fromJson(json['esimTransfer'] as Map<String, dynamic>? ?? {}),
-        intlRoaming:
-            FeatureItem.fromJson(json['intlRoaming'] as Map<String, dynamic>? ?? {}),
-      );
+  factory FeatureSet.fromJson(Map<String, dynamic> json) => FeatureSet({
+    for (final feature in Feature.values)
+      feature: FeatureItem.fromJson(
+        json.optMap(feature.name) ?? const <String, dynamic>{},
+      ),
+  });
 
   factory FeatureSet.fromJsonString(String jsonString) {
     if (jsonString.isEmpty) return FeatureSet();
-    return FeatureSet.fromJson(jsonDecode(jsonString) as Map<String, dynamic>);
-  }
-
-  FeatureSet copyWith({
-    FeatureItem? voice,
-    FeatureItem? sms,
-    FeatureItem? data,
-    FeatureItem? wifiCalling,
-    FeatureItem? volte,
-    FeatureItem? hotspot,
-    FeatureItem? esimTransfer,
-    FeatureItem? intlRoaming,
-  }) =>
-      FeatureSet(
-        voice: voice ?? this.voice.copyWith(),
-        sms: sms ?? this.sms.copyWith(),
-        data: data ?? this.data.copyWith(),
-        wifiCalling: wifiCalling ?? this.wifiCalling.copyWith(),
-        volte: volte ?? this.volte.copyWith(),
-        hotspot: hotspot ?? this.hotspot.copyWith(),
-        esimTransfer: esimTransfer ?? this.esimTransfer.copyWith(),
-        intlRoaming: intlRoaming ?? this.intlRoaming.copyWith(),
-      );
-
-  /// 根据功能名获取对应 FeatureItem
-  void updateByKey(String key, FeatureItem item) {
-    switch (key) {
-      case '通话':
-        voice = item;
-      case '短信':
-        sms = item;
-      case '数据流量':
-        data = item;
-      case 'Wi-Fi Calling':
-        wifiCalling = item;
-      case 'VoLTE':
-        volte = item;
-      case '热点共享':
-        hotspot = item;
-      case 'eSIM转移':
-        esimTransfer = item;
-      case '国际漫游':
-        intlRoaming = item;
-    }
+    final decoded = jsonDecode(jsonString);
+    return decoded is Map<String, dynamic>
+        ? FeatureSet.fromJson(decoded)
+        : FeatureSet();
   }
 }

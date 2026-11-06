@@ -1,9 +1,11 @@
 import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
+
 import '../models/sim_card.dart';
 import '../models/tag.dart';
-import 'sim_card_front.dart';
 import 'sim_card_back.dart';
+import 'sim_card_front.dart';
 
 /// 3D翻转卡片组件
 ///
@@ -25,16 +27,14 @@ class SimCardFlip extends StatefulWidget {
   });
 
   @override
-  State<SimCardFlip> createState() => SimCardFlipState();
+  State<SimCardFlip> createState() => _SimCardFlipState();
 }
 
-class SimCardFlipState extends State<SimCardFlip>
+class _SimCardFlipState extends State<SimCardFlip>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
   bool _isFlipped = false;
-
-  bool get isFlipped => _isFlipped;
 
   @override
   void initState() {
@@ -43,9 +43,10 @@ class SimCardFlipState extends State<SimCardFlip>
       duration: const Duration(milliseconds: 500),
       vsync: this,
     );
-    _animation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -60,42 +61,53 @@ class SimCardFlipState extends State<SimCardFlip>
     } else {
       _controller.forward();
     }
-    _isFlipped = !_isFlipped;
+    setState(() => _isFlipped = !_isFlipped);
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: flip,
-      child: AnimatedBuilder(
-        animation: _animation,
-        builder: (context, child) {
-          final angle = _animation.value * math.pi;
-          final isFront = _animation.value < 0.5;
+    return Semantics(
+      button: true,
+      onTapHint: _isFlipped ? '返回卡片正面' : '查看卡片详情',
+      child: GestureDetector(
+        onTap: flip,
+        // 正反面高度不同：翻到一半换面时平滑过渡，而不是让列表跳动
+        child: AnimatedSize(
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeInOut,
+          alignment: Alignment.topCenter,
+          child: AnimatedBuilder(
+            animation: _animation,
+            builder: (context, child) {
+              final angle = _animation.value * math.pi;
+              final isFront = _animation.value < 0.5;
 
-          return Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.identity()
-              ..setEntry(3, 2, 0.001) // 透视
-              ..rotateY(angle),
-            child: isFront
-                ? SimCardFront(
-                    simCard: widget.simCard,
-                    tags: widget.tags,
-                    onMarkAsUsed: widget.onMarkAsUsed,
-                  )
-                : Transform(
-                    alignment: Alignment.center,
-                    transform: Matrix4.identity()..rotateY(math.pi),
-                    child: SimCardBack(
-                      simCard: widget.simCard,
-                      tags: widget.tags,
-                      onEdit: widget.onEdit,
-                      onArchive: widget.onArchive,
-                    ),
-                  ),
-          );
-        },
+              return Transform(
+                alignment: Alignment.center,
+                transform: Matrix4.identity()
+                  ..setEntry(3, 2, 0.001) // 透视
+                  ..rotateY(angle),
+                child: isFront
+                    ? SimCardFront(
+                        simCard: widget.simCard,
+                        tags: widget.tags,
+                        onMarkAsUsed: widget.onMarkAsUsed,
+                      )
+                    : Transform(
+                        alignment: Alignment.center,
+                        transform: Matrix4.identity()..rotateY(math.pi),
+                        child: SimCardBack(
+                          simCard: widget.simCard,
+                          tags: widget.tags,
+                          onEdit: widget.onEdit,
+                          onArchive: widget.onArchive,
+                          onMarkAsUsed: widget.onMarkAsUsed,
+                        ),
+                      ),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
