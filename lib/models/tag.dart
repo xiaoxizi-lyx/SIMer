@@ -1,33 +1,35 @@
+import 'package:clock/clock.dart';
+
 import 'json_utils.dart';
 
 /// 用户自定义标签模型
 class Tag {
+  Tag({this.id, required this.name, required this.color, DateTime? createdAt})
+    : createdAt = (createdAt ?? clock.now()).toUtc();
+
   /// 备份中缺少标签颜色时使用的默认色。
   static const int defaultColor = 0xFF5E5CE6;
 
   int? id;
   String name;
   int color; // ARGB 颜色值
-  DateTime createdAt;
+  final DateTime createdAt;
 
-  Tag({this.id, required this.name, required this.color, DateTime? createdAt})
-    : createdAt = createdAt ?? DateTime.now();
-
-  Map<String, dynamic> toMap() => {
+  Map<String, Object?> toMap() => {
     if (id != null) 'id': id,
     'name': name,
     'color': color,
     'created_at': createdAt.toIso8601String(),
   };
 
-  factory Tag.fromMap(Map<String, dynamic> map) => Tag(
+  factory Tag.fromMap(Map<String, Object?> map) => Tag(
     id: map['id'] as int?,
-    name: map['name'] as String,
-    color: map['color'] as int,
-    createdAt: DateTime.parse(map['created_at'] as String),
+    name: map['name']! as String,
+    color: map['color']! as int,
+    createdAt: DateTime.tryParse(map['created_at'] as String? ?? ''),
   );
 
-  Map<String, dynamic> toJson() => {
+  Map<String, Object?> toJson() => {
     'id': id,
     'name': name,
     'color': color,
@@ -49,12 +51,13 @@ class Tag {
     createdAt: createdAt,
   );
 
+  /// 已入库的标签按 id 判等；尚未入库（id 为 null）的标签只与自身相等。
   @override
   bool operator ==(Object other) =>
-      identical(this, other) || (other is Tag && other.id == id);
+      identical(this, other) || (other is Tag && id != null && other.id == id);
 
   @override
-  int get hashCode => id.hashCode;
+  int get hashCode => id?.hashCode ?? identityHashCode(this);
 
   @override
   String toString() => 'Tag(id: $id, name: $name)';

@@ -1,35 +1,44 @@
+import 'dart:collection';
+
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 
+import '../data/countries.dart';
 import '../database/database_helper.dart';
-import '../models/sim_card.dart';
+import '../models/calendar_date.dart';
 import '../models/enums.dart';
+import '../models/sim_card.dart';
 import '../models/tag.dart';
 import 'filter_provider.dart';
 
 /// SIM卡状态管理
 class SimCardProvider extends ChangeNotifier {
-  final DatabaseHelper _db = DatabaseHelper.instance;
+  SimCardProvider({DatabaseHelper? database})
+    : _db = database ?? DatabaseHelper.instance;
+
+  final DatabaseHelper _db;
 
   List<SimCard> _simCards = [];
   List<SimCard> _archivedCards = [];
   List<Tag> _tags = [];
   bool _isLoading = false;
 
+  /// 卡片数据发生变化（增删改、归档、导入后重新加载）时调用，用于重排提醒等。
+  VoidCallback? onCardsChanged;
+
   // ── Getters ──
 
-  List<SimCard> get simCards => List.unmodifiable(_simCards);
-  List<SimCard> get archivedCards => List.unmodifiable(_archivedCards);
-  List<Tag> get tags => List.unmodifiable(_tags);
+  UnmodifiableListView<SimCard> get simCards => UnmodifiableListView(_simCards);
+  UnmodifiableListView<SimCard> get archivedCards =>
+      UnmodifiableListView(_archivedCards);
+  UnmodifiableListView<Tag> get tags => UnmodifiableListView(_tags);
   bool get isLoading => _isLoading;
 
-  int get totalCount => _simCards.length;
-  int get archivedCount => _archivedCards.length;
-
-  int get activeCount =>
-      _simCards.where((c) => c.status == SimStatus.active).length;
-  int get expiredCount =>
-      _simCards.where((c) => c.status == SimStatus.expired).length;
-  int get expiringCount => _simCards.where((c) => c.needsReminder).length;
+  /// 未归档卡片中满足 [filter] 的数量（用于筛选项计数）。
+  int countFor(StatusFilter filter, {DateTime? today}) {
+    final day = today ?? CalendarDate.today();
+    return _simCards.where((c) => _matchesStatus(c, filter, day)).length;
+  }
 
   // ── 数据加载 ──
 
@@ -37,123 +46,95 @@ class SimCardProvider extends ChangeNotifier {
   Future<void> loadAll() async {
     _isLoading = true;
     notifyListeners();
-
     try {
-      _simCards = await _db.getAllSimCards();
-      _archivedCards = await _db.getArchivedSimCards();
+      final cards = await _db.getSimCards();
+      _simCards = cards.where((c) => !c.isArchived).toList();
+      _archivedCards = cards.where((c) => c.isArchived).toList()
+        ..sort((a, b) => b.archivedAt!.compareTo(a.archivedAt!));
       _tags = await _db.getAllTags();
-
-      // 自动更新已过期状态
-      _autoUpdateExpiredStatus();
-    } catch (e) {
+    } on Exception catch (e) {
       debugPrint('加载数据失败: $e');
     } finally {
       _isLoading = false;
       notifyListeners();
+      onCardsChanged?.call();
     }
   }
 
-  /// 自动将已过期卡片的状态更新为 expired
-  void _autoUpdateExpiredStatus() {
-    bool hasChanges = false;
+  // ── SIM卡 ──
 
-    for (final card in _simCards) {
-      if (card.isExpired &&
-          card.status != SimStatus.expired &&
-          card.status != SimStatus.archived) {
-        card.status = SimStatus.expired;
-        _db.updateSimCard(card); // 异步更新数据库，不等待
-        hasChanges = true;
-      }
-    }
-
-    if (hasChanges) {
-      notifyListeners();
-    }
-  }
-
-  // ── SIM卡 CRUD ──
-
-  /// 添加SIM卡
   Future<int> addSimCard(SimCard card) async {
     final id = await _db.insertSimCard(card);
     card.id = id;
     _simCards.insert(0, card);
-    notifyListeners();
+    _changed();
     return id;
   }
 
-  /// 更新SIM卡
   Future<void> updateSimCard(SimCard card) async {
-    card.updatedAt = DateTime.now();
+    card.touch();
     await _db.updateSimCard(card);
-
-    final index = _simCards.indexWhere((c) => c.id == card.id);
-    if (index != -1) {
-      _simCards[index] = card;
-    }
-
-    // 也可能在归档列表中
-    final archiveIndex = _archivedCards.indexWhere((c) => c.id == card.id);
-    if (archiveIndex != -1) {
-      _archivedCards[archiveIndex] = card;
-    }
-
-    notifyListeners();
+    _replace(_simCards, card);
+    _replace(_archivedCards, card);
+    _changed();
   }
 
-  /// 归档SIM卡
+  /// 归档：保留激活状态，只记录归档时间。
   Future<void> archiveSimCard(int id) async {
-    await _db.archiveSimCard(id);
-
+    final now = clock.now().toUtc();
+    await _db.archiveSimCard(id, now);
     final index = _simCards.indexWhere((c) => c.id == id);
     if (index != -1) {
-      final card = _simCards.removeAt(index);
-      card.status = SimStatus.archived;
-      card.updatedAt = DateTime.now();
+      final card = _simCards.removeAt(index)
+        ..archivedAt = now
+        ..touch();
       _archivedCards.insert(0, card);
     }
-
-    notifyListeners();
+    _changed();
   }
 
-  /// 恢复SIM卡
+  /// 取消归档，恢复为归档前的激活状态。
   Future<void> restoreSimCard(int id) async {
     await _db.restoreSimCard(id);
-
     final index = _archivedCards.indexWhere((c) => c.id == id);
     if (index != -1) {
-      final card = _archivedCards.removeAt(index);
-      card.status = SimStatus.active;
-      card.updatedAt = DateTime.now();
+      final card = _archivedCards.removeAt(index)
+        ..archivedAt = null
+        ..touch();
       _simCards.insert(0, card);
     }
-
-    notifyListeners();
+    _changed();
   }
 
-  /// 永久删除SIM卡
   Future<void> permanentlyDelete(int id) async {
     await _db.permanentlyDeleteSimCard(id);
     _simCards.removeWhere((c) => c.id == id);
     _archivedCards.removeWhere((c) => c.id == id);
-    notifyListeners();
+    _changed();
   }
 
-  /// 标记为已使用（滚动有效期）
-  Future<void> markAsUsed(int id) async {
-    await _db.markAsUsed(id);
-
-    // 更新本地状态
-    final index = _simCards.indexWhere((c) => c.id == id);
-    if (index != -1) {
-      _simCards[index].markAsUsed();
-    }
-
-    notifyListeners();
+  /// 设置滚动有效期的上次使用日（「我已使用」及其撤销）。
+  Future<void> setLastUsedDate(int id, DateTime? date) async {
+    final card = getSimCardById(id);
+    if (card == null) return;
+    final value = date == null ? null : CalendarDate.of(date);
+    await _db.setLastUsedDate(id, value);
+    card
+      ..lastUsedDate = value
+      ..touch();
+    _changed();
   }
 
-  // ── 标签 CRUD ──
+  /// 记录今天已使用（滚动有效期续期）。
+  Future<void> markAsUsed(int id) => setLastUsedDate(id, CalendarDate.today());
+
+  // ── 标签 ──
+
+  /// 是否已有同名标签（不区分大小写）。
+  bool isTagNameTaken(String name, {int? exceptId}) {
+    final key = name.trim().toLowerCase();
+    return _tags.any((t) => t.id != exceptId && t.name.toLowerCase() == key);
+  }
 
   Future<int> addTag(Tag tag) async {
     final id = await _db.insertTag(tag);
@@ -165,135 +146,143 @@ class SimCardProvider extends ChangeNotifier {
 
   Future<void> updateTag(Tag tag) async {
     await _db.updateTag(tag);
-    final index = _tags.indexWhere((t) => t.id == tag.id);
-    if (index != -1) {
-      _tags[index] = tag;
-    }
+    _tags = [for (final t in _tags) t.id == tag.id ? tag : t];
     notifyListeners();
   }
 
   Future<void> deleteTag(int id) async {
     await _db.deleteTag(id);
     _tags.removeWhere((t) => t.id == id);
-
-    // 同时从所有卡片中移除该标签引用
-    for (final card in _simCards) {
+    for (final card in [..._simCards, ..._archivedCards]) {
       card.tagIds.remove(id);
     }
-    for (final card in _archivedCards) {
-      card.tagIds.remove(id);
-    }
-
     notifyListeners();
   }
 
   // ── 按 ID 查找 ──
 
   SimCard? getSimCardById(int id) {
-    try {
-      return _simCards.firstWhere((c) => c.id == id);
-    } catch (_) {
-      try {
-        return _archivedCards.firstWhere((c) => c.id == id);
-      } catch (_) {
-        return null;
-      }
+    for (final card in [..._simCards, ..._archivedCards]) {
+      if (card.id == id) return card;
     }
+    return null;
+  }
+
+  SimCard? getSimCardByUuid(String uuid) {
+    for (final card in [..._simCards, ..._archivedCards]) {
+      if (card.uuid == uuid) return card;
+    }
+    return null;
   }
 
   Tag? getTagById(int id) {
-    try {
-      return _tags.firstWhere((t) => t.id == id);
-    } catch (_) {
-      return null;
+    for (final tag in _tags) {
+      if (tag.id == id) return tag;
     }
+    return null;
   }
 
   // ── 筛选与排序 ──
 
-  /// 根据筛选条件获取过滤后并排序的卡片列表
-  List<SimCard> getFilteredAndSorted(FilterProvider filterProvider) {
-    List<SimCard> result = List.from(_simCards);
+  /// 根据筛选条件获取过滤后并排序的（未归档）卡片列表
+  List<SimCard> getFilteredAndSorted(FilterProvider filter, {DateTime? today}) {
+    final day = today ?? CalendarDate.today();
+    final query = filter.searchQuery.trim().toLowerCase();
+    final tagNames = {for (final t in _tags) t.id: t.name.toLowerCase()};
 
-    // 搜索过滤
-    if (filterProvider.searchQuery.isNotEmpty) {
-      final query = filterProvider.searchQuery.toLowerCase();
-      result = result.where((card) {
-        return card.carrierName.toLowerCase().contains(query) ||
-            card.phoneNumbers.any((p) => p.toLowerCase().contains(query)) ||
-            (card.iccid?.toLowerCase().contains(query) ?? false) ||
-            (card.notes?.toLowerCase().contains(query) ?? false) ||
-            (card.source?.toLowerCase().contains(query) ?? false) ||
-            card.countryCode.toLowerCase().contains(query);
-      }).toList();
-    }
-
-    // 状态筛选
-    if (filterProvider.statusFilter != null) {
-      result = result
-          .where((c) => c.status == filterProvider.statusFilter)
-          .toList();
-    }
-
-    // 国家筛选
-    if (filterProvider.countryFilter != null) {
-      result = result
-          .where((c) => c.countryCode == filterProvider.countryFilter)
-          .toList();
-    }
-
-    // 运营商筛选
-    if (filterProvider.carrierFilter != null) {
-      result = result
-          .where(
-            (c) =>
-                c.carrierCode == filterProvider.carrierFilter ||
-                c.carrierName == filterProvider.carrierFilter,
-          )
-          .toList();
-    }
-
-    // 标签筛选（包含任一选中标签即可）
-    if (filterProvider.tagFilters.isNotEmpty) {
-      result = result.where((c) {
-        return c.tagIds.any(
-          (tagId) => filterProvider.tagFilters.contains(tagId),
-        );
-      }).toList();
-    }
-
-    // 排序
-    result.sort((a, b) {
-      int comparison;
-      switch (filterProvider.sortBy) {
-        case SortBy.createdAt:
-          comparison = a.createdAt.compareTo(b.createdAt);
-        case SortBy.expirationDate:
-          final aDate = a.effectiveExpirationDate;
-          final bDate = b.effectiveExpirationDate;
-          if (aDate == null && bDate == null) {
-            comparison = 0;
-          } else if (aDate == null) {
-            comparison = 1; // 无到期日排在后面
-          } else if (bDate == null) {
-            comparison = -1;
-          } else {
-            comparison = aDate.compareTo(bDate);
-          }
-        case SortBy.carrierName:
-          comparison = a.carrierName.compareTo(b.carrierName);
-        case SortBy.countryCode:
-          comparison = a.countryCode.compareTo(b.countryCode);
+    final result = _simCards.where((card) {
+      if (query.isNotEmpty && !_matchesQuery(card, query, tagNames)) {
+        return false;
       }
+      final status = filter.statusFilter;
+      if (status != null && !_matchesStatus(card, status, day)) return false;
+      if (filter.countryFilter != null &&
+          card.countryCode != filter.countryFilter) {
+        return false;
+      }
+      if (filter.carrierFilter != null &&
+          card.carrierName != filter.carrierFilter) {
+        return false;
+      }
+      if (filter.tagFilters.isNotEmpty &&
+          !card.tagIds.any(filter.tagFilters.contains)) {
+        return false;
+      }
+      return true;
+    }).toList();
 
-      return filterProvider.sortOrder == SortOrder.ascending
-          ? comparison
-          : -comparison;
+    result.sort((a, b) {
+      final comparison = switch (filter.sortBy) {
+        SortBy.createdAt => a.createdAt.compareTo(b.createdAt),
+        SortBy.expirationDate => _compareExpiration(a, b),
+        SortBy.carrierName => a.carrierName.compareTo(b.carrierName),
+        SortBy.countryCode => a.countryCode.compareTo(b.countryCode),
+      };
+      return filter.sortOrder == SortOrder.ascending ? comparison : -comparison;
     });
-
     return result;
   }
 
-  /// 获取所有卡片正在使用的颜色集合（用于分配新卡片颜色）
-  Set<int> get usedCardColors => _simCards.map((c) => c.cardColor).toSet();
+  /// 所有卡片正在使用的颜色集合（用于为新卡片分配不冲突的颜色）
+  Set<int> get usedCardColors => {
+    for (final card in [..._simCards, ..._archivedCards]) card.cardColor,
+  };
+
+  // ── 私有方法 ──
+
+  void _changed() {
+    notifyListeners();
+    onCardsChanged?.call();
+  }
+
+  static void _replace(List<SimCard> list, SimCard card) {
+    final index = list.indexWhere((c) => c.id == card.id);
+    if (index != -1) list[index] = card;
+  }
+
+  static bool _matchesStatus(
+    SimCard card,
+    StatusFilter filter,
+    DateTime day,
+  ) => switch (filter) {
+    StatusFilter.active => card.activationStatus == ActivationStatus.active,
+    StatusFilter.inactive => card.activationStatus == ActivationStatus.inactive,
+    StatusFilter.expiringSoon =>
+      card.validityStateOn(day) == ValidityState.expiringSoon,
+    StatusFilter.expired => card.validityStateOn(day) == ValidityState.expired,
+  };
+
+  static bool _matchesQuery(
+    SimCard card,
+    String query,
+    Map<int?, String> tagNames,
+  ) {
+    bool has(String? value) => value?.toLowerCase().contains(query) ?? false;
+    final digitsQuery = query.replaceAll(RegExp(r'[\s\-()]'), '');
+    bool hasDigits(String? value) =>
+        digitsQuery.isNotEmpty &&
+        (value?.replaceAll(RegExp(r'[\s\-()]'), '').contains(digitsQuery) ??
+            false);
+
+    return has(card.carrierName) ||
+        card.phoneNumbers.any((p) => has(p) || hasDigits(p)) ||
+        has(card.iccid) ||
+        hasDigits(card.iccid) ||
+        has(card.notes) ||
+        has(card.source) ||
+        has(card.countryCode) ||
+        has(CountryData.countries[card.countryCode]) ||
+        has(card.rspServerAddress) ||
+        card.tagIds.any((id) => tagNames[id]?.contains(query) ?? false);
+  }
+
+  /// 按到期日排序，没有到期日的卡片排在最后。
+  static int _compareExpiration(SimCard a, SimCard b) {
+    final aDate = a.effectiveExpirationDate;
+    final bDate = b.effectiveExpirationDate;
+    if (aDate == null && bDate == null) return 0;
+    if (aDate == null) return 1;
+    if (bDate == null) return -1;
+    return aDate.compareTo(bDate);
+  }
 }

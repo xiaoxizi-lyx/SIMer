@@ -27,7 +27,8 @@ Future<String> _export(DatabaseHelper db) async {
 }
 
 Future<Set<String>> _tagNamesOf(DatabaseHelper db, String uuid) async {
-  final card = (await db.getAllSimCards()).singleWhere((c) => c.uuid == uuid);
+  final card = (await db.getSimCards(archived: false))
+      .singleWhere((c) => c.uuid == uuid);
   final tags = await db.getAllTags();
   return card.tagIds
       .map((id) => tags.firstWhere((t) => t.id == id).name)
@@ -57,7 +58,9 @@ void main() {
     expect(result.importedCards, 1);
     expect(result.importedTags, 1, reason: '「旅行」应与已有标签合并');
     expect(await _tagNamesOf(target, 'c1'), {'工作', '旅行'});
-    final phones = (await target.getAllSimCards()).single.phoneNumbers;
+    final phones = (await target.getSimCards(archived: false))
+        .single
+        .phoneNumbers;
     expect(phones, ['+852 5123 4567', '+852 6123 4567'], reason: '号码顺序保持不变');
   });
 
@@ -74,14 +77,14 @@ void main() {
       policy: ImportConflictPolicy.skip,
     );
     expect(skipped.skippedCards, 1);
-    expect((await target.getAllSimCards()).single.notes, '本机数据');
+    expect((await target.getSimCards(archived: false)).single.notes, '本机数据');
 
     final overwritten = await target.importBackup(
       data,
       policy: ImportConflictPolicy.overwrite,
     );
     expect(overwritten.overwrittenCards, 1);
-    final cards = await target.getAllSimCards();
+    final cards = await target.getSimCards(archived: false);
     expect(cards, hasLength(1));
     expect(cards.single.notes, '来自备份');
   });

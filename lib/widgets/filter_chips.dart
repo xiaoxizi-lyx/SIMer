@@ -12,7 +12,7 @@ typedef FilterCallback = void Function(String type, String? value);
 /// 包含状态筛选、国家筛选、标签筛选三组 chip
 class FilterChips extends StatelessWidget {
   // 当前筛选状态
-  final SimStatus? statusFilter;
+  final StatusFilter? statusFilter;
   final String? countryFilter;
   final List<int> tagFilters;
 
@@ -21,7 +21,7 @@ class FilterChips extends StatelessWidget {
   final List<MapEntry<int, String>> availableTags; // id → name
 
   // 回调
-  final ValueChanged<SimStatus?> onStatusChanged;
+  final ValueChanged<StatusFilter?> onStatusChanged;
   final ValueChanged<String?> onCountryChanged;
   final ValueChanged<List<int>> onTagsChanged;
 
@@ -56,9 +56,7 @@ class FilterChips extends StatelessWidget {
             onTap: () => onStatusChanged(null),
             chipTextColor: chipTextColor,
           ),
-          ...SimStatus.values.where((s) => s != SimStatus.archived).map((
-            status,
-          ) {
+          ...StatusFilter.values.map((status) {
             return _buildChip(
               context: context,
               label: status.label,
@@ -181,16 +179,10 @@ class FilterChips extends StatelessWidget {
     );
   }
 
-  Color _statusColor(SimStatus status) {
-    switch (status) {
-      case SimStatus.active:
-        return AppColors.statusActive;
-      case SimStatus.inactive:
-        return AppColors.statusInactive;
-      case SimStatus.expired:
-        return AppColors.statusExpired;
-      case SimStatus.archived:
-        return AppColors.statusArchived;
-    }
-  }
+  Color _statusColor(StatusFilter status) => switch (status) {
+    StatusFilter.active => AppColors.statusActive,
+    StatusFilter.inactive => AppColors.statusInactive,
+    StatusFilter.expiringSoon => AppColors.countdownWarning,
+    StatusFilter.expired => AppColors.statusExpired,
+  };
 }

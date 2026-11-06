@@ -377,7 +377,7 @@ class SimCardBack extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             Text(
-              e.key,
+              e.key.label,
               style: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -465,10 +465,10 @@ class SimCardBack extends StatelessWidget {
         if (onArchive != null)
           Expanded(
             child: _actionButton(
-              icon: simCard.status == SimStatus.archived
+              icon: simCard.isArchived
                   ? Icons.unarchive_rounded
                   : Icons.archive_rounded,
-              label: simCard.status == SimStatus.archived ? '取消归档' : '归档',
+              label: simCard.isArchived ? '取消归档' : '归档',
               onTap: onArchive!,
             ),
           ),

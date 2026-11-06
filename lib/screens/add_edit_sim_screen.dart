@@ -125,7 +125,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
     _balance = card.balance?.toString() ?? '';
     _balanceCurrency = card.balanceCurrency ?? '';
 
-    _features = card.features.copyWith();
+    _features = card.features.copy();
 
     _rspServer = card.rspServerAddress ?? '';
     _rspServerController.text = _rspServer;
@@ -731,12 +731,10 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
   List<Widget> _buildFeaturesSection() {
     return _features.entries.map((entry) {
       return FeatureToggleTile(
-        featureName: entry.key,
+        featureName: entry.key.label,
         featureItem: entry.value,
         onChanged: (item) {
-          setState(() {
-            _features.updateByKey(entry.key, item);
-          });
+          setState(() => _features[entry.key] = item);
         },
       );
     }).toList();
@@ -931,7 +929,9 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
       id: widget.simCard?.id,
       uuid: widget.simCard?.uuid ?? _uuid.v4(),
       type: _simType,
-      status: widget.simCard?.status ?? SimStatus.inactive,
+      activationStatus:
+          widget.simCard?.activationStatus ?? ActivationStatus.active,
+      archivedAt: widget.simCard?.archivedAt,
       iccid: _iccid.isNotEmpty ? _iccid : null,
       carrierName: _carrierName,
       carrierCode: _carrierCode,
@@ -959,7 +959,6 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
       confirmationCode: _confirmationCode.isNotEmpty ? _confirmationCode : null,
       cardColor: _cardColor.toARGB32(),
       tagIds: _selectedTagIds,
-      photoPath: widget.simCard?.photoPath,
       createdAt: widget.simCard?.createdAt,
     );
 

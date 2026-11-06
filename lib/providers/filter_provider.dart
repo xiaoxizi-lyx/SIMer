@@ -4,7 +4,7 @@ import '../models/enums.dart';
 
 /// 筛选与排序状态管理
 class FilterProvider extends ChangeNotifier {
-  SimStatus? _statusFilter;
+  StatusFilter? _statusFilter;
   String? _countryFilter;
   String? _carrierFilter;
   List<int> _tagFilters = [];
@@ -14,7 +14,7 @@ class FilterProvider extends ChangeNotifier {
 
   // ── Getters ──
 
-  SimStatus? get statusFilter => _statusFilter;
+  StatusFilter? get statusFilter => _statusFilter;
   String? get countryFilter => _countryFilter;
   String? get carrierFilter => _carrierFilter;
   List<int> get tagFilters => List.unmodifiable(_tagFilters);
@@ -41,7 +41,7 @@ class FilterProvider extends ChangeNotifier {
 
   // ── 设置筛选条件 ──
 
-  void setStatusFilter(SimStatus? status) {
+  void setStatusFilter(StatusFilter? status) {
     if (_statusFilter == status) return;
     _statusFilter = status;
     notifyListeners();

@@ -89,11 +89,11 @@ void main() {
         carrierName: 'Expired SIM',
         countryCode: 'CN',
         validityType: ValidityType.fixedDate,
-        expirationDate: DateTime.now().subtract(const Duration(hours: 3)),
+        expirationDate: DateTime.now().subtract(const Duration(days: 1)),
       );
 
       expect(card.isExpired, isTrue);
-      expect(card.needsReminder, isTrue);
+      expect(card.validityState, ValidityState.expired);
     });
 
     test('Formatted ICCID groups by 4 digits', () {

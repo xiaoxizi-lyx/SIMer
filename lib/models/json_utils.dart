@@ -1,3 +1,5 @@
+import 'calendar_date.dart';
+
 /// 读取（备份）JSON 时使用的类型安全读取方法。
 ///
 /// 字段类型不符时抛出 [FormatException] 而不是 `TypeError`，
@@ -46,6 +48,15 @@ extension JsonReader on Map<String, dynamic> {
     final value = optString(key);
     if (value == null || value.isEmpty) return null;
     final parsed = DateTime.tryParse(value);
+    if (parsed == null) throw FormatException('字段 "$key" 不是有效的日期');
+    return parsed;
+  }
+
+  /// 日历日期（`yyyy-MM-dd`，兼容旧版的完整时间戳），返回本地日期 00:00。
+  DateTime? optCalendarDate(String key) {
+    final value = optString(key);
+    if (value == null || value.isEmpty) return null;
+    final parsed = CalendarDate.tryParse(value);
     if (parsed == null) throw FormatException('字段 "$key" 不是有效的日期');
     return parsed;
   }

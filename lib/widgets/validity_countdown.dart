@@ -121,7 +121,11 @@ class _ValidityCountdownState extends State<ValidityCountdown>
     }
 
     // 正常倒计时
-    final text = days != null ? '剩余 $days 天$rollingHint' : '未设定';
+    final text = switch (days) {
+      null => '未设定',
+      0 => '今天到期$rollingHint',
+      _ => '剩余 $days 天$rollingHint',
+    };
     final shouldPulse = days != null && days >= 0 && days < 7;
 
     return _buildRow(

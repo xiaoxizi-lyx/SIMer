@@ -94,17 +94,21 @@ class SimCardFront extends StatelessWidget {
   }
 
   Widget _buildStatusBadge() {
-    final Color badgeColor;
-    switch (simCard.status) {
-      case SimStatus.active:
-        badgeColor = AppColors.statusActive;
-      case SimStatus.inactive:
-        badgeColor = AppColors.statusInactive;
-      case SimStatus.expired:
-        badgeColor = AppColors.statusExpired;
-      case SimStatus.archived:
-        badgeColor = AppColors.statusArchived;
-    }
+    // 归档 > 已过期 > 用户设置的激活状态
+    final (String label, Color badgeColor) = simCard.isArchived
+        ? ('已归档', AppColors.statusArchived)
+        : simCard.isExpired
+        ? (ValidityState.expired.label, AppColors.statusExpired)
+        : switch (simCard.activationStatus) {
+            ActivationStatus.active => (
+              ActivationStatus.active.label,
+              AppColors.statusActive,
+            ),
+            ActivationStatus.inactive => (
+              ActivationStatus.inactive.label,
+              AppColors.statusInactive,
+            ),
+          };
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -114,7 +118,7 @@ class SimCardFront extends StatelessWidget {
         border: Border.all(color: badgeColor.withValues(alpha: 0.5), width: 1),
       ),
       child: Text(
-        simCard.status.label,
+        label,
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,

@@ -1,16 +1,17 @@
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
+import '../models/calendar_date.dart';
 import '../models/sim_card.dart';
 import '../models/tag.dart';
-import '../models/enums.dart';
 import '../services/backup_codec.dart';
 
 /// SIMer 数据库管理器。
 ///
 /// 应用中通过 [instance] 使用单例；测试可用 [DatabaseHelper.forTesting]
-/// 打开独立的（内存）数据库。
+/// 打开独立的数据库。
 class DatabaseHelper {
   DatabaseHelper._(this._path) : _factory = null;
 
@@ -20,8 +21,17 @@ class DatabaseHelper {
 
   static final DatabaseHelper instance = DatabaseHelper._(null);
 
-  static const String _dbName = 'sim_keeper.db';
+  static const String _dbName = 'simer.db';
+
+  /// 当前 schema 版本。修改表结构时递增，并在 [_migrations] 中补充迁移。
   static const int _dbVersion = 1;
+
+  /// 从版本 n 升级到 n+1 的迁移。
+  static final Map<int, Future<void> Function(DatabaseExecutor db)>
+  _migrations = {};
+
+  /// SQLite 单条语句可绑定的参数数量有限，批量查询按此大小分块。
+  static const int _chunkSize = 500;
 
   /// 为 null 时使用系统数据库目录下的 [_dbName]。
   final String? _path;
@@ -40,101 +50,106 @@ class DatabaseHelper {
       path,
       options: OpenDatabaseOptions(
         version: _dbVersion,
+        onConfigure: (db) => db.execute('PRAGMA foreign_keys = ON'),
         onCreate: _onCreate,
-        onConfigure: (db) async {
-          await db.execute('PRAGMA foreign_keys = ON');
-        },
+        onUpgrade: _onUpgrade,
+        onDowngrade: (db, oldVersion, newVersion) => throw StateError(
+          '数据库版本 $oldVersion 高于当前应用支持的 $newVersion，请升级 SIMer',
+        ),
       ),
     );
   }
 
   Future<void> _onCreate(Database db, int version) async {
-    // SIM卡主表
-    await db.execute('''
-      CREATE TABLE sim_cards (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        uuid TEXT NOT NULL UNIQUE,
-        type TEXT NOT NULL,
-        status TEXT NOT NULL,
-        iccid TEXT,
-        carrier_name TEXT NOT NULL,
-        carrier_code TEXT,
-        country_code TEXT NOT NULL,
-        source TEXT,
-        notes TEXT,
-        validity_type TEXT NOT NULL,
-        activation_date TEXT,
-        expiration_date TEXT,
-        rolling_days INTEGER,
-        last_used_date TEXT,
-        reminder_days_before INTEGER NOT NULL DEFAULT 7,
-        data_balance_mb REAL,
-        data_total_mb REAL,
-        voice_minutes_remaining REAL,
-        voice_minutes_total REAL,
-        sms_remaining INTEGER,
-        sms_total INTEGER,
-        balance REAL,
-        balance_currency TEXT,
-        features TEXT,
-        rsp_server_address TEXT,
-        activation_code TEXT,
-        confirmation_code TEXT,
-        qr_code_raw_data TEXT,
-        card_color INTEGER NOT NULL,
-        photo_path TEXT,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
+    final batch = db.batch()
+      // SIM卡主表。到期类日期为 yyyy-MM-dd，时间戳为 UTC ISO 8601。
+      ..execute('''
+        CREATE TABLE sim_cards (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          uuid TEXT NOT NULL UNIQUE,
+          type TEXT NOT NULL,
+          activation_status TEXT NOT NULL,
+          archived_at TEXT,
+          iccid TEXT,
+          carrier_name TEXT NOT NULL,
+          carrier_code TEXT,
+          country_code TEXT NOT NULL,
+          source TEXT,
+          notes TEXT,
+          validity_type TEXT NOT NULL,
+          activation_date TEXT,
+          expiration_date TEXT,
+          rolling_days INTEGER,
+          last_used_date TEXT,
+          reminder_days_before INTEGER NOT NULL DEFAULT 7,
+          data_balance_mb REAL,
+          data_total_mb REAL,
+          voice_minutes_remaining REAL,
+          voice_minutes_total REAL,
+          sms_remaining INTEGER,
+          sms_total INTEGER,
+          balance REAL,
+          balance_currency TEXT,
+          features TEXT,
+          rsp_server_address TEXT,
+          activation_code TEXT,
+          confirmation_code TEXT,
+          qr_code_raw_data TEXT,
+          card_color INTEGER NOT NULL,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL
+        )
+      ''')
+      ..execute(
+        'CREATE INDEX idx_sim_cards_archived_at ON sim_cards(archived_at)',
       )
-    ''');
-
-    // 标签表
-    await db.execute('''
-      CREATE TABLE tags (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT NOT NULL,
-        color INTEGER NOT NULL,
-        created_at TEXT NOT NULL
+      // 标签名不区分大小写唯一
+      ..execute('''
+        CREATE TABLE tags (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT NOT NULL COLLATE NOCASE UNIQUE,
+          color INTEGER NOT NULL,
+          created_at TEXT NOT NULL
+        )
+      ''')
+      ..execute('''
+        CREATE TABLE sim_card_tags (
+          sim_card_id INTEGER NOT NULL
+            REFERENCES sim_cards(id) ON DELETE CASCADE,
+          tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+          PRIMARY KEY (sim_card_id, tag_id)
+        )
+      ''')
+      ..execute(
+        'CREATE INDEX idx_sim_card_tags_tag_id ON sim_card_tags(tag_id)',
       )
-    ''');
+      ..execute('''
+        CREATE TABLE phone_numbers (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          sim_card_id INTEGER NOT NULL
+            REFERENCES sim_cards(id) ON DELETE CASCADE,
+          number TEXT NOT NULL
+        )
+      ''')
+      ..execute(
+        'CREATE INDEX idx_phone_numbers_sim_card_id '
+        'ON phone_numbers(sim_card_id)',
+      );
+    await batch.commit(noResult: true);
+  }
 
-    // SIM卡-标签 关联表
-    await db.execute('''
-      CREATE TABLE sim_card_tags (
-        sim_card_id INTEGER NOT NULL,
-        tag_id INTEGER NOT NULL,
-        PRIMARY KEY (sim_card_id, tag_id),
-        FOREIGN KEY (sim_card_id) REFERENCES sim_cards(id) ON DELETE CASCADE,
-        FOREIGN KEY (tag_id) REFERENCES tags(id) ON DELETE CASCADE
-      )
-    ''');
-
-    // 电话号码表
-    await db.execute('''
-      CREATE TABLE phone_numbers (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        sim_card_id INTEGER NOT NULL,
-        number TEXT NOT NULL,
-        FOREIGN KEY (sim_card_id) REFERENCES sim_cards(id) ON DELETE CASCADE
-      )
-    ''');
-
-    // 创建常用查询索引
-    await db.execute('CREATE INDEX idx_sim_cards_status ON sim_cards(status)');
-    await db.execute('CREATE INDEX idx_sim_cards_uuid ON sim_cards(uuid)');
-    await db.execute(
-      'CREATE INDEX idx_phone_numbers_sim_card_id ON phone_numbers(sim_card_id)',
-    );
-    await db.execute(
-      'CREATE INDEX idx_sim_card_tags_sim_card_id ON sim_card_tags(sim_card_id)',
-    );
-    await db.execute(
-      'CREATE INDEX idx_sim_card_tags_tag_id ON sim_card_tags(tag_id)',
-    );
+  Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    for (var version = oldVersion; version < newVersion; version++) {
+      final migrate = _migrations[version];
+      if (migrate == null) {
+        throw StateError('缺少数据库从 v$version 升级到 v${version + 1} 的迁移');
+      }
+      await migrate(db);
+    }
   }
 
   // ══════════════════════════════════════════
-  // SIM卡 CRUD
+  // SIM卡
   // ══════════════════════════════════════════
 
   /// 插入SIM卡（含电话号码和标签，使用事务）
@@ -162,153 +177,54 @@ class DatabaseHelper {
     });
   }
 
-  /// 以给定列表整体替换一张卡片的电话号码与标签关联。
-  Future<void> _replaceRelations(
-    DatabaseExecutor txn,
-    int cardId,
-    List<String> phoneNumbers,
-    List<int> tagIds,
-  ) async {
-    final batch = txn.batch()
-      ..delete('phone_numbers', where: 'sim_card_id = ?', whereArgs: [cardId])
-      ..delete('sim_card_tags', where: 'sim_card_id = ?', whereArgs: [cardId]);
-    for (final number in phoneNumbers) {
-      batch.insert('phone_numbers', {'sim_card_id': cardId, 'number': number});
-    }
-    for (final tagId in tagIds.toSet()) {
-      batch.insert('sim_card_tags', {'sim_card_id': cardId, 'tag_id': tagId});
-    }
-    await batch.commit(noResult: true);
-  }
+  /// 读取卡片。[archived] 为 null 时返回全部，否则只返回已归档/未归档的卡片。
+  Future<List<SimCard>> getSimCards({bool? archived}) => _queryCards(
+    where: switch (archived) {
+      null => null,
+      true => 'archived_at IS NOT NULL',
+      false => 'archived_at IS NULL',
+    },
+    orderBy: archived == true ? 'archived_at DESC' : 'created_at DESC',
+  );
 
-  /// 获取单张SIM卡（含电话号码和标签）
-  Future<SimCard?> getSimCard(int id) async {
-    final db = await database;
-    final maps = await db.query('sim_cards', where: 'id = ?', whereArgs: [id]);
-    if (maps.isEmpty) return null;
+  /// 归档：保留激活状态，只记录归档时间。
+  Future<void> archiveSimCard(int id, DateTime archivedAt) =>
+      _updateCard(id, {'archived_at': archivedAt.toUtc().toIso8601String()});
 
-    final phoneNumbers = await _getPhoneNumbers(db, id);
-    final tagIds = await _getTagIds(db, id);
+  /// 取消归档：激活状态保持归档前的值。
+  Future<void> restoreSimCard(int id) => _updateCard(id, {'archived_at': null});
 
-    return SimCard.fromMap(
-      maps.first,
-      phoneNumbers: phoneNumbers,
-      tagIds: tagIds,
-    );
-  }
+  /// 设置滚动有效期的上次使用日（[date] 为 null 表示清除）。
+  Future<void> setLastUsedDate(int id, DateTime? date) => _updateCard(id, {
+    'last_used_date': date == null ? null : CalendarDate.format(date),
+  });
 
-  /// 获取所有非归档SIM卡
-  Future<List<SimCard>> getAllSimCards() async {
-    final db = await database;
-    final maps = await db.query(
-      'sim_cards',
-      where: 'status != ?',
-      whereArgs: [SimStatus.archived.name],
-      orderBy: 'created_at DESC',
-    );
-
-    return _buildSimCardList(db, maps);
-  }
-
-  /// 获取已归档SIM卡
-  Future<List<SimCard>> getArchivedSimCards() async {
-    final db = await database;
-    final maps = await db.query(
-      'sim_cards',
-      where: 'status = ?',
-      whereArgs: [SimStatus.archived.name],
-      orderBy: 'updated_at DESC',
-    );
-
-    return _buildSimCardList(db, maps);
-  }
-
-  /// 获取所有SIM卡（含归档，用于导出）
-  Future<List<SimCard>> _getAllSimCardsIncludingArchived() async {
-    final db = await database;
-    final maps = await db.query('sim_cards', orderBy: 'created_at DESC');
-    return _buildSimCardList(db, maps);
-  }
-
-  /// 归档SIM卡
-  Future<void> archiveSimCard(int id) async {
-    final db = await database;
-    await db.update(
-      'sim_cards',
-      {
-        'status': SimStatus.archived.name,
-        'updated_at': DateTime.now().toIso8601String(),
-      },
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
-
-  /// 恢复SIM卡（设为激活状态）
-  Future<void> restoreSimCard(int id) async {
-    final db = await database;
-    await db.update(
-      'sim_cards',
-      {
-        'status': SimStatus.active.name,
-        'updated_at': DateTime.now().toIso8601String(),
-      },
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-  }
-
-  /// 永久删除SIM卡及其所有关联数据
+  /// 永久删除SIM卡；号码与标签关联由外键级联删除。
   Future<void> permanentlyDeleteSimCard(int id) async {
     final db = await database;
-    // 外键 ON DELETE CASCADE 会自动删除关联表数据
     await db.delete('sim_cards', where: 'id = ?', whereArgs: [id]);
   }
 
-  /// 标记为已使用（滚动有效期）
-  Future<void> markAsUsed(int id) async {
+  Future<void> _updateCard(int id, Map<String, Object?> values) async {
     final db = await database;
-    final now = DateTime.now().toIso8601String();
-
-    // 先获取当前卡片信息检查有效期类型
-    final maps = await db.query(
-      'sim_cards',
-      columns: ['validity_type', 'status'],
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-
-    if (maps.isEmpty) return;
-
-    final validityType = ValidityType.fromString(
-      maps.first['validity_type'] as String,
-    );
-    if (validityType != ValidityType.rolling) return;
-
-    final currentStatus = SimStatus.fromString(maps.first['status'] as String);
-    final newStatus = currentStatus == SimStatus.expired
-        ? SimStatus.active.name
-        : currentStatus.name;
-
     await db.update(
       'sim_cards',
-      {'last_used_date': now, 'updated_at': now, 'status': newStatus},
+      {...values, 'updated_at': clock.now().toUtc().toIso8601String()},
       where: 'id = ?',
       whereArgs: [id],
     );
   }
 
   // ══════════════════════════════════════════
-  // 标签 CRUD
+  // 标签
   // ══════════════════════════════════════════
 
-  /// 插入标签
+  /// 插入标签。名称（不区分大小写）重复时抛出 [DatabaseException]。
   Future<int> insertTag(Tag tag) async {
     final db = await database;
-    return await db.insert('tags', tag.toMap());
+    return db.insert('tags', tag.toMap()..remove('id'));
   }
 
-  /// 更新标签
   Future<void> updateTag(Tag tag) async {
     final db = await database;
     await db.update('tags', tag.toMap(), where: 'id = ?', whereArgs: [tag.id]);
@@ -320,21 +236,10 @@ class DatabaseHelper {
     await db.delete('tags', where: 'id = ?', whereArgs: [id]);
   }
 
-  /// 获取所有标签
   Future<List<Tag>> getAllTags() async {
     final db = await database;
-    final maps = await db.query('tags', orderBy: 'created_at DESC');
-    return maps.map((m) => Tag.fromMap(m)).toList();
-  }
-
-  // ══════════════════════════════════════════
-  // 提醒查询
-  // ══════════════════════════════════════════
-
-  /// 获取需要提醒的SIM卡（在提醒阈值内）
-  Future<List<SimCard>> getSimCardsNeedingReminder() async {
-    final allCards = await getAllSimCards();
-    return allCards.where((card) => card.needsReminder).toList();
+    final rows = await db.query('tags', orderBy: 'created_at DESC, id DESC');
+    return rows.map(Tag.fromMap).toList();
   }
 
   // ══════════════════════════════════════════
@@ -343,7 +248,7 @@ class DatabaseHelper {
 
   /// 导出用的全量快照（含已归档卡片）。
   Future<({List<SimCard> cards, List<Tag> tags})> exportSnapshot() async {
-    final cards = await _getAllSimCardsIncludingArchived();
+    final cards = await getSimCards();
     final tags = await getAllTags();
     return (cards: cards, tags: tags);
   }
@@ -379,8 +284,10 @@ class DatabaseHelper {
         final key = backupTag.tag.name.trim().toLowerCase();
         var localId = tagIdByName[key];
         if (localId == null) {
-          final map = backupTag.tag.toMap()..remove('id');
-          localId = await txn.insert('tags', map);
+          localId = await txn.insert(
+            'tags',
+            backupTag.tag.toMap()..remove('id'),
+          );
           tagIdByName[key] = localId;
           importedTags++;
         }
@@ -441,42 +348,72 @@ class DatabaseHelper {
   // 私有辅助方法
   // ══════════════════════════════════════════
 
-  /// 获取SIM卡的电话号码列表
-  Future<List<String>> _getPhoneNumbers(Database db, int simCardId) async {
-    final maps = await db.query(
-      'phone_numbers',
-      where: 'sim_card_id = ?',
-      whereArgs: [simCardId],
-    );
-    return maps.map((m) => m['number'] as String).toList();
-  }
+  /// 查询卡片，并用两次批量查询补全号码与标签（避免每张卡单独查询）。
+  Future<List<SimCard>> _queryCards({String? where, String? orderBy}) async {
+    final db = await database;
+    final rows = await db.query('sim_cards', where: where, orderBy: orderBy);
+    if (rows.isEmpty) return [];
 
-  /// 获取SIM卡的标签 ID 列表
-  Future<List<int>> _getTagIds(Database db, int simCardId) async {
-    final maps = await db.query(
-      'sim_card_tags',
-      columns: ['tag_id'],
-      where: 'sim_card_id = ?',
-      whereArgs: [simCardId],
-    );
-    return maps.map((m) => m['tag_id'] as int).toList();
-  }
-
-  /// 从查询结果构建 SimCard 列表
-  Future<List<SimCard>> _buildSimCardList(
-    Database db,
-    List<Map<String, dynamic>> maps,
-  ) async {
-    final cards = <SimCard>[];
-    for (final map in maps) {
-      final id = map['id'] as int;
-      final phoneNumbers = await _getPhoneNumbers(db, id);
-      final tagIds = await _getTagIds(db, id);
-      cards.add(
-        SimCard.fromMap(map, phoneNumbers: phoneNumbers, tagIds: tagIds),
+    final ids = [for (final row in rows) row['id']! as int];
+    final phones = <int, List<String>>{};
+    final tags = <int, List<int>>{};
+    for (var start = 0; start < ids.length; start += _chunkSize) {
+      final chunk = ids.sublist(
+        start,
+        (start + _chunkSize).clamp(0, ids.length),
       );
+      final placeholders = List.filled(chunk.length, '?').join(',');
+      final phoneRows = await db.query(
+        'phone_numbers',
+        columns: ['sim_card_id', 'number'],
+        where: 'sim_card_id IN ($placeholders)',
+        whereArgs: chunk,
+        orderBy: 'id',
+      );
+      for (final row in phoneRows) {
+        (phones[row['sim_card_id']! as int] ??= []).add(
+          row['number']! as String,
+        );
+      }
+      final tagRows = await db.query(
+        'sim_card_tags',
+        columns: ['sim_card_id', 'tag_id'],
+        where: 'sim_card_id IN ($placeholders)',
+        whereArgs: chunk,
+        orderBy: 'rowid',
+      );
+      for (final row in tagRows) {
+        (tags[row['sim_card_id']! as int] ??= []).add(row['tag_id']! as int);
+      }
     }
-    return cards;
+
+    return [
+      for (final row in rows)
+        SimCard.fromMap(
+          row,
+          phoneNumbers: phones[row['id']] ?? [],
+          tagIds: tags[row['id']] ?? [],
+        ),
+    ];
+  }
+
+  /// 以给定列表整体替换一张卡片的电话号码与标签关联。
+  Future<void> _replaceRelations(
+    DatabaseExecutor txn,
+    int cardId,
+    List<String> phoneNumbers,
+    List<int> tagIds,
+  ) async {
+    final batch = txn.batch()
+      ..delete('phone_numbers', where: 'sim_card_id = ?', whereArgs: [cardId])
+      ..delete('sim_card_tags', where: 'sim_card_id = ?', whereArgs: [cardId]);
+    for (final number in phoneNumbers) {
+      batch.insert('phone_numbers', {'sim_card_id': cardId, 'number': number});
+    }
+    for (final tagId in tagIds.toSet()) {
+      batch.insert('sim_card_tags', {'sim_card_id': cardId, 'tag_id': tagId});
+    }
+    await batch.commit(noResult: true);
   }
 
   /// 关闭数据库

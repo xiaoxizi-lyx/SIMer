@@ -94,8 +94,10 @@ class NotificationService {
 
   /// 检查所有卡片并发送需要提醒的通知
   static Future<void> checkAndNotify() async {
-    final cardsNeedingReminder = await DatabaseHelper.instance
-        .getSimCardsNeedingReminder();
+    final cards = await DatabaseHelper.instance.getSimCards(archived: false);
+    final cardsNeedingReminder = cards
+        .where((c) => c.isExpired || c.isExpiringSoon)
+        .toList();
 
     for (int i = 0; i < cardsNeedingReminder.length; i++) {
       final card = cardsNeedingReminder[i];
@@ -104,9 +106,12 @@ class NotificationService {
       String title;
       String body;
 
-      if (daysLeft <= 0) {
+      if (daysLeft < 0) {
         title = '⚠️ SIM卡已过期';
         body = '${card.carrierName} 的SIM卡已过期，请及时处理';
+      } else if (daysLeft == 0) {
+        title = '⏰ SIM卡今天到期';
+        body = '${card.carrierName} 的SIM卡今天到期';
       } else if (daysLeft == 1) {
         title = '🔴 SIM卡明天到期';
         body = '${card.carrierName} 的SIM卡将在明天到期';
