@@ -209,3 +209,5 @@ flutter build apk --release --split-per-abi
 ## 📄 开源许可
 
 本项目基于 [MIT License](LICENSE) 开源。内置字体 [Inter](assets/fonts/OFL-Inter.txt) 与 [Roboto Mono](assets/fonts/OFL-RobotoMono.txt) 采用 SIL Open Font License 1.1。
+
+应用图标中的 Android 机器人形象复制或修改自 Google 创作并分享的作品，依据[知识共享署名 3.0 许可协议](https://creativecommons.org/licenses/by/3.0/)使用（The Android robot is reproduced or modified from work created and shared by Google and used according to terms described in the Creative Commons 3.0 Attribution License）。
