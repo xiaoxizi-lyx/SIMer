@@ -21,6 +21,11 @@ import 'package:simer/services/backup_service.dart';
 import 'package:simer/services/notification_service.dart';
 
 const _carrier = 'Integration Carrier';
+
+/// 当前对话框中的文字（避免与页面上同样的文字混淆）。
+Finder _inDialog(String text) =>
+    find.descendant(of: find.byType(Dialog), matching: find.text(text));
+
 const _iccid = '89860012345678901234';
 
 void main() {
@@ -114,12 +119,13 @@ void main() {
     );
     await tester.tap(find.text(l.settingsLanguage));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(other.localeName == 'zh' ? '简体中文' : 'English'));
+    await tester.tap(_inDialog(other.localeName == 'zh' ? '简体中文' : 'English'));
     await tester.pumpAndSettle();
     expect(find.text(other.settingsTitle), findsOneWidget);
     await tester.tap(find.text(other.settingsLanguage));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(other.commonFollowSystem));
+    // 主题设置里也有「跟随系统」，只在语言对话框中查找
+    await tester.tap(_inDialog(other.commonFollowSystem));
     await tester.pumpAndSettle();
     expect(find.text(l.settingsTitle), findsOneWidget);
     await tester.pageBack();

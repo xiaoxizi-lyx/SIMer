@@ -81,6 +81,19 @@ void main() {
     expect(locale.language, AppLanguage.en);
     expect(find.text('Settings'), findsOneWidget);
 
+    // 主题设置里也有「System default」：只点语言对话框中的那一项
+    await tester.tap(find.text('Language / 语言'));
+    await tester.pumpAndSettle();
+    expect(find.text('System default'), findsNWidgets(2));
+    await tester.tap(
+      find.descendant(
+        of: find.byType(Dialog),
+        matching: find.text('System default'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(locale.language, AppLanguage.system);
+
     await tester.tap(find.text('Hide sensitive details'));
     await tester.pumpAndSettle();
     expect(auth.maskSensitiveInfo, isFalse);
