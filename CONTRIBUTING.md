@@ -78,6 +78,7 @@ fix(models): resolve expiration calculation bug on day-of-expiry
    - 运行 `flutter test` 确保所有测试通过。
    - 若引入了新功能或修复了 Bug，请在 `test/` 下补充相应的测试用例（数据库相关测试使用 `sqflite_common_ffi`，参考 `test/support/test_db.dart`）。
    - 涉及界面的改动，请附上截图（浅色与深色模式）。
+   - 需要在手机上试用时，可以下载 PR 的 CI 测试包（Actions → 本次运行 → Artifacts → `ci-test-apks`）。它的包名带 `.ci` 后缀，可以和正式版同时安装，不会影响正式版的数据。
 4. **推送到远程并提交 Pull Request**：
    - 清晰描述修改动机、方案及自测结果。
    - 关联对应的 Issue（如 `Fixes #12`）。

@@ -120,8 +120,11 @@ jobs:
           echo "SIMER_KEYSTORE_FILE=${RUNNER_TEMP}/simer-release.jks" >> "${GITHUB_ENV}"
 
       # 非 tag 构建拿不到签名密钥，回退到 debug 签名，产物仅用于测试，不得分发
+      # 测试包的包名带 .ci 后缀、应用名为「SIMer CI」，可以和正式版同时安装
       - name: Build APKs (CI test build)
         if: env.IS_RELEASE != 'true'
+        env:
+          SIMER_TEST_BUILD: 'true'
         run: flutter build apk --release --split-per-abi
 
       - name: Build APKs (release-signed)
@@ -142,10 +145,19 @@ jobs:
         run: |
           build_tools="$(find "${ANDROID_HOME}/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           echo "Using ${build_tools}"
+          expected_package="io.github.xiaoxizi_lyx.simer"
+          if [ "${IS_RELEASE}" != "true" ]; then
+            expected_package="${expected_package}.ci"
+          fi
           for apk in build/app/outputs/flutter-apk/app-*-release.apk; do
             echo "== ${apk}"
             permissions="$("${build_tools}/aapt2" dump permissions "${apk}")"
             echo "${permissions}"
+            package="$(echo "${permissions}" | sed -n 's/^package: //p')"
+            if [ "${package}" != "${expected_package}" ]; then
+              echo "::error::${apk} has package name '${package}', expected '${expected_package}'"
+              exit 1
+            fi
             # Both checks must fail closed: if the tool output cannot be read, stop instead of passing.
             if ! echo "${permissions}" | grep -q "uses-permission"; then
               echo "::error::Could not read the permissions of ${apk}"

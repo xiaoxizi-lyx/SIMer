@@ -79,6 +79,23 @@ SIMer 是纯本地应用：没有账户、没有服务器，也没有统计、�
 sha256sum -c SHA256SUMS.txt --ignore-missing
 ```
 
+### 核验签名
+
+校验和只能说明文件下载完整，核对签名证书才能确认安装包出自本项目。2.0 起的所有正式版都使用同一个证书，信息如下（可以整段粘贴到 [AppVerifier](https://github.com/soupslurpr/AppVerifier) 中核对已安装的应用）：
+
+```text
+io.github.xiaoxizi_lyx.simer
+62:CC:31:FE:51:C5:A8:C6:35:E1:BC:19:37:28:7D:DD:6B:BD:DF:02:11:E8:73:74:69:0D:C5:22:8B:7D:52:23
+```
+
+也可以用 Android SDK 中的 `apksigner` 查看安装包，输出中 `certificate SHA-256 digest` 后面是同一串指纹（小写、不带冒号）：
+
+```bash
+apksigner verify --print-certs SIMer-v<版本>-arm64-v8a.apk
+```
+
+指纹不一致时请不要安装。
+
 ### 从 1.x 升级
 
 2.0 起应用包名改为 `io.github.xiaoxizi_lyx.simer`，并开始使用固定的正式签名，因此**不能覆盖安装 1.x**（1.x 的安装包使用临时调试签名，本来也无法覆盖升级）。安装 2.0 后，桌面上会同时出现新旧两个 SIMer，请按以下步骤迁移数据：
@@ -145,6 +162,8 @@ flutter pub get
 flutter run
 ```
 
+调试版的包名是 `io.github.xiaoxizi_lyx.simer.debug`，桌面上显示为「SIMer Debug」，可以和正式版同时安装，不会影响正式版的数据。
+
 提交前请确保以下检查全部通过（CI 会执行同样的检查）：
 
 ```bash
@@ -160,6 +179,15 @@ flutter build apk --release --split-per-abi
 ```
 
 没有配置签名时，本地 release 构建会使用调试签名，只能自己测试，不能分发。正式签名和发布流程见 [docs/RELEASING.md](docs/RELEASING.md)。
+
+| 构建 | 包名 | 桌面名称 |
+| --- | --- | --- |
+| 正式版（推送 `v*` 标签时由 CI 构建） | `io.github.xiaoxizi_lyx.simer` | SIMer |
+| CI 测试包（PR 与 `main`，在 Actions 的 Artifacts 中下载） | `io.github.xiaoxizi_lyx.simer.ci` | SIMer CI |
+| 调试版（`flutter run`） | `io.github.xiaoxizi_lyx.simer.debug` | SIMer Debug |
+| profile 版（`flutter run --profile`） | `io.github.xiaoxizi_lyx.simer.profile` | SIMer Profile |
+
+后三种都可以和正式版同时安装，数据各自独立。
 
 ---
 
