@@ -77,7 +77,8 @@ fix(models): resolve expiration calculation bug on day-of-expiry
    - 运行 `flutter analyze` 确保无 Lint 告警。
    - 运行 `flutter test` 确保所有测试通过。
    - 若引入了新功能或修复了 Bug，请在 `test/` 下补充相应的测试用例（数据库相关测试使用 `sqflite_common_ffi`，参考 `test/support/test_db.dart`）。
-   - 涉及界面的改动，请附上截图（浅色与深色模式）。
+   - 新增或修改界面文字时，在 `lib/l10n/app_zh.arb` 与 `lib/l10n/app_en.arb` 中同时添加中英文，运行 `flutter gen-l10n` 后提交生成的代码；不要在代码里直接写界面文字。
+   - 涉及界面的改动，请附上截图（浅色与深色模式，中文与英文界面）。
    - 需要在手机上试用时，可以下载 PR 的 CI 测试包（Actions → 本次运行 → Artifacts → `ci-test-apks`）。它的包名带 `.ci` 后缀，可以和正式版同时安装，不会影响正式版的数据。
 4. **推送到远程并提交 Pull Request**：
    - 清晰描述修改动机、方案及自测结果。
