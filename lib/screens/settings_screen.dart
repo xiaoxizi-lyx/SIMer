@@ -449,18 +449,24 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  /// 设置分组卡片。背景放在 Material 上：列表项的点击水波纹画在最近的 Material 上，
+  /// 若外面包一层带背景色的 Container，水波纹会被挡住（调试模式下还会报断言错误）。
   Widget _settingsCard(BuildContext context, {required List<Widget> children}) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Theme.of(context).dividerTheme.color ?? AppColors.lightDivider,
-          width: 0.5,
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Material(
+        color: theme.colorScheme.surface,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(
+            color: theme.dividerTheme.color ?? AppColors.lightDivider,
+            width: 0.5,
+          ),
         ),
+        clipBehavior: Clip.antiAlias,
+        child: Column(children: children),
       ),
-      child: Column(children: children),
     );
   }
 

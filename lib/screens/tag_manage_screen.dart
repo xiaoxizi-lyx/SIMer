@@ -102,62 +102,69 @@ class _TagManageScreenState extends State<TagManageScreen> {
       ...provider.archivedCards,
     ].where((c) => c.tagIds.contains(tag.id)).length;
 
-    return Container(
+    // 背景放在 Material 上，编辑/删除按钮的点击水波纹才不会被挡住
+    return Padding(
       key: ValueKey(tag.id),
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Theme.of(context).dividerTheme.color ?? AppColors.lightDivider,
-          width: 0.5,
-        ),
-      ),
-      child: ListTile(
-        leading: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: tagColor.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color:
+                Theme.of(context).dividerTheme.color ?? AppColors.lightDivider,
+            width: 0.5,
           ),
-          child: Center(
-            child: Container(
-              width: 14,
-              height: 14,
-              decoration: BoxDecoration(
-                color: tagColor,
-                shape: BoxShape.circle,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          leading: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: tagColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: tagColor,
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
           ),
-        ),
-        title: Text(
-          tag.name,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-        ),
-        subtitle: usageCount > 0
-            ? Text(
-                context.l10n.tagsUsage(usageCount),
-                style: const TextStyle(fontSize: 12),
-              )
-            : null,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit_rounded, size: 20),
-              onPressed: () => _showAddEditDialog(context, tag: tag),
-            ),
-            IconButton(
-              icon: const Icon(
-                Icons.delete_outline_rounded,
-                size: 20,
-                color: AppColors.countdownDanger,
+          title: Text(
+            tag.name,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+          ),
+          subtitle: usageCount > 0
+              ? Text(
+                  context.l10n.tagsUsage(usageCount),
+                  style: const TextStyle(fontSize: 12),
+                )
+              : null,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit_rounded, size: 20),
+                tooltip: context.l10n.commonEdit,
+                onPressed: () => _showAddEditDialog(context, tag: tag),
               ),
-              onPressed: () => _confirmDelete(context, tag, usageCount),
-            ),
-          ],
+              IconButton(
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  size: 20,
+                  color: AppColors.countdownDanger,
+                ),
+                tooltip: context.l10n.commonDelete,
+                onPressed: () => _confirmDelete(context, tag, usageCount),
+              ),
+            ],
+          ),
         ),
       ),
     );
