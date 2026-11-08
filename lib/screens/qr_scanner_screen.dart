@@ -9,6 +9,7 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/l10n.dart';
 import '../providers/auth_provider.dart';
 import '../services/platform_service.dart';
 import '../services/qr_parser_service.dart';
@@ -99,7 +100,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 200),
       child: Text(
-        hint ?? '将 eSIM 二维码放入框内',
+        hint ?? context.l10n.scanHint,
         key: ValueKey(hint),
         textAlign: TextAlign.center,
         style: TextStyle(
@@ -121,14 +122,14 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
           children: [
             IconButton(
               icon: const Icon(Icons.close_rounded, color: Colors.white),
-              tooltip: '关闭',
+              tooltip: context.l10n.commonClose,
               onPressed: () => Navigator.of(context).pop(),
             ),
-            const Expanded(
+            Expanded(
               child: Text(
-                '扫描 eSIM 二维码',
+                context.l10n.scanTitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(
+                style: const TextStyle(
                   fontSize: 17,
                   fontWeight: FontWeight.w600,
                   color: Colors.white,
@@ -161,7 +162,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
                     icon: torch == TorchState.on
                         ? Icons.flash_on_rounded
                         : Icons.flash_off_rounded,
-                    label: '闪光灯',
+                    label: context.l10n.scanTorch,
                     onTap: torch == TorchState.unavailable
                         ? null
                         : _controller.toggleTorch,
@@ -170,17 +171,17 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
               ),
               _ControlButton(
                 icon: Icons.photo_library_rounded,
-                label: '相册识别',
+                label: context.l10n.scanFromImage,
                 onTap: _scanImage,
               ),
               _ControlButton(
                 icon: Icons.content_paste_rounded,
-                label: '粘贴激活码',
+                label: context.l10n.scanPaste,
                 onTap: _pasteActivationCode,
               ),
               _ControlButton(
                 icon: Icons.cameraswitch_rounded,
-                label: '切换镜头',
+                label: context.l10n.scanSwitchCamera,
                 onTap: _controller.switchCamera,
               ),
             ],
@@ -209,21 +210,23 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
               ),
               const SizedBox(height: 16),
               Text(
-                denied ? '需要相机权限才能扫描二维码' : '相机无法启动',
+                denied
+                    ? context.l10n.scanPermissionDenied
+                    : context.l10n.scanCameraUnavailable,
                 textAlign: TextAlign.center,
                 style: const TextStyle(fontSize: 16, color: Colors.white),
               ),
               const SizedBox(height: 8),
-              const Text(
-                '也可以使用下方的「相册识别」或「粘贴激活码」。',
+              Text(
+                context.l10n.scanAlternatives,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Colors.white70),
+                style: const TextStyle(fontSize: 13, color: Colors.white70),
               ),
               if (denied) ...[
                 const SizedBox(height: 20),
-                const FilledButton(
+                FilledButton(
                   onPressed: PlatformService.openAppSettings,
-                  child: Text('去设置开启相机权限'),
+                  child: Text(context.l10n.scanOpenSettings),
                 ),
               ],
             ],
@@ -265,10 +268,10 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
         formats: const [BarcodeFormat.qrCode],
       );
       raw = capture == null ? null : _firstValue(capture);
-      if (raw == null) _showHint('图片中没有识别到二维码');
+      if (raw == null && mounted) _showHint(context.l10n.scanNoQrInImage);
     } on Exception catch (e) {
       debugPrint('识别图片失败: $e');
-      _showHint('无法识别这张图片');
+      if (mounted) _showHint(context.l10n.scanImageFailed);
     } finally {
       if (tempCopy != null && tempCopy.existsSync()) tempCopy.deleteSync();
       await FilePicker.clearTemporaryFiles();
@@ -282,7 +285,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     final data = await Clipboard.getData(Clipboard.kTextPlain);
     final text = data?.text?.trim() ?? '';
     if (text.isEmpty) {
-      _showHint('剪贴板中没有文本');
+      if (mounted) _showHint(context.l10n.scanClipboardEmpty);
       return;
     }
     await _handle(text, fromCamera: false);
@@ -293,7 +296,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> {
     final code = result.code;
     if (code == null) {
       if (fromCamera) _lastRejected = raw;
-      _showHint(result.errorMessage!);
+      if (mounted) _showHint(result.errorMessage(context.l10n)!);
       return;
     }
 
@@ -338,6 +341,7 @@ class _ResultSheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final secondary = Theme.of(context).colorScheme.onSurface
         .withValues(alpha: 0.6);
     Widget field(String label, String value) => Padding(
@@ -366,23 +370,28 @@ class _ResultSheet extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Row(
+            Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.check_circle_rounded,
                   color: AppColors.statusActive,
                   size: 24,
                 ),
-                SizedBox(width: 8),
-                Text(
-                  '识别到 eSIM 激活码',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    l.scanResultTitle,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            field('SM-DP+ 地址', code.smdpAddress),
-            field('激活码（匹配 ID）', code.matchingId),
+            field(l.fieldSmdpAddress, code.smdpAddress),
+            field(l.scanResultMatchingId, code.matchingId),
             if (code.smdpOid != null) field('SM-DP+ OID', code.smdpOid!),
             if (code.confirmationCodeRequired)
               Container(
@@ -393,10 +402,9 @@ class _ResultSheet extends StatelessWidget {
                   color: AppColors.countdownWarning.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Text(
-                  '此 eSIM 安装时需要确认码。确认码不包含在二维码中，'
-                  '请向运营商获取后在表单中填写。',
-                  style: TextStyle(fontSize: 13),
+                child: Text(
+                  l.scanNeedsConfirmationCode,
+                  style: const TextStyle(fontSize: 13),
                 ),
               ),
             const SizedBox(height: 8),
@@ -405,14 +413,14 @@ class _ResultSheet extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text('重新扫描'),
+                    child: Text(l.scanAgain),
                   ),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () => Navigator.of(context).pop(true),
-                    child: const Text('使用此信息'),
+                    child: Text(l.scanUseResult),
                   ),
                 ),
               ],

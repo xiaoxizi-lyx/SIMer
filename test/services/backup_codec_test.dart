@@ -1,9 +1,17 @@
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:simer/l10n/l10n.dart';
+import 'package:simer/models/json_utils.dart';
 import 'package:simer/models/sim_card.dart';
 import 'package:simer/models/tag.dart';
 import 'package:simer/services/backup_codec.dart';
+
+import '../support/l10n.dart';
+
+Matcher _throwsBackupError(BackupError error) => throwsA(
+  isA<BackupFormatException>().having((e) => e.error, 'error', error),
+);
 
 SimCard _card(String uuid, {List<int> tagIds = const []}) => SimCard(
   uuid: uuid,
@@ -46,18 +54,18 @@ void main() {
     test('拒绝更新版本导出的备份', () {
       expect(
         () => BackupCodec.decode(jsonEncode({'formatVersion': 99})),
-        throwsA(isA<BackupFormatException>()),
+        _throwsBackupError(BackupError.newerVersion),
       );
     });
 
     test('拒绝非 JSON 或无版本信息的文件', () {
       expect(
         () => BackupCodec.decode('not json'),
-        throwsA(isA<BackupFormatException>()),
+        _throwsBackupError(BackupError.notJson),
       );
       expect(
         () => BackupCodec.decode(jsonEncode({'simCards': <Object>[]})),
-        throwsA(isA<BackupFormatException>()),
+        _throwsBackupError(BackupError.missingVersion),
       );
     });
 
@@ -79,7 +87,26 @@ void main() {
 
       expect(data.cards.map((c) => c.uuid), ['ok']);
       expect(data.errors, hasLength(3));
-      expect(data.errors.map((e) => e.kind), containsAll(['卡片', '标签']));
+      expect(
+        data.errors.map((e) => e.kind),
+        containsAll([BackupRecordKind.card, BackupRecordKind.tag]),
+      );
+
+      final wrongType = data.errors.singleWhere((e) => e.index == 2);
+      expect(wrongType.kind, BackupRecordKind.card);
+      expect(wrongType.field, 'carrierName');
+      expect(wrongType.problem, JsonFieldProblem.notText);
+      expect(wrongType.message(zh), '第 2 张卡片：字段 "carrierName" 应为文本');
+      expect(wrongType.message(en), 'Card 2: field "carrierName" must be text');
+
+      final notObject = data.errors.singleWhere((e) => e.index == 3);
+      expect(notObject.field, isNull);
+      expect(notObject.message(zh), '第 3 张卡片：记录格式错误');
+
+      final tag = data.errors.singleWhere(
+        (e) => e.kind == BackupRecordKind.tag,
+      );
+      expect(tag.message(zh), '第 1 个标签：缺少字段 "name"');
     });
 
     test('缺少可选字段时使用默认值而不是失败', () {

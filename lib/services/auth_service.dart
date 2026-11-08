@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:local_auth_android/local_auth_android.dart';
 
 /// 设备能否进行身份验证。
 enum AuthAvailability {
@@ -16,11 +17,24 @@ enum AuthAvailability {
 /// 一次身份验证的结果。
 enum AuthResult { success, cancelled, noCredentials, lockedOut, failed }
 
+/// 系统验证对话框中显示的文字（随界面语言变化）。
+class AuthPrompt {
+  const AuthPrompt({
+    required this.title,
+    required this.reason,
+    required this.cancel,
+  });
+
+  final String title;
+  final String reason;
+  final String cancel;
+}
+
 /// 身份验证后端；测试中可替换为假实现。
 abstract interface class AuthBackend {
   Future<AuthAvailability> availability();
 
-  Future<AuthResult> authenticate();
+  Future<AuthResult> authenticate(AuthPrompt prompt);
 }
 
 /// 基于 `local_auth` 的实现：优先生物识别，可回退到设备密码。
@@ -43,10 +57,16 @@ class LocalAuthBackend implements AuthBackend {
   }
 
   @override
-  Future<AuthResult> authenticate() async {
+  Future<AuthResult> authenticate(AuthPrompt prompt) async {
     try {
       final success = await _auth.authenticate(
-        localizedReason: '请验证身份以访问 SIMer',
+        localizedReason: prompt.reason,
+        authMessages: [
+          AndroidAuthMessages(
+            signInTitle: prompt.title,
+            cancelButton: prompt.cancel,
+          ),
+        ],
         biometricOnly: false, // 允许回退到设备密码
         persistAcrossBackgrounding: true,
         sensitiveTransaction: false,

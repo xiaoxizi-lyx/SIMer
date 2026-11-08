@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/l10n.dart';
 import '../../models/calendar_date.dart';
 import '../../theme/app_colors.dart';
 import 'sim_form_draft.dart';
@@ -56,7 +57,7 @@ class FormSectionCard extends StatelessWidget {
                   Icon(section.icon, size: 20, color: AppColors.primary),
                   const SizedBox(width: 10),
                   Text(
-                    section.title,
+                    section.title(context.l10n),
                     style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -68,7 +69,7 @@ class FormSectionCard extends StatelessWidget {
                       Icons.error_rounded,
                       size: 16,
                       color: theme.colorScheme.error,
-                      semanticLabel: '此分区有需要修改的内容',
+                      semanticLabel: context.l10n.formSectionHasErrors,
                     ),
                   ],
                   const Spacer(),
@@ -177,7 +178,7 @@ class DateField extends StatelessWidget {
               ? const Icon(Icons.chevron_right_rounded)
               : IconButton(
                   icon: const Icon(Icons.clear_rounded),
-                  tooltip: '清除日期',
+                  tooltip: context.l10n.formClearDate,
                   onPressed: () => onChanged(null),
                 ),
         ),

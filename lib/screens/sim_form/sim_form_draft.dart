@@ -14,15 +14,14 @@ import 'sim_form_validators.dart';
 
 /// 表单分区。
 enum SimFormSection {
-  basic('基本信息', Icons.sim_card_outlined),
-  validity('有效期', Icons.calendar_today_rounded),
-  usage('用量记录', Icons.data_usage_rounded),
-  features('功能支持', Icons.checklist_rounded),
-  esim('eSIM 信息', Icons.qr_code_rounded),
-  appearance('外观与分类', Icons.palette_rounded);
+  basic(Icons.sim_card_outlined),
+  validity(Icons.calendar_today_rounded),
+  usage(Icons.data_usage_rounded),
+  features(Icons.checklist_rounded),
+  esim(Icons.qr_code_rounded),
+  appearance(Icons.palette_rounded);
 
-  const SimFormSection(this.title, this.icon);
-  final String title;
+  const SimFormSection(this.icon);
   final IconData icon;
 }
 
@@ -201,7 +200,7 @@ class SimFormDraft extends ChangeNotifier {
 
     final validityErrors = [
       if (validityType == ValidityType.fixedDate && expirationDate == null)
-        '请选择到期日期',
+        FieldError.expirationRequired,
       if (validityType == ValidityType.rolling) ...[
         SimFormValidators.rollingDays(rollingDays.text),
         SimFormValidators.lastUsedDate(lastUsedDate, day),

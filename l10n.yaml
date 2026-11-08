@@ -1,0 +1,12 @@
+# 界面文案：lib/l10n/app_zh.arb 为模板（简体中文），app_en.arb 为英文翻译。
+# 修改 .arb 后运行 `flutter gen-l10n` 重新生成 lib/l10n/app_localizations*.dart 并一起提交；
+# CI 会检查生成的代码是否最新、是否有未翻译的文案。
+arb-dir: lib/l10n
+template-arb-file: app_zh.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false
+format: true
+# 系统语言既不是中文也不是英文时使用英文
+preferred-supported-locales: [en]
+untranslated-messages-file: build/l10n_untranslated.json

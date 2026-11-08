@@ -1,6 +1,7 @@
 import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:simer/l10n/app_localizations.dart';
 import 'package:simer/models/enums.dart';
 import 'package:simer/models/sim_card.dart';
 import 'package:simer/widgets/sim_card_front.dart';
@@ -17,10 +18,17 @@ SimCard _rolling({required int daysSinceUse}) => SimCard(
   iccid: '89852000000000000001',
 );
 
-Future<void> _pump(WidgetTester tester, SimCard card) => withClock(
+Future<void> _pump(
+  WidgetTester tester,
+  SimCard card, {
+  Locale locale = const Locale('zh'),
+}) => withClock(
   Clock.fixed(DateTime(2026, 11, 6, 12)),
   () => tester.pumpWidget(
     MaterialApp(
+      locale: locale,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
       home: Scaffold(
         body: Padding(
           padding: const EdgeInsets.all(16),
@@ -38,6 +46,13 @@ void main() {
     expect(find.text('已过期'), findsOneWidget);
   });
 
+  testWidgets('英文界面显示英文文案', (tester) async {
+    await _pump(tester, _rolling(daysSinceUse: 40), locale: const Locale('en'));
+    expect(find.text('Mark as used'), findsOneWidget);
+    expect(find.text('Expired'), findsOneWidget);
+    expect(find.textContaining('Expired 10 days ago'), findsOneWidget);
+  });
+
   testWidgets('距到期较远时不在正面显示「我已使用」', (tester) async {
     await _pump(tester, _rolling(daysSinceUse: 1));
     expect(find.text('我已使用'), findsNothing);
@@ -52,6 +67,9 @@ void main() {
         Clock.fixed(DateTime(2026, 11, 6, 12)),
         () => tester.pumpWidget(
           MaterialApp(
+            locale: const Locale('zh'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
             builder: (context, child) => MediaQuery(
               data: MediaQuery.of(context)
                   .copyWith(textScaler: TextScaler.linear(scale)),

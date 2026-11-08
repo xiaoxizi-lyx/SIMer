@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/l10n.dart';
 import '../../../models/calendar_date.dart';
 import '../../../models/enums.dart';
 import '../../../theme/app_colors.dart';
@@ -19,6 +20,7 @@ class ValiditySection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final today = CalendarDate.today();
     final type = draft.validityType;
     final secondary = Theme.of(context).colorScheme.onSurface
@@ -27,7 +29,7 @@ class ValiditySection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const FieldLabel('有效期类型'),
+        FieldLabel(l.formValidityType),
         RadioGroup<ValidityType>(
           groupValue: type,
           onChanged: (value) {
@@ -41,11 +43,11 @@ class ValiditySection extends StatelessWidget {
                   dense: true,
                   contentPadding: EdgeInsets.zero,
                   title: Text(
-                    option.label,
+                    option.label(l),
                     style: const TextStyle(fontSize: 14),
                   ),
                   subtitle: Text(
-                    option.description,
+                    option.description(l),
                     style: TextStyle(fontSize: 11, color: secondary),
                   ),
                 ),
@@ -53,21 +55,21 @@ class ValiditySection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 12),
-        const FieldLabel('激活日期'),
+        FieldLabel(l.formActivationDate),
         DateField(
           value: draft.activationDate,
-          hint: '选择激活日期（可选）',
+          hint: l.formActivationDateHint,
           onChanged: (date) => draft.update(() => draft.activationDate = date),
         ),
         if (type == ValidityType.fixedDate) ...[
           const SizedBox(height: 12),
-          const FieldLabel('到期日期'),
+          FieldLabel(l.formExpirationDate),
           DateField(
             value: draft.expirationDate,
-            hint: '选择到期日期',
-            helperText: '到期日当天仍然有效',
+            hint: l.formExpirationDateHint,
+            helperText: l.formExpirationHelper,
             errorText: showErrors && draft.expirationDate == null
-                ? '请选择到期日期'
+                ? l.formErrorExpirationRequired
                 : null,
             onChanged: (date) =>
                 draft.update(() => draft.expirationDate = date),
@@ -75,44 +77,49 @@ class ValiditySection extends StatelessWidget {
         ],
         if (type == ValidityType.rolling) ...[
           const SizedBox(height: 12),
-          const FieldLabel('滚动天数'),
+          FieldLabel(l.formRollingDays),
           TextFormField(
             controller: draft.rollingDays,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              hintText: '例如 180',
-              suffixText: '天',
-              helperText: '每次使用后，有效期从使用当天起重新计算这么多天',
+            decoration: InputDecoration(
+              hintText: l.formRollingDaysHint,
+              suffixText: l.formDaysSuffix,
+              helperText: l.formRollingDaysHelper,
               helperMaxLines: 2,
             ),
-            validator: SimFormValidators.rollingDays,
+            validator: (value) =>
+                SimFormValidators.rollingDays(value)?.message(l),
           ),
           const SizedBox(height: 12),
-          const FieldLabel('上次使用日期'),
+          FieldLabel(l.formLastUsedDate),
           DateField(
             value: draft.lastUsedDate,
-            hint: '未填写',
+            hint: l.formLastUsedHint,
             lastDate: today,
-            helperText: '未填写时按激活日期计算；激活日期也未填写时按添加日期计算',
+            helperText: l.formLastUsedHelper,
             errorText: showErrors
-                ? SimFormValidators.lastUsedDate(draft.lastUsedDate, today)
+                ? SimFormValidators.lastUsedDate(
+                    draft.lastUsedDate,
+                    today,
+                  )?.message(l)
                 : null,
             onChanged: (date) => draft.update(() => draft.lastUsedDate = date),
           ),
         ],
         if (type != ValidityType.noExpiration) ...[
           const SizedBox(height: 12),
-          const FieldLabel('提前提醒天数'),
+          FieldLabel(l.formReminderDays),
           TextFormField(
             controller: draft.reminderDays,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              hintText: '例如 7',
-              suffixText: '天',
-              helperText: '到期前这么多天开始提醒，并显示为「即将到期」',
+            decoration: InputDecoration(
+              hintText: l.formReminderDaysHint,
+              suffixText: l.formDaysSuffix,
+              helperText: l.formReminderDaysHelper,
               helperMaxLines: 2,
             ),
-            validator: SimFormValidators.reminderDays,
+            validator: (value) =>
+                SimFormValidators.reminderDays(value)?.message(l),
           ),
           const SizedBox(height: 12),
           _ExpirationPreview(draft: draft),
@@ -136,12 +143,13 @@ class _ExpirationPreview extends StatelessWidget {
         final card = draft.build(newUuid: '_preview');
         final expiration = card.effectiveExpirationDate;
         if (expiration == null) return const SizedBox.shrink();
+        final l = context.l10n;
         final days = card.daysRemaining!;
         final status = days < 0
-            ? '已过期 ${-days} 天'
+            ? l.countdownExpiredDays(-days)
             : days == 0
-            ? '今天到期'
-            : '剩余 $days 天';
+            ? l.countdownDueToday
+            : l.countdownDaysLeft(days);
         return Container(
           width: double.infinity,
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
@@ -150,7 +158,7 @@ class _ExpirationPreview extends StatelessWidget {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            '到期日：${CalendarDate.format(expiration)}（$status）',
+            l.formExpirationPreview(CalendarDate.format(expiration), status),
             style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w500),
           ),
         );

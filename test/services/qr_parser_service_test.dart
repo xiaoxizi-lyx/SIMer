@@ -51,7 +51,7 @@ void main() {
       ]) {
         final result = QrParserService.parse(input);
         expect(result.isSuccess, isFalse, reason: input);
-        expect(result.errorMessage, isNotEmpty);
+        expect(result.error, isNotNull);
       }
     });
 

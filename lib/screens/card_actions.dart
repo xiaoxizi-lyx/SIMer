@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/l10n.dart';
 import '../models/calendar_date.dart';
 import '../models/sim_card.dart';
 import '../providers/sim_card_provider.dart';
@@ -17,6 +18,7 @@ abstract final class CardActions {
 
   /// 「我已使用」：把上次使用日记为今天，滚动有效期随之顺延。
   static Future<void> markAsUsed(BuildContext context, SimCard card) async {
+    final l = context.l10n;
     final provider = context.read<SimCardProvider>();
     final messenger = ScaffoldMessenger.of(context);
     final id = card.id!;
@@ -25,7 +27,7 @@ abstract final class CardActions {
       await provider.markAsUsed(id);
     } on Exception catch (e) {
       debugPrint('记录使用失败: $e');
-      messenger.showSnackBar(const SnackBar(content: Text('操作失败，请重试')));
+      messenger.showSnackBar(SnackBar(content: Text(l.actionFailed)));
       return;
     }
     final expiration = card.effectiveExpirationDate;
@@ -35,11 +37,11 @@ abstract final class CardActions {
         SnackBar(
           content: Text(
             expiration == null
-                ? '已记录今天使用'
-                : '已记录今天使用，有效期顺延至 ${CalendarDate.format(expiration)}',
+                ? l.markUsedDone
+                : l.markUsedDoneExtended(CalendarDate.format(expiration)),
           ),
           action: SnackBarAction(
-            label: '撤销',
+            label: l.commonUndo,
             onPressed: () => unawaited(provider.setLastUsedDate(id, previous)),
           ),
         ),
@@ -48,19 +50,21 @@ abstract final class CardActions {
 
   /// 归档（先确认，完成后可撤销）。
   static Future<void> archive(BuildContext context, SimCard card) async {
+    final l = context.l10n;
+    final carrier = card.carrierLabel(l);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('归档SIM卡'),
-        content: Text('确定要将 ${card.carrierName} 的SIM卡归档吗？归档后可在「设置 → 归档」中恢复。'),
+        title: Text(l.archiveDialogTitle),
+        content: Text(l.archiveDialogMessage(carrier)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('取消'),
+            child: Text(l.commonCancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('归档'),
+            child: Text(l.cardArchive),
           ),
         ],
       ),
@@ -74,16 +78,16 @@ abstract final class CardActions {
       await provider.archiveSimCard(id);
     } on Exception catch (e) {
       debugPrint('归档失败: $e');
-      messenger.showSnackBar(const SnackBar(content: Text('归档失败，请重试')));
+      messenger.showSnackBar(SnackBar(content: Text(l.archiveFailed)));
       return;
     }
     messenger
       ..hideCurrentSnackBar()
       ..showSnackBar(
         SnackBar(
-          content: Text('已归档 ${card.carrierName}'),
+          content: Text(l.archiveDone(carrier)),
           action: SnackBarAction(
-            label: '撤销',
+            label: l.commonUndo,
             onPressed: () => unawaited(provider.restoreSimCard(id)),
           ),
         ),

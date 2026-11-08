@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../data/carriers.dart';
 import '../data/countries.dart';
+import '../l10n/l10n.dart';
 import '../models/carrier.dart';
 
 /// 运营商选择器底部弹窗。
 ///
-/// 当前国家/地区的运营商排在最前；搜索同时匹配运营商名称、代码与国家名称；
+/// 当前国家/地区的运营商排在最前；搜索同时匹配运营商的中英文名称、代码与国家名称；
 /// 输入的名称没有对应的预置运营商时，可直接作为自定义运营商使用。
 class CarrierPickerSheet extends StatefulWidget {
   const CarrierPickerSheet({super.key, this.countryCode});
@@ -37,11 +38,15 @@ class _CarrierPickerSheetState extends State<CarrierPickerSheet> {
     final matches = query.isEmpty
         ? CarrierData.carriers
         : CarrierData.carriers.where((c) {
-            final country = CountryData.countries[c.countryCode] ?? '';
             return c.name.toLowerCase().contains(query) ||
+                (c.nameEn?.toLowerCase().contains(query) ?? false) ||
                 c.code.toLowerCase().contains(query) ||
                 c.countryCode.toLowerCase() == query ||
-                country.contains(query);
+                CountryData.name(c.countryCode, 'zh').contains(query) ||
+                CountryData.name(
+                  c.countryCode,
+                  'en',
+                ).toLowerCase().contains(query);
           }).toList();
     final home = widget.countryCode;
     if (home == null) return matches;
@@ -54,10 +59,13 @@ class _CarrierPickerSheetState extends State<CarrierPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final results = _results();
     final query = _query.trim();
     final exactMatch = results.any(
-      (c) => c.name.toLowerCase() == query.toLowerCase(),
+      (c) =>
+          c.name.toLowerCase() == query.toLowerCase() ||
+          c.nameEn?.toLowerCase() == query.toLowerCase(),
     );
     final mediaQuery = MediaQuery.of(context);
 
@@ -69,20 +77,23 @@ class _CarrierPickerSheetState extends State<CarrierPickerSheet> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 0, 16, 12),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
               child: Text(
-                '选择运营商',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                l.carrierPickerTitle,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
                 autofocus: false,
-                decoration: const InputDecoration(
-                  hintText: '搜索运营商或国家，或输入自定义名称',
-                  prefixIcon: Icon(Icons.search_rounded, size: 20),
+                decoration: InputDecoration(
+                  hintText: l.carrierPickerSearchHint,
+                  prefixIcon: const Icon(Icons.search_rounded, size: 20),
                 ),
                 onChanged: (value) => setState(() => _query = value),
                 onSubmitted: (value) {
@@ -100,7 +111,7 @@ class _CarrierPickerSheetState extends State<CarrierPickerSheet> {
                   if (query.isNotEmpty && !exactMatch)
                     ListTile(
                       leading: const Icon(Icons.edit_rounded),
-                      title: Text('使用「$query」作为自定义运营商'),
+                      title: Text(l.carrierPickerUseCustom(query)),
                       onTap: () =>
                           Navigator.of(context).pop(CustomCarrierChoice(query)),
                     ),
@@ -120,15 +131,14 @@ class _CarrierPickerSheetState extends State<CarrierPickerSheet> {
                         ),
                       ),
                       title: Text(
-                        carrier.name,
+                        carrier.localizedName(l.localeName),
                         style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       subtitle: Text(
-                        CountryData.countries[carrier.countryCode] ??
-                            carrier.countryCode,
+                        CountryData.name(carrier.countryCode, l.localeName),
                         style: const TextStyle(fontSize: 12),
                       ),
                       trailing: Container(
@@ -144,7 +154,7 @@ class _CarrierPickerSheetState extends State<CarrierPickerSheet> {
                               .pop(PresetCarrierChoice(carrier)),
                     ),
                   if (results.isEmpty && query.isEmpty)
-                    const ListTile(title: Text('没有预置运营商')),
+                    ListTile(title: Text(l.carrierPickerEmpty)),
                 ],
               ),
             ),

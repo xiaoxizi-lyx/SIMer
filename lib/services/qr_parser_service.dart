@@ -36,27 +36,56 @@ class LpaActivationCode {
   String toString() => toLpaString();
 }
 
+/// 解析失败的原因；界面层把它转换为当前语言的说明。
+enum QrParseError {
+  empty,
+
+  /// 不以 `LPA:1$`（或 `1$`）开头，例如网址、Wi-Fi 二维码。
+  notActivationCode,
+
+  /// 格式版本不是 `1`（[QrParseResult.errorDetail] 为该版本号）。
+  unsupportedFormat,
+
+  /// 缺少 SM-DP+ 地址或匹配 ID 字段。
+  incomplete,
+  emptySmdp,
+
+  /// SM-DP+ 地址不是合法的主机名（[QrParseResult.errorDetail] 为该地址）。
+  invalidSmdp,
+  emptyMatchingId,
+}
+
 /// 二维码 / 激活码文本的解析结果。
 class QrParseResult {
-  const QrParseResult._({required this.rawData, this.code, this.errorMessage});
+  const QrParseResult._({
+    required this.rawData,
+    this.code,
+    this.error,
+    this.errorDetail,
+  });
 
   factory QrParseResult.success(LpaActivationCode code, String rawData) =>
       QrParseResult._(rawData: rawData, code: code);
 
-  factory QrParseResult.failure(String message, String rawData) =>
-      QrParseResult._(rawData: rawData, errorMessage: message);
+  factory QrParseResult.failure(
+    QrParseError error,
+    String rawData, [
+    String? detail,
+  ]) => QrParseResult._(rawData: rawData, error: error, errorDetail: detail);
 
   /// 去除首尾空白后的原始内容。
   final String rawData;
   final LpaActivationCode? code;
-  final String? errorMessage;
+  final QrParseError? error;
+
+  /// 与 [error] 相关的内容（例如不受支持的版本号、格式不正确的地址）。
+  final String? errorDetail;
 
   bool get isSuccess => code != null;
 
   @override
-  String toString() => isSuccess
-      ? 'QrParseResult($code)'
-      : 'QrParseResult(error: $errorMessage)';
+  String toString() =>
+      isSuccess ? 'QrParseResult($code)' : 'QrParseResult(error: $error)';
 }
 
 /// eSIM 激活码解析（GSMA SGP.22 v2.2.2 §4.1）。
@@ -71,34 +100,38 @@ abstract final class QrParserService {
   /// 同时接受带 `LPA:` 前缀（二维码）与不带前缀（如邮件中给出的 `1$...`）的写法。
   static QrParseResult parse(String input) {
     final raw = input.trim();
-    if (raw.isEmpty) return QrParseResult.failure('内容为空', raw);
+    if (raw.isEmpty) return QrParseResult.failure(QrParseError.empty, raw);
 
     var body = raw;
     if (body.toUpperCase().startsWith('LPA:')) {
       body = body.substring(4);
     } else if (!body.startsWith(r'1$')) {
-      return QrParseResult.failure(r'不是 eSIM 激活码（应以 LPA:1$ 开头）', raw);
+      return QrParseResult.failure(QrParseError.notActivationCode, raw);
     }
 
     final fields = body.split(r'$').map((f) => f.trim()).toList();
     if (fields.first != '1') {
-      return QrParseResult.failure('不支持的激活码格式版本「${fields.first}」', raw);
+      return QrParseResult.failure(
+        QrParseError.unsupportedFormat,
+        raw,
+        fields.first,
+      );
     }
     if (fields.length < 3) {
-      return QrParseResult.failure('激活码不完整，缺少 SM-DP+ 地址或匹配 ID', raw);
+      return QrParseResult.failure(QrParseError.incomplete, raw);
     }
 
     final smdpAddress = fields[1];
     if (smdpAddress.isEmpty) {
-      return QrParseResult.failure('SM-DP+ 地址为空', raw);
+      return QrParseResult.failure(QrParseError.emptySmdp, raw);
     }
     if (!_hostname.hasMatch(smdpAddress)) {
-      return QrParseResult.failure('SM-DP+ 地址格式不正确：$smdpAddress', raw);
+      return QrParseResult.failure(QrParseError.invalidSmdp, raw, smdpAddress);
     }
 
     final matchingId = fields[2];
     if (matchingId.isEmpty) {
-      return QrParseResult.failure('匹配 ID 为空', raw);
+      return QrParseResult.failure(QrParseError.emptyMatchingId, raw);
     }
 
     final oid = fields.length > 3 && fields[3].isNotEmpty ? fields[3] : null;

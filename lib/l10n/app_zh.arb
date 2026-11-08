@@ -1,0 +1,803 @@
+{
+  "@@locale": "zh",
+  "appTitle": "SIMer",
+  "commonCancel": "取消",
+  "commonConfirm": "确定",
+  "commonSave": "保存",
+  "commonDelete": "删除",
+  "commonEdit": "编辑",
+  "commonClose": "关闭",
+  "commonCopy": "复制",
+  "commonUndo": "撤销",
+  "commonRetry": "重试",
+  "commonFollowSystem": "跟随系统",
+  "commonNotSet": "未设置",
+  "simTypePhysical": "实体SIM卡",
+  "simTypeEsim": "eSIM",
+  "activationActive": "激活",
+  "activationInactive": "未激活",
+  "validityUnlimited": "无期限",
+  "validityUnknown": "未设定",
+  "validityValid": "有效",
+  "validityExpiringSoon": "即将到期",
+  "validityExpired": "已过期",
+  "validityTypeFixedDate": "固定到期日",
+  "validityTypeRolling": "滚动有效期",
+  "validityTypeNoExpiration": "无期限",
+  "validityTypeFixedDateDesc": "设定一个具体的到期日期，当天仍然有效",
+  "validityTypeRollingDesc": "每隔N天需使用一次，使用后自动续期",
+  "validityTypeNoExpirationDesc": "此SIM卡没有有效期限制",
+  "sortByCreatedAt": "添加时间",
+  "sortByExpirationDate": "到期时间",
+  "sortByCarrierName": "运营商",
+  "sortByCountryCode": "国家/地区",
+  "sortOrderAscending": "升序",
+  "sortOrderDescending": "降序",
+  "featureVoice": "通话",
+  "featureSms": "短信",
+  "featureData": "数据流量",
+  "featureWifiCalling": "Wi-Fi Calling",
+  "featureVolte": "VoLTE",
+  "featureHotspot": "热点共享",
+  "featureEsimTransfer": "eSIM转移",
+  "featureIntlRoaming": "国际漫游",
+  "lockTimeoutImmediately": "立即",
+  "lockTimeoutSeconds30": "30 秒后",
+  "lockTimeoutMinute1": "1 分钟后",
+  "lockTimeoutMinutes5": "5 分钟后",
+  "authPromptTitle": "验证身份",
+  "authPromptReason": "请验证身份以访问 SIMer",
+  "authNoticeLockDisabled": "设备已不再设置锁屏密码或生物识别，应用锁已自动关闭",
+  "authErrorLockedOut": "尝试次数过多，请稍后再试或使用设备密码",
+  "authErrorFailed": "验证失败，请重试",
+  "lockToggleNeedsDeviceLock": "请先在系统设置中设置锁屏密码或生物识别",
+  "lockToggleAuthFailed": "身份验证失败",
+  "countryPickerTitle": "选择国家/地区",
+  "countryPickerSearchHint": "搜索国家/地区…",
+  "carrierPickerTitle": "选择运营商",
+  "carrierPickerSearchHint": "搜索运营商或国家，或输入自定义名称",
+  "carrierPickerUseCustom": "使用「{name}」作为自定义运营商",
+  "@carrierPickerUseCustom": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "carrierPickerEmpty": "没有预置运营商",
+  "filterAll": "全部",
+  "sortTooltip": "排序",
+  "cardFlipHintToFront": "返回卡片正面",
+  "@cardFlipHintToFront": {
+    "description": "Screen reader action hint (\"double tap to ...\")."
+  },
+  "cardFlipHintToDetails": "查看卡片详情",
+  "@cardFlipHintToDetails": {
+    "description": "Screen reader action hint (\"double tap to ...\")."
+  },
+  "featureNoteHint": "备注（可选）",
+  "cardDetailDeleted": "这张卡片已被删除",
+  "cardArchivedBadge": "已归档",
+  "cardMarkUsed": "我已使用",
+  "countdownExpiredDays": "已过期 {days} 天",
+  "@countdownExpiredDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "countdownDaysLeft": "剩余 {days} 天",
+  "@countdownDaysLeft": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "countdownDueToday": "今天到期",
+  "countdownRollingCycle": "{days}天一用",
+  "@countdownRollingCycle": {
+    "description": "Appended after the countdown for rolling-validity cards.",
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "colorPickerTitle": "选择卡片颜色",
+  "colorPickerCarrierSuggested": "{carrier}推荐",
+  "@colorPickerCarrierSuggested": {
+    "placeholders": {
+      "carrier": {
+        "type": "String"
+      }
+    }
+  },
+  "colorPickerCarrierSuggestedGeneric": "运营商推荐",
+  "colorPickerPresets": "预设颜色",
+  "colorPickerCustom": "自定义颜色",
+  "lockScreenTitle": "SIMer 已锁定",
+  "lockScreenPrompt": "请验证身份后继续",
+  "lockScreenUnlock": "解锁",
+  "backSectionBasic": "基本信息",
+  "fieldCarrier": "运营商",
+  "fieldCountry": "国家/地区",
+  "fieldPrimaryNumber": "主号码",
+  "fieldNumberN": "号码{index}",
+  "@fieldNumberN": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      }
+    }
+  },
+  "fieldSimType": "SIM类型",
+  "backSectionValidity": "有效期",
+  "fieldValidityType": "类型",
+  "fieldActivationDate": "激活日期",
+  "fieldExpirationDate": "到期日期",
+  "fieldRollingCycle": "滚动周期",
+  "fieldLastUsed": "上次使用",
+  "daysCount": "{days} 天",
+  "@daysCount": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "backSectionUsage": "用量",
+  "backSectionFeatures": "功能支持",
+  "backSectionEsim": "eSIM信息",
+  "fieldMatchingId": "激活码",
+  "@fieldMatchingId": {
+    "description": "The Matching ID (AC_Token) stored for an eSIM."
+  },
+  "fieldConfirmationCode": "确认码",
+  "backSectionOther": "其他",
+  "fieldSource": "来源",
+  "fieldNotes": "备注",
+  "copiedField": "已复制 {field}",
+  "@copiedField": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "usageData": "流量",
+  "usageVoice": "通话",
+  "usageSms": "短信",
+  "usageBalance": "余额",
+  "usageRemaining": "剩余 {amount}",
+  "@usageRemaining": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "usageTotal": "总量 {amount}",
+  "@usageTotal": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "usageMinutes": "{amount} 分钟",
+  "@usageMinutes": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "usageMessages": "{amount} 条",
+  "@usageMessages": {
+    "placeholders": {
+      "amount": {
+        "type": "String"
+      }
+    }
+  },
+  "cardArchive": "归档",
+  "cardUnarchive": "取消归档",
+  "actionFailed": "操作失败，请重试",
+  "markUsedDone": "已记录今天使用",
+  "markUsedDoneExtended": "已记录今天使用，有效期顺延至 {date}",
+  "@markUsedDoneExtended": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "archiveDialogTitle": "归档SIM卡",
+  "archiveDialogMessage": "确定要将 {carrier} 的SIM卡归档吗？归档后可在「设置 → 归档」中恢复。",
+  "@archiveDialogMessage": {
+    "placeholders": {
+      "carrier": {
+        "type": "String"
+      }
+    }
+  },
+  "archiveFailed": "归档失败，请重试",
+  "archiveDone": "已归档 {carrier}",
+  "@archiveDone": {
+    "placeholders": {
+      "carrier": {
+        "type": "String"
+      }
+    }
+  },
+  "archiveTitle": "归档",
+  "archiveEmptyTitle": "没有已归档的SIM卡",
+  "archiveEmptySubtitle": "已归档的SIM卡会显示在这里",
+  "archiveRestore": "恢复",
+  "archiveRestored": "已恢复 {carrier}",
+  "@archiveRestored": {
+    "placeholders": {
+      "carrier": {
+        "type": "String"
+      }
+    }
+  },
+  "archiveRestoreFailed": "恢复失败，请重试",
+  "archiveDeleteForever": "永久删除",
+  "archiveDeleteMessage": "确定要永久删除 {carrier} 的SIM卡吗？\n\n此操作不可恢复。",
+  "@archiveDeleteMessage": {
+    "placeholders": {
+      "carrier": {
+        "type": "String"
+      }
+    }
+  },
+  "archiveDeleted": "已永久删除 {carrier}",
+  "@archiveDeleted": {
+    "placeholders": {
+      "carrier": {
+        "type": "String"
+      }
+    }
+  },
+  "archiveDeleteFailed": "删除失败，请重试",
+  "tagsTitle": "标签管理",
+  "tagsAdd": "添加标签",
+  "tagsEmptyTitle": "还没有标签",
+  "tagsEmptySubtitle": "点击右上角添加你的第一个标签",
+  "tagsUsage": "已关联 {count} 张SIM卡",
+  "@tagsUsage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tagsEdit": "编辑标签",
+  "tagsNameHint": "标签名称",
+  "tagsColor": "标签颜色",
+  "tagsNameTaken": "已有名为「{name}」的标签",
+  "@tagsNameTaken": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "commonAdd": "添加",
+  "tagsSaveFailed": "保存标签失败，请重试",
+  "tagsDeleteTitle": "删除标签",
+  "tagsDeleteInUse": "标签\"{name}\"已被 {count} 张SIM卡使用。删除后将从这些卡中移除该标签。确定要删除吗？",
+  "@tagsDeleteInUse": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tagsDeleteConfirm": "确定要删除标签\"{name}\"吗？",
+  "@tagsDeleteConfirm": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "homeSearchClose": "关闭搜索",
+  "homeSearchHint": "搜索运营商、号码、国家、标签…",
+  "homeSearch": "搜索",
+  "settingsTitle": "设置",
+  "homeEmptyFiltered": "没有匹配的SIM卡",
+  "homeEmpty": "还没有SIM卡记录",
+  "homeEmptyFilteredHint": "试试调整筛选条件",
+  "homeEmptyHint": "点击下方按钮添加你的第一张SIM卡",
+  "homeClearFilters": "清除筛选",
+  "homeAddCard": "添加SIM/eSIM信息",
+  "settingsSectionTheme": "主题",
+  "themeLight": "浅色",
+  "themeDark": "深色",
+  "settingsLanguage": "语言 / Language",
+  "@settingsLanguage": {
+    "description": "Kept bilingual so the setting can be found after switching to an unfamiliar language."
+  },
+  "settingsSectionSecurity": "安全",
+  "settingsAppLock": "应用锁",
+  "settingsAppLockOn": "打开应用时验证指纹、面容或设备密码",
+  "settingsAppLockNeedsDeviceLock": "需要先在系统设置中设置锁屏密码",
+  "settingsAutoLock": "自动锁定",
+  "settingsAutoLockSubtitle": "离开应用多久后需要重新验证",
+  "autoLockOptionImmediately": "离开应用后立即",
+  "autoLockOptionSeconds30": "离开应用 30 秒后",
+  "autoLockOptionMinute1": "离开应用 1 分钟后",
+  "autoLockOptionMinutes5": "离开应用 5 分钟后",
+  "settingsPrivacyScreen": "防窥保护",
+  "settingsPrivacyScreenSubtitle": "在「最近任务」中隐藏应用内容；Android 12 及以下会同时禁止截屏",
+  "settingsSectionReminders": "提醒",
+  "settingsExpiryReminders": "到期提醒",
+  "settingsExpiryRemindersSubtitle": "在卡片提前提醒日、到期当天与过期次日各提醒一次",
+  "settingsReminderTime": "提醒时间",
+  "settingsNotificationsOff": "通知权限未开启",
+  "settingsNotificationsOffSubtitle": "未开启时提醒不会显示，点击授权",
+  "settingsSectionData": "数据",
+  "settingsExport": "导出备份",
+  "settingsExportSubtitle": "手动导出全部数据，用于迁移到新设备",
+  "settingsImport": "导入备份",
+  "settingsImportSubtitle": "从 SIMer 备份文件恢复数据",
+  "settingsSectionManage": "管理",
+  "settingsSectionAbout": "关于",
+  "settingsVersion": "版本 {version}",
+  "@settingsVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAboutDescription": "SIM卡信息记录管理，安全存储你的SIM卡与eSIM信息。",
+  "settingsLicenses": "开源许可",
+  "exportIntro": "备份包含全部 SIM 卡与标签数据，其中有 ICCID、电话号码、eSIM 激活码与确认码等敏感信息。",
+  "exportEncrypt": "加密备份（推荐）",
+  "exportPassword": "密码",
+  "exportPasswordConfirm": "再次输入密码",
+  "exportPasswordTooShort": "密码至少 {min} 位",
+  "@exportPasswordTooShort": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      }
+    }
+  },
+  "exportPasswordMismatch": "两次输入的密码不一致",
+  "exportPasswordWarning": "请牢记密码：忘记密码将无法恢复这份备份。",
+  "exportPlainWarning": "未加密的备份是明文 JSON 文件。请只保存到你信任的位置，或直接发送到你自己的新设备，导入完成后及时删除。",
+  "exportShare": "分享",
+  "exportSaveToFile": "保存到文件",
+  "exportEncrypting": "正在加密…",
+  "exportSaveDialogTitle": "保存 SIMer 备份",
+  "exportShareSubject": "SIMer 数据备份",
+  "exportSaved": "备份已保存",
+  "exportSaveCancelled": "已取消保存",
+  "exportShared": "备份已分享",
+  "exportShareCancelled": "已取消分享",
+  "exportShareOpened": "已打开分享面板",
+  "exportFailed": "导出失败，请重试",
+  "importPasswordTitle": "输入备份密码",
+  "importPasswordMessage": "这份备份已加密，请输入导出时设置的密码。",
+  "importDecrypt": "解密",
+  "importDecrypting": "正在解密…",
+  "importFailed": "导入失败，现有数据未做任何修改",
+  "importDoneTitle": "导入完成",
+  "importSkippedRecords": "以下记录无法解析，已跳过：",
+  "commonGotIt": "知道了",
+  "importSummary": "导入完成：{details}",
+  "@importSummary": {
+    "placeholders": {
+      "details": {
+        "type": "String"
+      }
+    }
+  },
+  "listSeparator": "，",
+  "@listSeparator": {
+    "description": "Separator between items of an inline list."
+  },
+  "importSummaryCards": "新增 {count} 张卡片",
+  "@importSummaryCards": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importSummaryOverwritten": "覆盖 {count} 张",
+  "@importSummaryOverwritten": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importSummarySkipped": "跳过 {count} 张重复卡片",
+  "@importSummarySkipped": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importSummaryTags": "新增 {count} 个标签",
+  "@importSummaryTags": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importSummaryFailed": "{count} 条记录无法解析",
+  "@importSummaryFailed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importExportedAt": "导出时间：{time}",
+  "@importExportedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "importCards": "卡片：{count} 张",
+  "@importCards": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importDuplicates": "其中 {count} 张与本机已有卡片相同（UUID 一致）",
+  "@importDuplicates": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importTags": "标签：{count} 个（同名标签会自动合并）",
+  "@importTags": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importLegacy": "此备份来自 SIMer 1.0，导入时会自动转换格式。",
+  "importWasEncrypted": "这是一份加密备份，已用你输入的密码解密。",
+  "importUnreadableRecords": "{count} 条记录无法解析，将被跳过：",
+  "@importUnreadableRecords": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importMoreErrors": "…等共 {count} 条",
+  "@importMoreErrors": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importNothing": "备份中没有可导入的数据。",
+  "importOverwrite": "覆盖重复",
+  "importSkip": "跳过重复",
+  "importButton": "导入",
+  "recordErrorCard": "第 {index} 张卡片：{detail}",
+  "@recordErrorCard": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "recordErrorTag": "第 {index} 个标签：{detail}",
+  "@recordErrorTag": {
+    "placeholders": {
+      "index": {
+        "type": "int"
+      },
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "fieldErrorMissing": "缺少字段 \"{field}\"",
+  "@fieldErrorMissing": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "fieldErrorNotText": "字段 \"{field}\" 应为文本",
+  "@fieldErrorNotText": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "fieldErrorNotInteger": "字段 \"{field}\" 应为整数",
+  "@fieldErrorNotInteger": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "fieldErrorNotNumber": "字段 \"{field}\" 应为数字",
+  "@fieldErrorNotNumber": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "fieldErrorNotBoolean": "字段 \"{field}\" 应为布尔值",
+  "@fieldErrorNotBoolean": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "fieldErrorInvalidDate": "字段 \"{field}\" 不是有效的日期",
+  "@fieldErrorInvalidDate": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "fieldErrorNotObject": "字段 \"{field}\" 应为对象",
+  "@fieldErrorNotObject": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "fieldErrorNotTextList": "字段 \"{field}\" 应为文本列表",
+  "@fieldErrorNotTextList": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "fieldErrorNotIntegerList": "字段 \"{field}\" 应为整数列表",
+  "@fieldErrorNotIntegerList": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "recordErrorInvalid": "记录格式错误",
+  "backupErrorFileTooLarge": "文件过大（超过 10 MB），不是有效的 SIMer 备份",
+  "backupErrorNotUtf8": "文件编码不是 UTF-8，不是有效的 SIMer 备份",
+  "backupErrorUnreadable": "无法读取所选文件",
+  "backupErrorNotJson": "文件不是有效的 JSON，可能不是 SIMer 备份文件",
+  "backupErrorUnrecognized": "无法识别的备份文件",
+  "backupErrorNewerVersion": "该备份由更新版本的 SIMer 导出，请先升级应用后再导入",
+  "backupErrorUnsupportedVersion": "无法识别的备份格式版本",
+  "backupErrorMissingVersion": "无法识别的备份文件（缺少格式版本信息）",
+  "backupErrorCorrupted": "备份文件已损坏",
+  "backupErrorWrongPassword": "密码不正确，或文件已损坏",
+  "backupErrorUnsupportedEncryption": "这份加密备份使用了当前版本不支持的加密方式，请先升级应用",
+  "qrErrorEmpty": "内容为空",
+  "qrErrorNotActivationCode": "不是 eSIM 激活码（应以 LPA:1$ 开头）",
+  "qrErrorUnsupportedFormat": "不支持的激活码格式版本「{version}」",
+  "@qrErrorUnsupportedFormat": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "qrErrorIncomplete": "激活码不完整，缺少 SM-DP+ 地址或匹配 ID",
+  "qrErrorEmptySmdp": "SM-DP+ 地址为空",
+  "qrErrorInvalidSmdp": "SM-DP+ 地址格式不正确：{address}",
+  "@qrErrorInvalidSmdp": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "qrErrorEmptyMatchingId": "匹配 ID 为空",
+  "scanHint": "将 eSIM 二维码放入框内",
+  "scanTitle": "扫描 eSIM 二维码",
+  "scanTorch": "闪光灯",
+  "scanFromImage": "相册识别",
+  "scanPaste": "粘贴激活码",
+  "scanSwitchCamera": "切换镜头",
+  "scanPermissionDenied": "需要相机权限才能扫描二维码",
+  "scanCameraUnavailable": "相机无法启动",
+  "scanAlternatives": "也可以使用下方的「相册识别」或「粘贴激活码」。",
+  "scanOpenSettings": "去设置开启相机权限",
+  "scanNoQrInImage": "图片中没有识别到二维码",
+  "scanImageFailed": "无法识别这张图片",
+  "scanClipboardEmpty": "剪贴板中没有文本",
+  "scanResultTitle": "识别到 eSIM 激活码",
+  "fieldSmdpAddress": "SM-DP+ 地址",
+  "scanResultMatchingId": "激活码（匹配 ID）",
+  "scanNeedsConfirmationCode": "此 eSIM 安装时需要确认码。确认码不包含在二维码中，请向运营商获取后在表单中填写。",
+  "scanAgain": "重新扫描",
+  "scanUseResult": "使用此信息",
+  "formErrorIccid": "ICCID 应为 18-22 位数字",
+  "formErrorNumber": "请输入有效的数字",
+  "formErrorNegative": "不能为负数",
+  "formErrorInteger": "请输入整数",
+  "formErrorDaysRequired": "请输入天数",
+  "formErrorDaysInteger": "请输入整数天数",
+  "formErrorDaysRange": "天数应在 {min}-{max} 之间",
+  "@formErrorDaysRange": {
+    "placeholders": {
+      "min": {
+        "type": "int"
+      },
+      "max": {
+        "type": "int"
+      }
+    }
+  },
+  "formErrorDateInFuture": "不能晚于今天",
+  "formErrorExpirationRequired": "请选择到期日期",
+  "formSectionUsage": "用量记录",
+  "formSectionEsim": "eSIM 信息",
+  "formSectionAppearance": "外观与分类",
+  "formSectionHasErrors": "此分区有需要修改的内容",
+  "formClearDate": "清除日期",
+  "formEditTitle": "编辑SIM卡",
+  "formAddTitle": "添加SIM/eSIM信息",
+  "formCheckErrors": "请检查标红的内容",
+  "formSaveFailed": "保存失败，请重试",
+  "formDiscardTitle": "放弃未保存的修改？",
+  "formDiscardMessage": "离开后，本次填写的内容不会保存。",
+  "formKeepEditing": "继续编辑",
+  "formDiscard": "放弃",
+  "formSimType": "SIM 卡类型",
+  "formActivationStatus": "激活状态",
+  "formCarrierHint": "选择或输入运营商",
+  "formCarrierRequired": "请选择或输入运营商",
+  "formIccidHint": "18-22 位数字，可含空格",
+  "formPhoneNumbers": "电话号码",
+  "formRemoveNumber": "删除此号码",
+  "formAddNumber": "添加号码",
+  "formValidityType": "有效期类型",
+  "formActivationDate": "激活日期",
+  "formActivationDateHint": "选择激活日期（可选）",
+  "formExpirationDate": "到期日期",
+  "formExpirationDateHint": "选择到期日期",
+  "formExpirationHelper": "到期日当天仍然有效",
+  "formRollingDays": "滚动天数",
+  "formRollingDaysHint": "例如 180",
+  "formDaysSuffix": "天",
+  "formRollingDaysHelper": "每次使用后，有效期从使用当天起重新计算这么多天",
+  "formLastUsedDate": "上次使用日期",
+  "formLastUsedHint": "未填写",
+  "formLastUsedHelper": "未填写时按激活日期计算；激活日期也未填写时按添加日期计算",
+  "formReminderDays": "提前提醒天数",
+  "formReminderDaysHint": "例如 7",
+  "formReminderDaysHelper": "到期前这么多天开始提醒，并显示为「即将到期」",
+  "formExpirationPreview": "到期日：{date}（{status}）",
+  "@formExpirationPreview": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "formDataRemaining": "流量剩余 (MB)",
+  "formDataTotal": "流量总量 (MB)",
+  "formDataRemainingHint": "例如 1024",
+  "formDataTotalHint": "例如 5120",
+  "formVoiceRemaining": "通话剩余（分钟）",
+  "formVoiceTotal": "通话总量（分钟）",
+  "formSmsRemaining": "短信剩余",
+  "formSmsTotal": "短信总量",
+  "formBalance": "话费余额",
+  "formCurrency": "币种",
+  "formSmdpAddress": "SM-DP+ 服务器地址",
+  "formSmdpHint": "例如 rsp.example.com",
+  "formConfirmationHint": "如运营商提供",
+  "formConfirmationRequired": "此 eSIM 的激活码标明安装时需要确认码（不在二维码中，由运营商另行提供）",
+  "formScanQr": "扫描/识别二维码",
+  "formCopiedActivationCode": "已复制完整激活码",
+  "formCopyActivationCode": "复制完整激活码",
+  "formCardColor": "卡片颜色",
+  "formChangeColor": "更改颜色",
+  "formTags": "标签",
+  "formNoTags": "还没有标签，可在「设置 → 标签管理」中添加",
+  "formSource": "来源渠道",
+  "formSourceHint": "例如：官网、线下门店、朋友转让",
+  "formNotesHint": "其他备忘信息",
+  "reminderUpcomingTitle": "📅 {carrier} 将在 {days} 天后到期",
+  "@reminderUpcomingTitle": {
+    "placeholders": {
+      "carrier": {
+        "type": "String"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "reminderUpcomingBodyRolling": "请在 {date} 前使用一次以保号",
+  "@reminderUpcomingBodyRolling": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderUpcomingBodyFixed": "到期日：{date}",
+  "@reminderUpcomingBodyFixed": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderDueTodayTitle": "⏰ {carrier} 今天到期",
+  "@reminderDueTodayTitle": {
+    "placeholders": {
+      "carrier": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderDueTodayBodyRolling": "今天是最后期限，请使用一次以续期",
+  "reminderDueTodayBodyFixed": "请及时续费或处理",
+  "reminderExpiredTitle": "⚠️ {carrier} 已过期",
+  "@reminderExpiredTitle": {
+    "placeholders": {
+      "carrier": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderExpiredBodyRolling": "已超过保号期限 {date}，请尽快确认号码状态",
+  "@reminderExpiredBodyRolling": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "reminderExpiredBodyFixed": "已于 {date} 到期",
+  "@reminderExpiredBodyFixed": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "notificationChannelName": "到期提醒",
+  "notificationChannelDescription": "SIM 卡即将到期、今天到期或已过期时提醒"
+}

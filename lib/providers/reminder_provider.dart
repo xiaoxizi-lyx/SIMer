@@ -5,17 +5,22 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/sim_card.dart';
 import '../services/notification_service.dart';
+import 'locale_provider.dart';
 import 'sim_card_provider.dart';
 
-/// 到期提醒设置，并在卡片或设置变化后重新预约提醒。
+/// 到期提醒设置，并在卡片、设置或界面语言变化后重新预约提醒。
 class ReminderProvider extends ChangeNotifier {
-  ReminderProvider({required this._cards});
+  ReminderProvider({required this._cards, required this._locale}) {
+    // 通知文字按预约时的界面语言生成，语言变化后重新预约
+    _locale.addListener(cardsChanged);
+  }
 
   static const String _enabledKey = 'reminders_enabled';
   static const String _timeKey = 'reminder_time_minutes';
   static const String _askedKey = 'notification_permission_requested';
 
   final SimCardProvider _cards;
+  final LocaleProvider _locale;
 
   bool _enabled = true;
   TimeOfDay _time = const TimeOfDay(hour: 9, minute: 0);
@@ -91,10 +96,12 @@ class ReminderProvider extends ChangeNotifier {
     enabled: _enabled,
     hour: _time.hour,
     minute: _time.minute,
+    strings: _locale.strings,
   );
 
   @override
   void dispose() {
+    _locale.removeListener(cardsChanged);
     _debounce?.cancel();
     super.dispose();
   }

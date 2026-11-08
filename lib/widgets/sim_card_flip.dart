@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../models/sim_card.dart';
 import '../models/tag.dart';
 import 'sim_card_back.dart';
@@ -68,7 +69,9 @@ class _SimCardFlipState extends State<SimCardFlip>
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      onTapHint: _isFlipped ? '返回卡片正面' : '查看卡片详情',
+      onTapHint: _isFlipped
+          ? context.l10n.cardFlipHintToFront
+          : context.l10n.cardFlipHintToDetails,
       child: GestureDetector(
         onTap: flip,
         // 正反面高度不同：翻到一半换面时平滑过渡，而不是让列表跳动

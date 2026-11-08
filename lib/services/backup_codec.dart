@@ -1,36 +1,80 @@
 import 'dart:convert';
 
+import '../models/json_utils.dart';
 import '../models/sim_card.dart';
 import '../models/tag.dart';
 
-/// 整份备份文件不可用（格式无法识别、版本过新等）。
-class BackupFormatException implements Exception {
-  const BackupFormatException(this.message);
+/// 整份备份文件不可用的原因；界面层把它转换为当前语言的说明。
+enum BackupError {
+  /// 文件超过 [BackupCodec.maxFileBytes]。
+  fileTooLarge,
 
-  final String message;
+  /// 文件不是 UTF-8 文本。
+  notUtf8,
+
+  /// 无法读取所选文件。
+  unreadable,
+
+  /// 文件不是有效的 JSON。
+  notJson,
+
+  /// JSON 结构不是 SIMer 备份。
+  unrecognized,
+
+  /// 由更新版本的 SIMer 导出。
+  newerVersion,
+
+  /// 格式版本无法识别。
+  unsupportedVersion,
+
+  /// 缺少格式版本信息。
+  missingVersion,
+
+  /// 文件结构已损坏（例如顶层的列表字段类型不对）。
+  corrupted,
+
+  /// 加密备份：密码错误，或文件被修改、已损坏（AES-GCM 无法区分这两种情况）。
+  wrongPassword,
+
+  /// 加密备份使用了本版本不支持的加密方式或参数。
+  unsupportedEncryption,
+}
+
+/// 整份备份文件不可用。
+class BackupFormatException implements Exception {
+  const BackupFormatException(this.error);
+
+  final BackupError error;
 
   @override
-  String toString() => message;
+  String toString() => 'BackupFormatException(${error.name})';
 }
+
+/// 备份中的记录类型。
+enum BackupRecordKind { tag, card }
 
 /// 备份中单条记录解析失败；导入时跳过该记录并向用户汇报。
 class BackupRecordError {
   const BackupRecordError({
     required this.kind,
     required this.index,
-    required this.message,
+    this.field,
+    this.problem,
   });
 
-  /// 记录类型：「卡片」或「标签」。
-  final String kind;
+  final BackupRecordKind kind;
 
   /// 记录在备份中的序号（从 1 开始）。
   final int index;
 
-  final String message;
+  /// 出问题的字段；为 null 时表示整条记录的格式不对。
+  final String? field;
+  final JsonFieldProblem? problem;
 
   @override
-  String toString() => '第 $index 个$kind：$message';
+  String toString() =>
+      'BackupRecordError(${kind.name} #$index, '
+      '${field ?? 'record'}: ${problem?.name ?? 'invalid'})';
 }
 
 /// 备份中的标签，保留其在来源数据库中的 id，用于还原卡片与标签的关联。
@@ -72,6 +116,8 @@ class BackupData {
 }
 
 /// SIMer 备份文件（JSON）的编码与解码。纯 Dart 实现，不依赖数据库与平台。
+///
+/// 加密备份是把这里的 JSON 整体加密后放进另一层 JSON，见 `BackupCrypto`。
 abstract final class BackupCodec {
   /// 当前导出格式版本。
   static const int currentFormatVersion = 2;
@@ -99,19 +145,26 @@ abstract final class BackupCodec {
     return const JsonEncoder.withIndent('  ').convert(data);
   }
 
-  /// 解析备份文本。整份文件不可用时抛出 [BackupFormatException]；
-  /// 单条记录损坏时记入 [BackupData.errors] 并继续解析其余记录。
-  static BackupData decode(String source) {
+  /// 解析 JSON 文本为对象。不是 JSON 对象时抛出 [BackupFormatException]。
+  static Map<String, dynamic> parseRoot(String source) {
     final Object? root;
     try {
       root = jsonDecode(source);
     } on FormatException {
-      throw const BackupFormatException('文件不是有效的 JSON，可能不是 SIMer 备份文件');
+      throw const BackupFormatException(BackupError.notJson);
     }
     if (root is! Map<String, dynamic>) {
-      throw const BackupFormatException('无法识别的备份文件');
+      throw const BackupFormatException(BackupError.unrecognized);
     }
+    return root;
+  }
 
+  /// 解析备份文本。整份文件不可用时抛出 [BackupFormatException]；
+  /// 单条记录损坏时记入 [BackupData.errors] 并继续解析其余记录。
+  static BackupData decode(String source) => decodeRoot(parseRoot(source));
+
+  /// 同 [decode]，输入为已解析的 JSON 对象。
+  static BackupData decodeRoot(Map<String, dynamic> root) {
     final formatVersion = _detectFormatVersion(root);
     final errors = <BackupRecordError>[];
 
@@ -119,13 +172,10 @@ abstract final class BackupCodec {
     final rawTags = _list(root, 'tags');
     for (var i = 0; i < rawTags.length; i++) {
       try {
-        final raw = _object(rawTags[i]);
-        final tag = Tag.fromJson(raw);
+        final tag = Tag.fromJson(_object(rawTags[i]));
         tags.add(BackupTag(sourceId: tag.id, tag: tag));
       } on FormatException catch (e) {
-        errors.add(
-          BackupRecordError(kind: '标签', index: i + 1, message: e.message),
-        );
+        errors.add(_recordError(BackupRecordKind.tag, i + 1, e));
       }
     }
 
@@ -135,9 +185,7 @@ abstract final class BackupCodec {
       try {
         cards.add(SimCard.fromJson(_object(rawCards[i])));
       } on FormatException catch (e) {
-        errors.add(
-          BackupRecordError(kind: '卡片', index: i + 1, message: e.message),
-        );
+        errors.add(_recordError(BackupRecordKind.card, i + 1, e));
       }
     }
 
@@ -151,32 +199,45 @@ abstract final class BackupCodec {
     );
   }
 
+  static BackupRecordError _recordError(
+    BackupRecordKind kind,
+    int index,
+    FormatException e,
+  ) => e is JsonFieldException
+      ? BackupRecordError(
+          kind: kind,
+          index: index,
+          field: e.field,
+          problem: e.problem,
+        )
+      : BackupRecordError(kind: kind, index: index);
+
   static int _detectFormatVersion(Map<String, dynamic> root) {
     final version = root['formatVersion'];
     if (version is int) {
       if (version > currentFormatVersion) {
-        throw const BackupFormatException('该备份由更新版本的 SIMer 导出，请先升级应用后再导入');
+        throw const BackupFormatException(BackupError.newerVersion);
       }
       if (version < legacyFormatVersion) {
-        throw const BackupFormatException('无法识别的备份格式版本');
+        throw const BackupFormatException(BackupError.unsupportedVersion);
       }
       return version;
     }
     if (root['version'] == legacyFormatVersion && root['simCards'] is List) {
       return legacyFormatVersion;
     }
-    throw const BackupFormatException('无法识别的备份文件（缺少格式版本信息）');
+    throw const BackupFormatException(BackupError.missingVersion);
   }
 
   static List<Object?> _list(Map<String, dynamic> root, String key) {
     final value = root[key];
     if (value == null) return const [];
     if (value is List) return value;
-    throw BackupFormatException('备份文件已损坏（"$key" 不是列表）');
+    throw const BackupFormatException(BackupError.corrupted);
   }
 
   static Map<String, dynamic> _object(Object? value) {
     if (value is Map<String, dynamic>) return value;
-    throw const FormatException('记录格式错误');
+    throw const FormatException('record is not an object');
   }
 }

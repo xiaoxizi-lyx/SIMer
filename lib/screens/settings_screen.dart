@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/l10n.dart';
 import '../providers/auth_provider.dart';
+import '../providers/locale_provider.dart';
 import '../providers/reminder_provider.dart';
 import '../providers/theme_provider.dart';
+import '../services/auth_service.dart';
 import '../services/platform_service.dart';
 import '../theme/app_colors.dart';
 import 'archive_screen.dart';
@@ -16,37 +19,41 @@ class SettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     return Scaffold(
-      appBar: AppBar(title: const Text('设置')),
+      appBar: AppBar(title: Text(l.settingsTitle)),
       body: ListView(
         padding: const EdgeInsets.symmetric(vertical: 8),
         children: [
-          // ═══════ 主题 ═══════
-          _buildSectionHeader(context, '主题'),
+          // ═══════ 主题与语言 ═══════
+          _buildSectionHeader(l.settingsSectionTheme),
           _buildThemeSection(context),
+          const SizedBox(height: 8),
+          _buildLanguageSection(context),
           const SizedBox(height: 16),
 
           // ═══════ 安全 ═══════
-          _buildSectionHeader(context, '安全'),
+          _buildSectionHeader(l.settingsSectionSecurity),
           _buildSecuritySection(context),
           const SizedBox(height: 16),
 
-          // ═══════ 数据 ═══════
-          _buildSectionHeader(context, '提醒'),
+          // ═══════ 提醒 ═══════
+          _buildSectionHeader(l.settingsSectionReminders),
           _buildReminderSection(context),
           const SizedBox(height: 16),
 
-          _buildSectionHeader(context, '数据'),
+          // ═══════ 数据 ═══════
+          _buildSectionHeader(l.settingsSectionData),
           _buildDataSection(context),
           const SizedBox(height: 16),
 
           // ═══════ 管理 ═══════
-          _buildSectionHeader(context, '管理'),
+          _buildSectionHeader(l.settingsSectionManage),
           _buildManageSection(context),
           const SizedBox(height: 16),
 
           // ═══════ 关于 ═══════
-          _buildSectionHeader(context, '关于'),
+          _buildSectionHeader(l.settingsSectionAbout),
           _buildAboutSection(context),
           const SizedBox(height: 40),
         ],
@@ -54,7 +61,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(BuildContext context, String title) {
+  Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 8, 20, 4),
       child: Text(
@@ -70,6 +77,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildThemeSection(BuildContext context) {
+    final l = context.l10n;
     final themeProvider = context.watch<ThemeProvider>();
     final currentMode = themeProvider.themeMode;
 
@@ -77,24 +85,21 @@ class SettingsScreen extends StatelessWidget {
       context,
       children: [
         _themeTile(
-          context,
-          title: '跟随系统',
+          title: l.commonFollowSystem,
           icon: Icons.brightness_auto_rounded,
           isSelected: currentMode == ThemeMode.system,
           onTap: () => themeProvider.setThemeMode(ThemeMode.system),
         ),
         _thinDivider(context),
         _themeTile(
-          context,
-          title: '浅色',
+          title: l.themeLight,
           icon: Icons.light_mode_rounded,
           isSelected: currentMode == ThemeMode.light,
           onTap: () => themeProvider.setThemeMode(ThemeMode.light),
         ),
         _thinDivider(context),
         _themeTile(
-          context,
-          title: '深色',
+          title: l.themeDark,
           icon: Icons.dark_mode_rounded,
           isSelected: currentMode == ThemeMode.dark,
           onTap: () => themeProvider.setThemeMode(ThemeMode.dark),
@@ -103,8 +108,7 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
-  Widget _themeTile(
-    BuildContext context, {
+  Widget _themeTile({
     required String title,
     required IconData icon,
     required bool isSelected,
@@ -126,14 +130,65 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildLanguageSection(BuildContext context) {
+    final l = context.l10n;
+    final localeProvider = context.watch<LocaleProvider>();
+    String label(AppLanguage language) =>
+        language.nativeName ?? l.commonFollowSystem;
+
+    return _settingsCard(
+      context,
+      children: [
+        ListTile(
+          leading: const Icon(Icons.translate_rounded, size: 22),
+          title: Text(l.settingsLanguage, style: const TextStyle(fontSize: 15)),
+          trailing: Text(label(localeProvider.language)),
+          onTap: () async {
+            final selected = await showDialog<AppLanguage>(
+              context: context,
+              builder: (ctx) => SimpleDialog(
+                title: Text(l.settingsLanguage),
+                children: [
+                  RadioGroup<AppLanguage>(
+                    groupValue: localeProvider.language,
+                    onChanged: (value) => Navigator.of(ctx).pop(value),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (final language in AppLanguage.values)
+                          RadioListTile<AppLanguage>(
+                            value: language,
+                            title: Text(label(language)),
+                          ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+            if (selected != null) await localeProvider.setLanguage(selected);
+          },
+        ),
+      ],
+    );
+  }
+
   Widget _buildSecuritySection(BuildContext context) {
+    final l = context.l10n;
     final auth = context.watch<AuthProvider>();
 
     Future<void> toggleLock(bool value) async {
-      final error = await auth.setLockEnabled(value);
+      final error = await auth.setLockEnabled(
+        value,
+        AuthPrompt(
+          title: l.authPromptTitle,
+          reason: l.authPromptReason,
+          cancel: l.commonCancel,
+        ),
+      );
       if (error != null && context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(error)));
+            .showSnackBar(SnackBar(content: Text(error.message(l))));
       }
     }
 
@@ -142,9 +197,11 @@ class SettingsScreen extends StatelessWidget {
       children: [
         SwitchListTile.adaptive(
           secondary: const Icon(Icons.fingerprint_rounded, size: 22),
-          title: const Text('应用锁', style: TextStyle(fontSize: 15)),
+          title: Text(l.settingsAppLock, style: const TextStyle(fontSize: 15)),
           subtitle: Text(
-            auth.deviceSecure ? '打开应用时验证指纹、面容或设备密码' : '需要先在系统设置中设置锁屏密码',
+            auth.deviceSecure
+                ? l.settingsAppLockOn
+                : l.settingsAppLockNeedsDeviceLock,
             style: const TextStyle(fontSize: 12),
           ),
           value: auth.lockEnabled,
@@ -154,22 +211,28 @@ class SettingsScreen extends StatelessWidget {
           _thinDivider(context),
           ListTile(
             leading: const Icon(Icons.timer_outlined, size: 22),
-            title: const Text('自动锁定', style: TextStyle(fontSize: 15)),
-            subtitle: const Text(
-              '离开应用多久后需要重新验证',
-              style: TextStyle(fontSize: 12),
+            title: Text(
+              l.settingsAutoLock,
+              style: const TextStyle(fontSize: 15),
             ),
-            trailing: Text(auth.lockTimeout.label),
+            subtitle: Text(
+              l.settingsAutoLockSubtitle,
+              style: const TextStyle(fontSize: 12),
+            ),
+            trailing: Text(auth.lockTimeout.label(l)),
             onTap: () => _chooseLockTimeout(context, auth),
           ),
         ],
         _thinDivider(context),
         SwitchListTile.adaptive(
           secondary: const Icon(Icons.visibility_off_outlined, size: 22),
-          title: const Text('防窥保护', style: TextStyle(fontSize: 15)),
-          subtitle: const Text(
-            '在「最近任务」中隐藏应用内容；Android 12 及以下会同时禁止截屏',
-            style: TextStyle(fontSize: 12),
+          title: Text(
+            l.settingsPrivacyScreen,
+            style: const TextStyle(fontSize: 15),
+          ),
+          subtitle: Text(
+            l.settingsPrivacyScreenSubtitle,
+            style: const TextStyle(fontSize: 12),
           ),
           value: auth.privacyProtection,
           onChanged: auth.setPrivacyProtection,
@@ -182,10 +245,11 @@ class SettingsScreen extends StatelessWidget {
     BuildContext context,
     AuthProvider auth,
   ) async {
+    final l = context.l10n;
     final selected = await showDialog<LockTimeout>(
       context: context,
       builder: (ctx) => SimpleDialog(
-        title: const Text('自动锁定'),
+        title: Text(l.settingsAutoLock),
         children: [
           RadioGroup<LockTimeout>(
             groupValue: auth.lockTimeout,
@@ -196,11 +260,7 @@ class SettingsScreen extends StatelessWidget {
                 for (final timeout in LockTimeout.values)
                   RadioListTile<LockTimeout>(
                     value: timeout,
-                    title: Text(
-                      timeout == LockTimeout.immediately
-                          ? '离开应用后立即'
-                          : '离开应用 ${timeout.label}',
-                    ),
+                    title: Text(timeout.optionLabel(l)),
                   ),
               ],
             ),
@@ -212,6 +272,7 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildReminderSection(BuildContext context) {
+    final l = context.l10n;
     final reminders = context.watch<ReminderProvider>();
     final time = reminders.time;
     return _settingsCard(
@@ -219,10 +280,13 @@ class SettingsScreen extends StatelessWidget {
       children: [
         SwitchListTile.adaptive(
           secondary: const Icon(Icons.notifications_active_outlined, size: 22),
-          title: const Text('到期提醒', style: TextStyle(fontSize: 15)),
-          subtitle: const Text(
-            '在卡片提前提醒日、到期当天与过期次日各提醒一次',
-            style: TextStyle(fontSize: 12),
+          title: Text(
+            l.settingsExpiryReminders,
+            style: const TextStyle(fontSize: 15),
+          ),
+          subtitle: Text(
+            l.settingsExpiryRemindersSubtitle,
+            style: const TextStyle(fontSize: 12),
           ),
           value: reminders.enabled,
           onChanged: reminders.setEnabled,
@@ -231,7 +295,10 @@ class SettingsScreen extends StatelessWidget {
           _thinDivider(context),
           ListTile(
             leading: const Icon(Icons.schedule_rounded, size: 22),
-            title: const Text('提醒时间', style: TextStyle(fontSize: 15)),
+            title: Text(
+              l.settingsReminderTime,
+              style: const TextStyle(fontSize: 15),
+            ),
             trailing: Text(time.format(context)),
             onTap: () async {
               final picked = await showTimePicker(
@@ -249,10 +316,13 @@ class SettingsScreen extends StatelessWidget {
                 size: 22,
                 color: Theme.of(context).colorScheme.error,
               ),
-              title: const Text('通知权限未开启', style: TextStyle(fontSize: 15)),
-              subtitle: const Text(
-                '未开启时提醒不会显示，点击授权',
-                style: TextStyle(fontSize: 12),
+              title: Text(
+                l.settingsNotificationsOff,
+                style: const TextStyle(fontSize: 15),
+              ),
+              subtitle: Text(
+                l.settingsNotificationsOffSubtitle,
+                style: const TextStyle(fontSize: 12),
               ),
               onTap: reminders.requestPermission,
             ),
@@ -263,41 +333,43 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildDataSection(BuildContext context) {
+    final l = context.l10n;
     return _settingsCard(
       context,
       children: [
         ListTile(
           leading: const Icon(Icons.upload_file_rounded, size: 22),
-          title: const Text('导出备份', style: TextStyle(fontSize: 15)),
-          subtitle: const Text(
-            '手动导出全部数据，用于迁移到新设备',
-            style: TextStyle(fontSize: 12),
+          title: Text(l.settingsExport, style: const TextStyle(fontSize: 15)),
+          subtitle: Text(
+            l.settingsExportSubtitle,
+            style: const TextStyle(fontSize: 12),
           ),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
-          onTap: () => _exportData(context),
+          onTap: () => runExportFlow(context),
         ),
         _thinDivider(context),
         ListTile(
           leading: const Icon(Icons.download_rounded, size: 22),
-          title: const Text('导入备份', style: TextStyle(fontSize: 15)),
-          subtitle: const Text(
-            '从 SIMer 备份文件恢复数据',
-            style: TextStyle(fontSize: 12),
+          title: Text(l.settingsImport, style: const TextStyle(fontSize: 15)),
+          subtitle: Text(
+            l.settingsImportSubtitle,
+            style: const TextStyle(fontSize: 12),
           ),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
-          onTap: () => _importData(context),
+          onTap: () => runImportFlow(context),
         ),
       ],
     );
   }
 
   Widget _buildManageSection(BuildContext context) {
+    final l = context.l10n;
     return _settingsCard(
       context,
       children: [
         ListTile(
           leading: const Icon(Icons.label_rounded, size: 22),
-          title: const Text('标签管理', style: TextStyle(fontSize: 15)),
+          title: Text(l.tagsTitle, style: const TextStyle(fontSize: 15)),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
           onTap: () {
             Navigator.of(context).push(
@@ -308,7 +380,7 @@ class SettingsScreen extends StatelessWidget {
         _thinDivider(context),
         ListTile(
           leading: const Icon(Icons.archive_rounded, size: 22),
-          title: const Text('归档', style: TextStyle(fontSize: 15)),
+          title: Text(l.archiveTitle, style: const TextStyle(fontSize: 15)),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
           onTap: () {
             Navigator.of(context).push(
@@ -321,39 +393,43 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildAboutSection(BuildContext context) {
+    final l = context.l10n;
     return _settingsCard(
       context,
       children: [
         ListTile(
           leading: const Icon(Icons.info_outline_rounded, size: 22),
-          title: const Text(
-            'SIMer',
-            style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+          title: Text(
+            l.appTitle,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
           ),
           subtitle: FutureBuilder<String?>(
             future: PlatformService.appVersion(),
             builder: (context, snapshot) => Text(
-              '版本 ${snapshot.data ?? '—'}',
+              l.settingsVersion(snapshot.data ?? '—'),
               style: const TextStyle(fontSize: 12),
             ),
           ),
         ),
         _thinDivider(context),
-        const ListTile(
-          leading: Icon(Icons.description_outlined, size: 22),
-          title: Text('关于', style: TextStyle(fontSize: 15)),
+        ListTile(
+          leading: const Icon(Icons.description_outlined, size: 22),
+          title: Text(
+            l.settingsSectionAbout,
+            style: const TextStyle(fontSize: 15),
+          ),
           subtitle: Text(
-            'SIM卡信息记录管理，安全存储你的SIM卡与eSIM信息。',
-            style: TextStyle(fontSize: 12),
+            l.settingsAboutDescription,
+            style: const TextStyle(fontSize: 12),
           ),
         ),
         _thinDivider(context),
         ListTile(
           leading: const Icon(Icons.gavel_rounded, size: 22),
-          title: const Text('开源许可', style: TextStyle(fontSize: 15)),
+          title: Text(l.settingsLicenses, style: const TextStyle(fontSize: 15)),
           trailing: const Icon(Icons.chevron_right_rounded, size: 22),
           onTap: () =>
-              showLicensePage(context: context, applicationName: 'SIMer'),
+              showLicensePage(context: context, applicationName: l.appTitle),
         ),
       ],
     );
@@ -381,8 +457,4 @@ class SettingsScreen extends StatelessWidget {
       color: Theme.of(context).dividerTheme.color ?? AppColors.lightDivider,
     );
   }
-
-  Future<void> _exportData(BuildContext context) => runExportFlow(context);
-
-  Future<void> _importData(BuildContext context) => runImportFlow(context);
 }

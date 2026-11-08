@@ -44,6 +44,20 @@ jobs:
       - name: Install dependencies (locked)
         run: flutter pub get --enforce-lockfile
 
+      # 界面文案：生成的代码必须与 .arb 一致，英文不能缺少任何条目
+      - name: Check localizations
+        run: |
+          flutter gen-l10n
+          if ! git diff --exit-code -- lib/l10n; then
+            echo "::error::lib/l10n is out of date. Run 'flutter gen-l10n' and commit the result."
+            exit 1
+          fi
+          if grep -q '[^{}[:space:]]' build/l10n_untranslated.json; then
+            echo "::error::Untranslated messages:"
+            cat build/l10n_untranslated.json
+            exit 1
+          fi
+
       - name: Check formatting
         run: dart format --output=none --set-exit-if-changed lib test
 

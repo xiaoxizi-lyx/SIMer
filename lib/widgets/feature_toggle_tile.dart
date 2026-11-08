@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../models/feature_set.dart';
 
 /// 功能开关列表项（用于添加/编辑表单）
@@ -70,7 +71,7 @@ class _FeatureToggleTileState extends State<FeatureToggleTile> {
                   child: TextField(
                     controller: _noteController,
                     decoration: InputDecoration(
-                      hintText: '备注（可选）',
+                      hintText: context.l10n.featureNoteHint,
                       isDense: true,
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 12,

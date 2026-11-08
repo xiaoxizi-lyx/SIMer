@@ -4,17 +4,14 @@ import 'json_utils.dart';
 
 /// SIM 卡可能支持的功能。枚举名同时是备份 JSON 中的键，不可随意修改。
 enum Feature {
-  voice('通话'),
-  sms('短信'),
-  data('数据流量'),
-  wifiCalling('Wi-Fi Calling'),
-  volte('VoLTE'),
-  hotspot('热点共享'),
-  esimTransfer('eSIM转移'),
-  intlRoaming('国际漫游');
-
-  const Feature(this.label);
-  final String label;
+  voice,
+  sms,
+  data,
+  wifiCalling,
+  volte,
+  hotspot,
+  esimTransfer,
+  intlRoaming,
 }
 
 /// 单个功能项：是否支持 + 可选备注（不可变）。
