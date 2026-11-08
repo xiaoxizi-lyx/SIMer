@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:simer/models/enums.dart';
 import 'package:simer/models/sim_card.dart';
+import 'package:simer/widgets/qr_code_view.dart';
 import 'package:simer/widgets/sim_card_back.dart';
 
 import '../support/l10n.dart';
@@ -92,5 +93,39 @@ void main() {
     expect(find.text('ABCD-1234-EFGH-5678'), findsOneWidget);
     expect(find.text('246810'), findsOneWidget);
     expect(find.byTooltip('显示ICCID'), findsNothing);
+  });
+
+  testWidgets('eSIM 卡可以重新显示激活码二维码并复制激活码', (tester) async {
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied = (call.arguments as Map<Object?, Object?>)['text'] as String?;
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
+
+    await _pump(tester, mask: true);
+    await tester.tap(find.text('显示二维码'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('eSIM 二维码'), findsOneWidget);
+    expect(find.byType(QrCodeView), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    // 卡片填写了确认码：提示安装时需要确认码
+    expect(find.textContaining('还需要输入确认码'), findsOneWidget);
+
+    await tester.tap(find.text('复制完整激活码'));
+    await tester.pump();
+    expect(copied, r'LPA:1$rsp.example.com$ABCD-1234-EFGH-5678$$1');
+    expect(find.text('已复制完整激活码'), findsOneWidget);
   });
 }

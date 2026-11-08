@@ -9,8 +9,10 @@ import '../models/enums.dart';
 import '../models/sensitive_mask.dart';
 import '../models/sim_card.dart';
 import '../models/tag.dart';
+import '../services/qr_parser_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_fonts.dart';
+import 'esim_qr_sheet.dart';
 import 'validity_countdown.dart';
 
 /// SIM卡背面 – 完整详情视图
@@ -168,6 +170,20 @@ class SimCardBack extends StatelessWidget {
                       simCard.confirmationCode!,
                       simCard.confirmationCode!,
                       masked: SensitiveMask.full(simCard.confirmationCode!),
+                    ),
+                  if (QrParserService.forCard(simCard) != null)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: TextButton.icon(
+                        style: TextButton.styleFrom(
+                          foregroundColor: _textColor,
+                          padding: EdgeInsets.zero,
+                          visualDensity: VisualDensity.compact,
+                        ),
+                        onPressed: () => EsimQrSheet.show(context, simCard),
+                        icon: const Icon(Icons.qr_code_2_rounded, size: 18),
+                        label: Text(l.esimQrShow),
+                      ),
                     ),
                 ]),
               ],

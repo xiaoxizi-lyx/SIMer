@@ -1,3 +1,5 @@
+import '../models/sim_card.dart';
+
 /// eSIM 激活码（GSMA SGP.22 §4.1 Activation Code）。
 ///
 /// 二维码内容为 `LPA:` 加上以 `$` 分隔的字段：
@@ -146,5 +148,34 @@ abstract final class QrParserService {
       ),
       raw,
     );
+  }
+
+  /// 卡片保存的 eSIM 激活码，用于重新生成二维码；信息不完整或格式不正确时为 null。
+  ///
+  /// 扫码时保存的原始内容与当前的 SM-DP+ 地址、匹配 ID 一致时直接使用
+  /// （保留 SM-DP+ OID 与确认码标志）；否则（例如扫码后手动改过）按当前字段组成，
+  /// 填写了确认码时标明安装需要确认码。
+  static LpaActivationCode? forCard(SimCard card) {
+    final smdp = card.rspServerAddress?.trim() ?? '';
+    final matchingId = card.activationCode?.trim() ?? '';
+    if (smdp.isEmpty || matchingId.isEmpty) return null;
+
+    final raw = card.qrCodeRawData;
+    if (raw != null && raw.trim().isNotEmpty) {
+      final scanned = parse(raw).code;
+      if (scanned != null &&
+          scanned.smdpAddress == smdp &&
+          scanned.matchingId == matchingId) {
+        return scanned;
+      }
+    }
+    final confirmationCode = card.confirmationCode?.trim() ?? '';
+    return parse(
+      LpaActivationCode(
+        smdpAddress: smdp,
+        matchingId: matchingId,
+        confirmationCodeRequired: confirmationCode.isNotEmpty,
+      ).toLpaString(),
+    ).code;
   }
 }

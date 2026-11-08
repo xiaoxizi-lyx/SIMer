@@ -364,5 +364,10 @@
   "settingsMaskSensitiveSubtitle": "ICCIDs, eSIM activation codes and confirmation codes stay partly hidden until you tap the eye icon",
   "sensitiveShow": "Show {field}",
   "sensitiveHide": "Hide {field}",
-  "copyField": "Copy {field}"
+  "copyField": "Copy {field}",
+  "esimQrShow": "Show QR code",
+  "esimQrTitle": "eSIM QR code",
+  "esimQrSemantics": "eSIM activation QR code",
+  "esimQrHint": "Scan this code on another device to install the eSIM. Most activation codes work only once, so an eSIM that has already been installed usually can't be downloaded again.",
+  "esimQrNeedsConfirmation": "You'll also need the confirmation code during installation (see “Confirmation code” in the card details)."
 }

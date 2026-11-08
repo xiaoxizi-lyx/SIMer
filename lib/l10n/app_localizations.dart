@@ -2287,6 +2287,36 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'复制{field}'**
   String copyField(String field);
+
+  /// No description provided for @esimQrShow.
+  ///
+  /// In zh, this message translates to:
+  /// **'显示二维码'**
+  String get esimQrShow;
+
+  /// No description provided for @esimQrTitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'eSIM 二维码'**
+  String get esimQrTitle;
+
+  /// No description provided for @esimQrSemantics.
+  ///
+  /// In zh, this message translates to:
+  /// **'eSIM 激活码二维码'**
+  String get esimQrSemantics;
+
+  /// No description provided for @esimQrHint.
+  ///
+  /// In zh, this message translates to:
+  /// **'在另一台设备上扫描此二维码安装 eSIM。大多数激活码只能使用一次：已经安装过的 eSIM 通常无法再次下载。'**
+  String get esimQrHint;
+
+  /// No description provided for @esimQrNeedsConfirmation.
+  ///
+  /// In zh, this message translates to:
+  /// **'安装时还需要输入确认码（见卡片详情中的「确认码」）。'**
+  String get esimQrNeedsConfirmation;
 }
 
 class _AppLocalizationsDelegate

@@ -1349,4 +1349,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String copyField(String field) {
     return 'Copy $field';
   }
+
+  @override
+  String get esimQrShow => 'Show QR code';
+
+  @override
+  String get esimQrTitle => 'eSIM QR code';
+
+  @override
+  String get esimQrSemantics => 'eSIM activation QR code';
+
+  @override
+  String get esimQrHint =>
+      'Scan this code on another device to install the eSIM. Most activation codes work only once, so an eSIM that has already been installed usually can\'t be downloaded again.';
+
+  @override
+  String get esimQrNeedsConfirmation =>
+      'You\'ll also need the confirmation code during installation (see “Confirmation code” in the card details).';
 }

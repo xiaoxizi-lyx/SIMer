@@ -1231,4 +1231,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String copyField(String field) {
     return '复制$field';
   }
+
+  @override
+  String get esimQrShow => '显示二维码';
+
+  @override
+  String get esimQrTitle => 'eSIM 二维码';
+
+  @override
+  String get esimQrSemantics => 'eSIM 激活码二维码';
+
+  @override
+  String get esimQrHint =>
+      '在另一台设备上扫描此二维码安装 eSIM。大多数激活码只能使用一次：已经安装过的 eSIM 通常无法再次下载。';
+
+  @override
+  String get esimQrNeedsConfirmation => '安装时还需要输入确认码（见卡片详情中的「确认码」）。';
 }
