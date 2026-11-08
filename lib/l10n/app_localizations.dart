@@ -2257,6 +2257,36 @@ abstract class AppLocalizations {
   /// In zh, this message translates to:
   /// **'SIM 卡即将到期、今天到期或已过期时提醒'**
   String get notificationChannelDescription;
+
+  /// No description provided for @settingsMaskSensitive.
+  ///
+  /// In zh, this message translates to:
+  /// **'隐藏敏感信息'**
+  String get settingsMaskSensitive;
+
+  /// No description provided for @settingsMaskSensitiveSubtitle.
+  ///
+  /// In zh, this message translates to:
+  /// **'ICCID、eSIM 激活码与确认码默认部分隐藏，点击眼睛图标查看'**
+  String get settingsMaskSensitiveSubtitle;
+
+  /// No description provided for @sensitiveShow.
+  ///
+  /// In zh, this message translates to:
+  /// **'显示{field}'**
+  String sensitiveShow(String field);
+
+  /// No description provided for @sensitiveHide.
+  ///
+  /// In zh, this message translates to:
+  /// **'隐藏{field}'**
+  String sensitiveHide(String field);
+
+  /// No description provided for @copyField.
+  ///
+  /// In zh, this message translates to:
+  /// **'复制{field}'**
+  String copyField(String field);
 }
 
 class _AppLocalizationsDelegate

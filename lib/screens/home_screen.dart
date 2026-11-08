@@ -218,6 +218,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 使用 SimCardProvider 内置的筛选/排序
     final filteredCards = simCardProvider.getFilteredAndSorted(filterProvider);
+    final maskSensitive = context.select<AuthProvider, bool>(
+      (a) => a.maskSensitiveInfo,
+    );
 
     if (filteredCards.isEmpty) {
       final hasFilters =
@@ -248,6 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onEdit: () => CardActions.edit(context, card),
                 onArchive: () => CardActions.archive(context, card),
                 onMarkAsUsed: () => CardActions.markAsUsed(context, card),
+                maskSensitive: maskSensitive,
               ),
             );
           },

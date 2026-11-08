@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 
 import '../l10n/l10n.dart';
 import '../models/sim_card.dart';
+import '../providers/auth_provider.dart';
 import '../providers/sim_card_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/sim_card_front.dart';
@@ -19,6 +20,9 @@ class ArchiveScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<SimCardProvider>();
     final archivedCards = provider.archivedCards;
+    final maskSensitive = context.select<AuthProvider, bool>(
+      (a) => a.maskSensitiveInfo,
+    );
 
     return Scaffold(
       appBar: AppBar(title: Text(context.l10n.archiveTitle)),
@@ -29,7 +33,12 @@ class ArchiveScreen extends StatelessWidget {
               itemCount: archivedCards.length,
               itemBuilder: (context, index) {
                 final card = archivedCards[index];
-                return _buildArchivedCard(context, card, provider);
+                return _buildArchivedCard(
+                  context,
+                  card,
+                  provider,
+                  maskSensitive: maskSensitive,
+                );
               },
             ),
     );
@@ -73,8 +82,9 @@ class ArchiveScreen extends StatelessWidget {
   Widget _buildArchivedCard(
     BuildContext context,
     SimCard card,
-    SimCardProvider provider,
-  ) {
+    SimCardProvider provider, {
+    required bool maskSensitive,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -82,7 +92,11 @@ class ArchiveScreen extends StatelessWidget {
           // 卡片正面（略灰化）
           Opacity(
             opacity: 0.75,
-            child: SimCardFront(simCard: card, tags: provider.tags),
+            child: SimCardFront(
+              simCard: card,
+              tags: provider.tags,
+              maskSensitive: maskSensitive,
+            ),
           ),
           const SizedBox(height: 8),
           // 操作按钮行

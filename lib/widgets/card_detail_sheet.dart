@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../l10n/l10n.dart';
+import '../providers/auth_provider.dart';
 import '../providers/sim_card_provider.dart';
 import '../screens/card_actions.dart';
 import 'sim_card_back.dart';
@@ -27,6 +28,9 @@ class CardDetailSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<SimCardProvider>();
     final card = provider.getSimCardByUuid(cardUuid);
+    final maskSensitive = context.select<AuthProvider, bool>(
+      (a) => a.maskSensitiveInfo,
+    );
     if (card == null) {
       return SizedBox(
         height: 160,
@@ -51,6 +55,7 @@ class CardDetailSheet extends StatelessWidget {
         child: SimCardBack(
           simCard: card,
           tags: provider.tags,
+          maskSensitive: maskSensitive,
           onEdit: () => closeThen((ctx) => CardActions.edit(ctx, card)),
           onMarkAsUsed: () =>
               closeThen((ctx) => CardActions.markAsUsed(ctx, card)),

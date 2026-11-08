@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../data/countries.dart';
 import '../l10n/l10n.dart';
 import '../models/enums.dart';
+import '../models/sensitive_mask.dart';
 import '../models/sim_card.dart';
 import '../models/tag.dart';
 import '../theme/app_colors.dart';
@@ -20,6 +21,9 @@ class SimCardBack extends StatelessWidget {
   final VoidCallback? onArchive;
   final VoidCallback? onMarkAsUsed;
 
+  /// ICCID、激活码与确认码是否默认打码显示（见设置中的「隐藏敏感信息」）。
+  final bool maskSensitive;
+
   const SimCardBack({
     super.key,
     required this.simCard,
@@ -27,6 +31,7 @@ class SimCardBack extends StatelessWidget {
     this.onEdit,
     this.onArchive,
     this.onMarkAsUsed,
+    this.maskSensitive = true,
   });
 
   Color get _baseColor => Color(simCard.cardColor);
@@ -81,6 +86,7 @@ class SimCardBack extends StatelessWidget {
                     simCard.formattedIccid!,
                     simCard.iccid!,
                     monospace: true,
+                    masked: SensitiveMask.iccid(simCard.iccid!),
                   ),
                 if (simCard.phoneNumbers.isNotEmpty)
                   ...simCard.phoneNumbers.asMap().entries.map(
@@ -153,12 +159,15 @@ class SimCardBack extends StatelessWidget {
                       l.fieldMatchingId,
                       simCard.activationCode!,
                       simCard.activationCode!,
+                      masked: SensitiveMask.code(simCard.activationCode!),
                     ),
                   if (simCard.confirmationCode != null &&
                       simCard.confirmationCode!.isNotEmpty)
-                    _infoRow(
+                    _infoRowWithCopy(
                       l.fieldConfirmationCode,
                       simCard.confirmationCode!,
+                      simCard.confirmationCode!,
+                      masked: SensitiveMask.full(simCard.confirmationCode!),
                     ),
                 ]),
               ],
@@ -235,14 +244,17 @@ class SimCardBack extends StatelessWidget {
     secondaryColor: _secondaryColor,
   );
 
+  /// 带复制按钮的一行。[masked] 是打码后的显示内容，仅在开启「隐藏敏感信息」时使用。
   Widget _infoRowWithCopy(
     String label,
     String displayValue,
     String copyValue, {
     bool monospace = false,
+    String? masked,
   }) => _InfoRow(
     label: label,
     value: displayValue,
+    maskedValue: maskSensitive ? masked : null,
     copyValue: copyValue,
     monospace: monospace,
     textColor: _textColor,
@@ -488,15 +500,17 @@ class SimCardBack extends StatelessWidget {
   }
 }
 
-/// 卡片背面的一行信息：标签 + 值（可选复制按钮）。
+/// 卡片背面的一行信息：标签 + 值，可选复制按钮与打码。
 ///
 /// 标签列宽度随界面语言调整：英文标签更长。
-class _InfoRow extends StatelessWidget {
+/// 有 [maskedValue] 时默认显示打码内容，点击眼睛图标切换；复制的始终是完整内容。
+class _InfoRow extends StatefulWidget {
   const _InfoRow({
     required this.label,
     required this.value,
     required this.textColor,
     required this.secondaryColor,
+    this.maskedValue,
     this.copyValue,
     this.monospace = false,
   });
@@ -506,14 +520,44 @@ class _InfoRow extends StatelessWidget {
   final Color textColor;
   final Color secondaryColor;
 
+  /// 打码后的显示内容；为空表示不打码。
+  final String? maskedValue;
+
   /// 不为空时显示复制按钮，复制此内容。
   final String? copyValue;
   final bool monospace;
 
   @override
+  State<_InfoRow> createState() => _InfoRowState();
+}
+
+class _InfoRowState extends State<_InfoRow> {
+  bool _revealed = false;
+
+  @override
   Widget build(BuildContext context) {
     final l = context.l10n;
-    final copy = copyValue;
+    final copy = widget.copyValue;
+    final masked = widget.maskedValue;
+    final hidden = masked != null && !_revealed;
+    final iconColor = widget.secondaryColor;
+
+    Widget iconButton({
+      required IconData icon,
+      required String tooltip,
+      required VoidCallback onTap,
+    }) => Tooltip(
+      message: tooltip,
+      child: InkResponse(
+        onTap: onTap,
+        radius: 18,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+          child: Icon(icon, size: 14, color: iconColor, semanticLabel: tooltip),
+        ),
+      ),
+    );
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 6),
       child: Row(
@@ -522,39 +566,50 @@ class _InfoRow extends StatelessWidget {
           SizedBox(
             width: l.localeName == 'zh' ? 72 : 112,
             child: Text(
-              label,
-              style: TextStyle(fontSize: 12, color: secondaryColor),
+              widget.label,
+              style: TextStyle(fontSize: 12, color: widget.secondaryColor),
             ),
           ),
           Expanded(
             child: Text(
-              value,
-              style: monospace
+              hidden ? masked : widget.value,
+              style: widget.monospace
                   ? TextStyle(
                       fontFamily: AppFonts.mono,
                       fontSize: 12,
                       fontWeight: FontWeight.w400,
-                      color: textColor,
+                      color: widget.textColor,
                     )
                   : TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: textColor,
+                      color: widget.textColor,
                     ),
             ),
           ),
+          if (masked != null)
+            iconButton(
+              icon: hidden
+                  ? Icons.visibility_outlined
+                  : Icons.visibility_off_outlined,
+              tooltip: hidden
+                  ? l.sensitiveShow(widget.label)
+                  : l.sensitiveHide(widget.label),
+              onTap: () => setState(() => _revealed = !_revealed),
+            ),
           if (copy != null)
-            GestureDetector(
+            iconButton(
+              icon: Icons.copy_rounded,
+              tooltip: l.copyField(widget.label),
               onTap: () {
                 unawaited(Clipboard.setData(ClipboardData(text: copy)));
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
-                    content: Text(l.copiedField(label)),
+                    content: Text(l.copiedField(widget.label)),
                     duration: const Duration(seconds: 1),
                   ),
                 );
               },
-              child: Icon(Icons.copy_rounded, size: 14, color: secondaryColor),
             ),
         ],
       ),

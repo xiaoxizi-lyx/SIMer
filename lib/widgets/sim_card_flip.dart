@@ -18,6 +18,9 @@ class SimCardFlip extends StatefulWidget {
   final VoidCallback? onArchive;
   final VoidCallback? onMarkAsUsed;
 
+  /// ICCID、激活码等是否打码显示（见设置中的「隐藏敏感信息」）。
+  final bool maskSensitive;
+
   const SimCardFlip({
     super.key,
     required this.simCard,
@@ -25,6 +28,7 @@ class SimCardFlip extends StatefulWidget {
     this.onEdit,
     this.onArchive,
     this.onMarkAsUsed,
+    this.maskSensitive = true,
   });
 
   @override
@@ -95,6 +99,7 @@ class _SimCardFlipState extends State<SimCardFlip>
                         simCard: widget.simCard,
                         tags: widget.tags,
                         onMarkAsUsed: widget.onMarkAsUsed,
+                        maskSensitive: widget.maskSensitive,
                       )
                     : Transform(
                         alignment: Alignment.center,
@@ -105,6 +110,7 @@ class _SimCardFlipState extends State<SimCardFlip>
                           onEdit: widget.onEdit,
                           onArchive: widget.onArchive,
                           onMarkAsUsed: widget.onMarkAsUsed,
+                          maskSensitive: widget.maskSensitive,
                         ),
                       ),
               );

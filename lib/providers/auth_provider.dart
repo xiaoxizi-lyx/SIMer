@@ -47,6 +47,7 @@ class AuthProvider extends ChangeNotifier {
   static const String _lockEnabledKey = 'app_lock_enabled';
   static const String _lockTimeoutKey = 'app_lock_timeout';
   static const String _privacyKey = 'privacy_protection_enabled';
+  static const String _maskKey = 'mask_sensitive_info';
 
   final AuthBackend _backend;
 
@@ -55,6 +56,7 @@ class AuthProvider extends ChangeNotifier {
   bool _authenticating = false;
   bool _deviceSecure = false;
   bool _privacyProtection = true;
+  bool _maskSensitiveInfo = true;
   LockTimeout _lockTimeout = LockTimeout.seconds30;
   AuthError? _lastError;
   AuthNotice? _notice;
@@ -72,6 +74,9 @@ class AuthProvider extends ChangeNotifier {
   LockTimeout get lockTimeout => _lockTimeout;
   bool get privacyProtection => _privacyProtection;
 
+  /// 卡片上的 ICCID、激活码与确认码是否默认打码显示。
+  bool get maskSensitiveInfo => _maskSensitiveInfo;
+
   /// 最近一次验证失败的原因（显示在锁屏上）。
   AuthError? get lastError => _lastError;
 
@@ -83,6 +88,7 @@ class AuthProvider extends ChangeNotifier {
     _lockEnabled = prefs.getBool(_lockEnabledKey) ?? false;
     _lockTimeout = LockTimeout.fromName(prefs.getString(_lockTimeoutKey));
     _privacyProtection = prefs.getBool(_privacyKey) ?? true;
+    _maskSensitiveInfo = prefs.getBool(_maskKey) ?? true;
 
     final availability = await _backend.availability();
     _deviceSecure = availability == AuthAvailability.available;
@@ -187,6 +193,13 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     await PlatformService.setPrivacyProtection(enabled: enabled);
     await _savePref((p) => p.setBool(_privacyKey, enabled));
+  }
+
+  Future<void> setMaskSensitiveInfo(bool enabled) async {
+    if (_maskSensitiveInfo == enabled) return;
+    _maskSensitiveInfo = enabled;
+    notifyListeners();
+    await _savePref((p) => p.setBool(_maskKey, enabled));
   }
 
   void dismissNotice() {

@@ -359,5 +359,10 @@
   "reminderExpiredBodyRolling": "The keep-alive deadline ({date}) has passed. Check the number's status soon.",
   "reminderExpiredBodyFixed": "Expired on {date}.",
   "notificationChannelName": "Expiry reminders",
-  "notificationChannelDescription": "Reminders when a SIM card is about to expire, expires today or has expired"
+  "notificationChannelDescription": "Reminders when a SIM card is about to expire, expires today or has expired",
+  "settingsMaskSensitive": "Hide sensitive details",
+  "settingsMaskSensitiveSubtitle": "ICCIDs, eSIM activation codes and confirmation codes stay partly hidden until you tap the eye icon",
+  "sensitiveShow": "Show {field}",
+  "sensitiveHide": "Hide {field}",
+  "copyField": "Copy {field}"
 }

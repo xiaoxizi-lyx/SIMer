@@ -799,5 +799,31 @@
     }
   },
   "notificationChannelName": "到期提醒",
-  "notificationChannelDescription": "SIM 卡即将到期、今天到期或已过期时提醒"
+  "notificationChannelDescription": "SIM 卡即将到期、今天到期或已过期时提醒",
+  "settingsMaskSensitive": "隐藏敏感信息",
+  "settingsMaskSensitiveSubtitle": "ICCID、eSIM 激活码与确认码默认部分隐藏，点击眼睛图标查看",
+  "sensitiveShow": "显示{field}",
+  "@sensitiveShow": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "sensitiveHide": "隐藏{field}",
+  "@sensitiveHide": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  },
+  "copyField": "复制{field}",
+  "@copyField": {
+    "placeholders": {
+      "field": {
+        "type": "String"
+      }
+    }
+  }
 }

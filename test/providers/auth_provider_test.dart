@@ -119,4 +119,16 @@ void main() {
     expect(await auth.setLockEnabled(true, testPrompt), isNull);
     expect(auth.lockEnabled, isTrue);
   });
+
+  test('「隐藏敏感信息」默认开启，并保存用户的选择', () async {
+    final auth = await _provider(FakeAuthBackend(), lockEnabled: false);
+    expect(auth.maskSensitiveInfo, isTrue);
+
+    await auth.setMaskSensitiveInfo(false);
+    expect(auth.maskSensitiveInfo, isFalse);
+
+    final reloaded = AuthProvider(backend: FakeAuthBackend());
+    await reloaded.initialize();
+    expect(reloaded.maskSensitiveInfo, isFalse);
+  });
 }

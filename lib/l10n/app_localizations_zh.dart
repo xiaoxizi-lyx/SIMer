@@ -1209,4 +1209,26 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get notificationChannelDescription => 'SIM 卡即将到期、今天到期或已过期时提醒';
+
+  @override
+  String get settingsMaskSensitive => '隐藏敏感信息';
+
+  @override
+  String get settingsMaskSensitiveSubtitle =>
+      'ICCID、eSIM 激活码与确认码默认部分隐藏，点击眼睛图标查看';
+
+  @override
+  String sensitiveShow(String field) {
+    return '显示$field';
+  }
+
+  @override
+  String sensitiveHide(String field) {
+    return '隐藏$field';
+  }
+
+  @override
+  String copyField(String field) {
+    return '复制$field';
+  }
 }

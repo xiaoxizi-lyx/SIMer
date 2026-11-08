@@ -1327,4 +1327,26 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get notificationChannelDescription =>
       'Reminders when a SIM card is about to expire, expires today or has expired';
+
+  @override
+  String get settingsMaskSensitive => 'Hide sensitive details';
+
+  @override
+  String get settingsMaskSensitiveSubtitle =>
+      'ICCIDs, eSIM activation codes and confirmation codes stay partly hidden until you tap the eye icon';
+
+  @override
+  String sensitiveShow(String field) {
+    return 'Show $field';
+  }
+
+  @override
+  String sensitiveHide(String field) {
+    return 'Hide $field';
+  }
+
+  @override
+  String copyField(String field) {
+    return 'Copy $field';
+  }
 }

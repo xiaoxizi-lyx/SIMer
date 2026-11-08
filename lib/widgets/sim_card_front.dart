@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../data/countries.dart';
 import '../l10n/l10n.dart';
 import '../models/enums.dart';
+import '../models/sensitive_mask.dart';
 import '../models/sim_card.dart';
 import '../models/tag.dart';
 import '../theme/app_colors.dart';
@@ -15,11 +16,15 @@ class SimCardFront extends StatelessWidget {
   final List<Tag> tags;
   final VoidCallback? onMarkAsUsed;
 
+  /// ICCID 是否打码显示（见设置中的「隐藏敏感信息」）。
+  final bool maskSensitive;
+
   const SimCardFront({
     super.key,
     required this.simCard,
     this.tags = const [],
     this.onMarkAsUsed,
+    this.maskSensitive = true,
   });
 
   Color get _baseColor => Color(simCard.cardColor);
@@ -27,6 +32,12 @@ class SimCardFront extends StatelessWidget {
   Color get _textColor => AppColors.textOnColor(_baseColor);
 
   Color get _secondaryTextColor => _textColor.withValues(alpha: 0.7);
+
+  String get _iccidText {
+    final iccid = simCard.iccid;
+    if (iccid == null || iccid.isEmpty) return '';
+    return maskSensitive ? SensitiveMask.iccid(iccid) : simCard.formattedIccid!;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -241,7 +252,7 @@ class SimCardFront extends StatelessWidget {
         // ICCID
         Expanded(
           child: Text(
-            simCard.formattedIccid ?? '',
+            _iccidText,
             style: TextStyle(
               fontFamily: AppFonts.mono,
               fontSize: 11,

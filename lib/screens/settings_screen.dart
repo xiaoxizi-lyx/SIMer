@@ -237,6 +237,20 @@ class SettingsScreen extends StatelessWidget {
           value: auth.privacyProtection,
           onChanged: auth.setPrivacyProtection,
         ),
+        _thinDivider(context),
+        SwitchListTile.adaptive(
+          secondary: const Icon(Icons.password_rounded, size: 22),
+          title: Text(
+            l.settingsMaskSensitive,
+            style: const TextStyle(fontSize: 15),
+          ),
+          subtitle: Text(
+            l.settingsMaskSensitiveSubtitle,
+            style: const TextStyle(fontSize: 12),
+          ),
+          value: auth.maskSensitiveInfo,
+          onChanged: auth.setMaskSensitiveInfo,
+        ),
       ],
     );
   }
