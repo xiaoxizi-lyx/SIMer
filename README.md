@@ -167,7 +167,7 @@ flutter run
 提交前请确保以下检查全部通过（CI 会执行同样的检查）：
 
 ```bash
-dart format --output=none --set-exit-if-changed lib test
+dart format --output=none --set-exit-if-changed lib test integration_test
 flutter analyze
 flutter test
 ```

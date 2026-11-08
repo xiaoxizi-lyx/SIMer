@@ -24,7 +24,7 @@
 
 4. **格式检查**：
    ```bash
-   dart format --output=none --set-exit-if-changed lib test
+   dart format --output=none --set-exit-if-changed lib test integration_test
    ```
 
 5. **代码静态检查**（`analysis_options.yaml` 启用了严格模式，要求零告警）：
