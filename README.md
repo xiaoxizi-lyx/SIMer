@@ -206,6 +206,17 @@ flutter build apk --release --split-per-abi
 
 ---
 
+## 📝 待办 (TODO)
+
+- [ ] **自适应图标与主题图标**：现在的图标是一张不分层的图片，Android 8.0 及以上的部分桌面会把它缩小后放进白色底板，Android 13 起的主题图标（随壁纸配色的单色图标）也无法使用。需要分层素材（透明背景的前景图加背景色，最好是 SVG），或重新设计一个矢量图标。
+- [ ] **繁体中文界面**：增加 `lib/l10n/app_zh_Hant.arb`；目前繁体中文系统显示简体中文。
+- [ ] **复核国家/地区的英文名称**：英文界面中的国家/地区名称是按中文界面的叫法逐一对应翻译的（例如「中国大陆」→ Mainland China），需要再确认一遍。
+- [ ] **升级 Gradle 与 Android Gradle 插件**（目前为 Gradle 9.1.0、AGP 9.0.1）：计划随下次升级 Flutter 一起进行。
+- [ ] **数据库加密（SQLCipher）**：待评估。系统的文件级加密、应用沙盒、禁用系统备份和应用锁已覆盖常见风险，再加密数据库的收益有限，还会让安装包明显变大，并需要迁移现有数据。
+- [ ] **仓库设置**：在 v1.0.0 Release 说明的开头注明 1.x 已停止维护，并链接到[从 1.x 升级](#从-1x-升级)；在仓库 Settings → Code security 中开启 Dependabot 安全更新（版本更新已由 `.github/dependabot.yml` 配置）。
+
+---
+
 ## 📄 开源许可
 
 本项目基于 [MIT License](LICENSE) 开源。内置字体 [Inter](assets/fonts/OFL-Inter.txt) 与 [Roboto Mono](assets/fonts/OFL-RobotoMono.txt) 采用 SIL Open Font License 1.1。

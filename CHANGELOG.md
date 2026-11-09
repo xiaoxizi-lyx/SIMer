@@ -2,7 +2,7 @@
 
 本项目遵循 [Semantic Versioning (语义化版本 2.0.0)](https://semver.org/lang/zh-CN/) 以及 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/) 规范。
 
-## [2.1.0] - 2026-11-08
+## [2.1.0] - 2026-11-09
 
 > 从 2.0 直接覆盖安装即可升级，数据会保留。加密备份需要 2.1.0 及以上版本才能导入。
 
