@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/countries.dart';
+import '../l10n/l10n.dart';
 
 /// 国家/地区选择器底部弹窗
 class CountryPickerSheet extends StatefulWidget {
@@ -27,6 +28,7 @@ class _CountryPickerSheetState extends State<CountryPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final results = CountryData.search(_query);
     final screenHeight = MediaQuery.of(context).size.height;
 
@@ -48,15 +50,15 @@ class _CountryPickerSheetState extends State<CountryPickerSheet> {
               ),
             ),
           ),
-          const Text(
-            '选择国家/地区',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          Text(
+            l.countryPickerTitle,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 12),
           TextField(
-            decoration: const InputDecoration(
-              hintText: '搜索国家/地区…',
-              prefixIcon: Icon(Icons.search_rounded, size: 20),
+            decoration: InputDecoration(
+              hintText: l.countryPickerSearchHint,
+              prefixIcon: const Icon(Icons.search_rounded, size: 20),
             ),
             onChanged: (v) => setState(() => _query = v),
           ),
@@ -65,26 +67,26 @@ class _CountryPickerSheetState extends State<CountryPickerSheet> {
             child: ListView.builder(
               itemCount: results.length,
               itemBuilder: (context, index) {
-                final entry = results[index];
-                final emoji = CountryData.countryCodeToEmoji(entry.key);
+                final code = results[index];
+                final emoji = CountryData.countryCodeToEmoji(code);
                 return ListTile(
                   leading: Text(emoji, style: const TextStyle(fontSize: 24)),
                   title: Text(
-                    entry.value,
+                    CountryData.name(code, l.localeName),
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
                     ),
                   ),
                   trailing: Text(
-                    entry.key,
+                    code,
                     style: TextStyle(
                       fontSize: 12,
                       color: Theme.of(context).colorScheme.onSurface
                           .withValues(alpha: 0.4),
                     ),
                   ),
-                  onTap: () => Navigator.of(context).pop(entry.key),
+                  onTap: () => Navigator.of(context).pop(code),
                 );
               },
             ),

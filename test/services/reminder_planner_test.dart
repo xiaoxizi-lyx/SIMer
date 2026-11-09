@@ -3,6 +3,8 @@ import 'package:simer/models/enums.dart';
 import 'package:simer/models/sim_card.dart';
 import 'package:simer/services/reminder_planner.dart';
 
+import '../support/l10n.dart';
+
 final _now = DateTime(2026, 11, 6, 10);
 
 SimCard _card(
@@ -28,7 +30,7 @@ SimCard _card(
 );
 
 List<PlannedReminder> _plan(Iterable<SimCard> cards) =>
-    ReminderPlanner.plan(cards, now: _now, hour: 9, minute: 30);
+    ReminderPlanner.plan(cards, now: _now, hour: 9, minute: 30, strings: zh);
 
 void main() {
   test('每张卡最多三条一次性提醒：提前 N 天、当天、过期次日', () {

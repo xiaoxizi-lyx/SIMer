@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/l10n.dart';
 import '../models/tag.dart';
 import '../providers/filter_provider.dart';
 import '../providers/sim_card_provider.dart';
@@ -34,11 +35,11 @@ class _TagManageScreenState extends State<TagManageScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('标签管理'),
+        title: Text(context.l10n.tagsTitle),
         actions: [
           IconButton(
             icon: const Icon(Icons.add_rounded),
-            tooltip: '添加标签',
+            tooltip: context.l10n.tagsAdd,
             onPressed: () => _showAddEditDialog(context),
           ),
         ],
@@ -69,7 +70,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            '还没有标签',
+            context.l10n.tagsEmptyTitle,
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
@@ -79,7 +80,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '点击右上角添加你的第一个标签',
+            context.l10n.tagsEmptySubtitle,
             style: TextStyle(
               fontSize: 14,
               color: Theme.of(context).colorScheme.onSurface
@@ -101,68 +102,76 @@ class _TagManageScreenState extends State<TagManageScreen> {
       ...provider.archivedCards,
     ].where((c) => c.tagIds.contains(tag.id)).length;
 
-    return Container(
+    // 背景放在 Material 上，编辑/删除按钮的点击水波纹才不会被挡住
+    return Padding(
       key: ValueKey(tag.id),
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
         color: Theme.of(context).colorScheme.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: Theme.of(context).dividerTheme.color ?? AppColors.lightDivider,
-          width: 0.5,
-        ),
-      ),
-      child: ListTile(
-        leading: Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: tagColor.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(8),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: BorderSide(
+            color:
+                Theme.of(context).dividerTheme.color ?? AppColors.lightDivider,
+            width: 0.5,
           ),
-          child: Center(
-            child: Container(
-              width: 14,
-              height: 14,
-              decoration: BoxDecoration(
-                color: tagColor,
-                shape: BoxShape.circle,
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          leading: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: tagColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Center(
+              child: Container(
+                width: 14,
+                height: 14,
+                decoration: BoxDecoration(
+                  color: tagColor,
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
           ),
-        ),
-        title: Text(
-          tag.name,
-          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
-        ),
-        subtitle: usageCount > 0
-            ? Text(
-                '已关联 $usageCount 张SIM卡',
-                style: const TextStyle(fontSize: 12),
-              )
-            : null,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.edit_rounded, size: 20),
-              onPressed: () => _showAddEditDialog(context, tag: tag),
-            ),
-            IconButton(
-              icon: const Icon(
-                Icons.delete_outline_rounded,
-                size: 20,
-                color: AppColors.countdownDanger,
+          title: Text(
+            tag.name,
+            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+          ),
+          subtitle: usageCount > 0
+              ? Text(
+                  context.l10n.tagsUsage(usageCount),
+                  style: const TextStyle(fontSize: 12),
+                )
+              : null,
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              IconButton(
+                icon: const Icon(Icons.edit_rounded, size: 20),
+                tooltip: context.l10n.commonEdit,
+                onPressed: () => _showAddEditDialog(context, tag: tag),
               ),
-              onPressed: () => _confirmDelete(context, tag, usageCount),
-            ),
-          ],
+              IconButton(
+                icon: const Icon(
+                  Icons.delete_outline_rounded,
+                  size: 20,
+                  color: AppColors.countdownDanger,
+                ),
+                tooltip: context.l10n.commonDelete,
+                onPressed: () => _confirmDelete(context, tag, usageCount),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Future<void> _showAddEditDialog(BuildContext context, {Tag? tag}) async {
+    final l = context.l10n;
     final isEditing = tag != null;
     _nameController.text = tag?.name ?? '';
     final provider = context.read<SimCardProvider>();
@@ -177,16 +186,16 @@ class _TagManageScreenState extends State<TagManageScreen> {
         return StatefulBuilder(
           builder: (ctx, setDialogState) {
             return AlertDialog(
-              title: Text(isEditing ? '编辑标签' : '添加标签'),
+              title: Text(isEditing ? l.tagsEdit : l.tagsAdd),
               content: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   TextField(
                     controller: _nameController,
                     autofocus: true,
-                    decoration: const InputDecoration(
-                      hintText: '标签名称',
-                      prefixIcon: Icon(Icons.label_rounded, size: 20),
+                    decoration: InputDecoration(
+                      hintText: l.tagsNameHint,
+                      prefixIcon: const Icon(Icons.label_rounded, size: 20),
                     ),
                   ),
                   const SizedBox(height: 16),
@@ -194,7 +203,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
                   Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
-                      '标签颜色',
+                      l.tagsColor,
                       style: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
@@ -248,22 +257,22 @@ class _TagManageScreenState extends State<TagManageScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(ctx).pop(),
-                  child: const Text('取消'),
+                  child: Text(l.commonCancel),
                 ),
                 ElevatedButton(
                   onPressed: () {
                     final name = _nameController.text.trim();
                     if (name.isEmpty) return;
                     if (provider.isTagNameTaken(name, exceptId: tag?.id)) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text('已有名为「$name」的标签')));
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(l.tagsNameTaken(name))),
+                      );
                       return;
                     }
                     Navigator.of(ctx)
                         .pop({'name': name, 'color': selectedColor.toARGB32()});
                   },
-                  child: Text(isEditing ? '保存' : '添加'),
+                  child: Text(isEditing ? l.commonSave : l.commonAdd),
                 ),
               ],
             );
@@ -289,25 +298,26 @@ class _TagManageScreenState extends State<TagManageScreen> {
       }
     } on Exception catch (e) {
       debugPrint('保存标签失败: $e');
-      messenger.showSnackBar(const SnackBar(content: Text('保存标签失败，请重试')));
+      messenger.showSnackBar(SnackBar(content: Text(l.tagsSaveFailed)));
     }
   }
 
   void _confirmDelete(BuildContext context, Tag tag, int usageCount) {
+    final l = context.l10n;
     unawaited(
       showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('删除标签'),
+          title: Text(l.tagsDeleteTitle),
           content: Text(
             usageCount > 0
-                ? '标签"${tag.name}"已被 $usageCount 张SIM卡使用。删除后将从这些卡中移除该标签。确定要删除吗？'
-                : '确定要删除标签"${tag.name}"吗？',
+                ? l.tagsDeleteInUse(tag.name, usageCount)
+                : l.tagsDeleteConfirm(tag.name),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('取消'),
+              child: Text(l.commonCancel),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -320,7 +330,7 @@ class _TagManageScreenState extends State<TagManageScreen> {
                 ctx.read<FilterProvider>().removeTagFilter(id);
                 unawaited(ctx.read<SimCardProvider>().deleteTag(id));
               },
-              child: const Text('删除'),
+              child: Text(l.commonDelete),
             ),
           ],
         ),

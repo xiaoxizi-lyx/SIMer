@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../data/carriers.dart';
 import '../../../data/countries.dart';
+import '../../../l10n/l10n.dart';
 import '../../../models/enums.dart';
 import '../../../theme/app_fonts.dart';
 import '../../../widgets/carrier_picker_sheet.dart';
@@ -22,17 +24,18 @@ class BasicInfoSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final missingCarrier = showErrors && draft.carrierName.trim().isEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const FieldLabel('SIM 卡类型'),
+        FieldLabel(l.formSimType),
         SegmentedButton<SimType>(
           segments: [
             for (final type in SimType.values)
               ButtonSegment(
                 value: type,
-                label: Text(type.label),
+                label: Text(type.label(l)),
                 icon: Icon(
                   type == SimType.esim
                       ? Icons.qr_code_rounded
@@ -46,23 +49,27 @@ class BasicInfoSection extends StatelessWidget {
               draft.update(() => draft.type = selection.first),
         ),
         const SizedBox(height: 16),
-        const FieldLabel('激活状态'),
+        FieldLabel(l.formActivationStatus),
         SegmentedButton<ActivationStatus>(
           segments: [
             for (final status in ActivationStatus.values)
-              ButtonSegment(value: status, label: Text(status.label)),
+              ButtonSegment(value: status, label: Text(status.label(l))),
           ],
           selected: {draft.activationStatus},
           onSelectionChanged: (selection) =>
               draft.update(() => draft.activationStatus = selection.first),
         ),
         const SizedBox(height: 16),
-        const FieldLabel('运营商'),
+        FieldLabel(l.fieldCarrier),
         PickerField(
           icon: Icons.cell_tower_rounded,
-          text: draft.carrierName,
-          hint: '选择或输入运营商',
-          errorText: missingCarrier ? '请选择或输入运营商' : null,
+          text: CarrierData.displayName(
+            carrierCode: draft.carrierCode,
+            storedName: draft.carrierName,
+            languageCode: l.localeName,
+          ),
+          hint: l.formCarrierHint,
+          errorText: missingCarrier ? l.formCarrierRequired : null,
           onTap: () async {
             final choice = await CarrierPickerSheet.show(
               context,
@@ -72,11 +79,11 @@ class BasicInfoSection extends StatelessWidget {
           },
         ),
         const SizedBox(height: 16),
-        const FieldLabel('国家/地区'),
+        FieldLabel(l.fieldCountry),
         PickerField(
           icon: Icons.public_rounded,
-          text: CountryData.displayName(draft.countryCode),
-          hint: '选择国家/地区',
+          text: CountryData.displayName(draft.countryCode, l.localeName),
+          hint: l.countryPickerTitle,
           onTap: () async {
             final code = await CountryPickerSheet.show(context);
             if (code != null) draft.update(() => draft.countryCode = code);
@@ -86,19 +93,19 @@ class BasicInfoSection extends StatelessWidget {
         const FieldLabel('ICCID'),
         TextFormField(
           controller: draft.iccid,
-          decoration: const InputDecoration(
-            hintText: '18-22 位数字，可含空格',
-            prefixIcon: Icon(Icons.credit_card_rounded, size: 20),
+          decoration: InputDecoration(
+            hintText: l.formIccidHint,
+            prefixIcon: const Icon(Icons.credit_card_rounded, size: 20),
           ),
           keyboardType: TextInputType.number,
           inputFormatters: [
             FilteringTextInputFormatter.allow(RegExp(r'[0-9 ]')),
           ],
           style: const TextStyle(fontFamily: AppFonts.mono, fontSize: 14),
-          validator: SimFormValidators.iccid,
+          validator: (value) => SimFormValidators.iccid(value)?.message(l),
         ),
         const SizedBox(height: 16),
-        const FieldLabel('电话号码'),
+        FieldLabel(l.formPhoneNumbers),
         for (final (index, controller) in draft.phones.indexed)
           Padding(
             key: ObjectKey(controller),
@@ -110,7 +117,9 @@ class BasicInfoSection extends StatelessWidget {
                     controller: controller,
                     keyboardType: TextInputType.phone,
                     decoration: InputDecoration(
-                      hintText: index == 0 ? '主号码' : '号码 ${index + 1}',
+                      hintText: index == 0
+                          ? l.fieldPrimaryNumber
+                          : l.fieldNumberN(index + 1),
                       prefixIcon: const Icon(Icons.phone_rounded, size: 20),
                     ),
                   ),
@@ -121,7 +130,7 @@ class BasicInfoSection extends StatelessWidget {
                       Icons.remove_circle_outline_rounded,
                       color: Theme.of(context).colorScheme.error,
                     ),
-                    tooltip: '删除此号码',
+                    tooltip: l.formRemoveNumber,
                     onPressed: () => draft.removePhone(index),
                   ),
               ],
@@ -132,7 +141,7 @@ class BasicInfoSection extends StatelessWidget {
           child: TextButton.icon(
             onPressed: draft.addPhone,
             icon: const Icon(Icons.add_rounded, size: 18),
-            label: const Text('添加号码'),
+            label: Text(l.formAddNumber),
           ),
         ),
       ],

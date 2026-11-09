@@ -3,7 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/l10n.dart';
 import '../models/sim_card.dart';
+import '../providers/auth_provider.dart';
 import '../providers/sim_card_provider.dart';
 import '../theme/app_colors.dart';
 import '../widgets/sim_card_front.dart';
@@ -18,9 +20,12 @@ class ArchiveScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<SimCardProvider>();
     final archivedCards = provider.archivedCards;
+    final maskSensitive = context.select<AuthProvider, bool>(
+      (a) => a.maskSensitiveInfo,
+    );
 
     return Scaffold(
-      appBar: AppBar(title: const Text('归档')),
+      appBar: AppBar(title: Text(context.l10n.archiveTitle)),
       body: archivedCards.isEmpty
           ? _buildEmptyState(context)
           : ListView.builder(
@@ -28,7 +33,12 @@ class ArchiveScreen extends StatelessWidget {
               itemCount: archivedCards.length,
               itemBuilder: (context, index) {
                 final card = archivedCards[index];
-                return _buildArchivedCard(context, card, provider);
+                return _buildArchivedCard(
+                  context,
+                  card,
+                  provider,
+                  maskSensitive: maskSensitive,
+                );
               },
             ),
     );
@@ -47,7 +57,7 @@ class ArchiveScreen extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           Text(
-            '没有已归档的SIM卡',
+            context.l10n.archiveEmptyTitle,
             style: TextStyle(
               fontSize: 17,
               fontWeight: FontWeight.w600,
@@ -57,7 +67,7 @@ class ArchiveScreen extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            '已归档的SIM卡会显示在这里',
+            context.l10n.archiveEmptySubtitle,
             style: TextStyle(
               fontSize: 14,
               color: Theme.of(context).colorScheme.onSurface
@@ -72,8 +82,9 @@ class ArchiveScreen extends StatelessWidget {
   Widget _buildArchivedCard(
     BuildContext context,
     SimCard card,
-    SimCardProvider provider,
-  ) {
+    SimCardProvider provider, {
+    required bool maskSensitive,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Column(
@@ -81,7 +92,11 @@ class ArchiveScreen extends StatelessWidget {
           // 卡片正面（略灰化）
           Opacity(
             opacity: 0.75,
-            child: SimCardFront(simCard: card, tags: provider.tags),
+            child: SimCardFront(
+              simCard: card,
+              tags: provider.tags,
+              maskSensitive: maskSensitive,
+            ),
           ),
           const SizedBox(height: 8),
           // 操作按钮行
@@ -92,22 +107,23 @@ class ArchiveScreen extends StatelessWidget {
               _actionChip(
                 context,
                 icon: Icons.unarchive_rounded,
-                label: '恢复',
+                label: context.l10n.archiveRestore,
                 color: AppColors.primary,
                 onTap: () async {
+                  final l = context.l10n;
                   final messenger = ScaffoldMessenger.of(context);
                   try {
                     await provider.restoreSimCard(card.id!);
                     messenger.showSnackBar(
                       SnackBar(
-                        content: Text('已恢复 ${card.carrierName}'),
+                        content: Text(l.archiveRestored(card.carrierLabel(l))),
                         duration: const Duration(seconds: 2),
                       ),
                     );
                   } on Exception catch (e) {
                     debugPrint('恢复失败: $e');
                     messenger.showSnackBar(
-                      const SnackBar(content: Text('恢复失败，请重试')),
+                      SnackBar(content: Text(l.archiveRestoreFailed)),
                     );
                   }
                 },
@@ -117,7 +133,7 @@ class ArchiveScreen extends StatelessWidget {
               _actionChip(
                 context,
                 icon: Icons.delete_forever_rounded,
-                label: '永久删除',
+                label: context.l10n.archiveDeleteForever,
                 color: AppColors.countdownDanger,
                 onTap: () => _confirmPermanentDelete(context, card, provider),
               ),
@@ -168,16 +184,18 @@ class ArchiveScreen extends StatelessWidget {
     SimCard card,
     SimCardProvider provider,
   ) {
+    final l = context.l10n;
+    final carrier = card.carrierLabel(l);
     unawaited(
       showDialog<void>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('永久删除'),
-          content: Text('确定要永久删除 ${card.carrierName} 的SIM卡吗？\n\n此操作不可恢复。'),
+          title: Text(l.archiveDeleteForever),
+          content: Text(l.archiveDeleteMessage(carrier)),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(),
-              child: const Text('取消'),
+              child: Text(l.commonCancel),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
@@ -190,18 +208,18 @@ class ArchiveScreen extends StatelessWidget {
                   await provider.permanentlyDelete(card.id!);
                   messenger.showSnackBar(
                     SnackBar(
-                      content: Text('已永久删除 ${card.carrierName}'),
+                      content: Text(l.archiveDeleted(carrier)),
                       duration: const Duration(seconds: 2),
                     ),
                   );
                 } on Exception catch (e) {
                   debugPrint('删除失败: $e');
                   messenger.showSnackBar(
-                    const SnackBar(content: Text('删除失败，请重试')),
+                    SnackBar(content: Text(l.archiveDeleteFailed)),
                   );
                 }
               },
-              child: const Text('删除'),
+              child: Text(l.commonDelete),
             ),
           ],
         ),

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/l10n.dart';
 import '../models/enums.dart';
 import '../providers/auth_provider.dart';
 import '../providers/filter_provider.dart';
@@ -54,7 +55,10 @@ class _HomeScreenState extends State<HomeScreen> {
     final notice = auth.notice;
     if (notice == null) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(notice), duration: const Duration(seconds: 6)),
+      SnackBar(
+        content: Text(notice.message(context.l10n)),
+        duration: const Duration(seconds: 6),
+      ),
     );
     auth.dismissNotice();
   }
@@ -99,20 +103,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
   PreferredSizeWidget _buildAppBar() {
     final filterProvider = context.watch<FilterProvider>();
+    final l = context.l10n;
 
     if (_isSearching) {
       return AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_rounded),
-          tooltip: '关闭搜索',
+          tooltip: l.homeSearchClose,
           onPressed: _closeSearch,
         ),
         title: TextField(
           controller: _searchController,
           autofocus: true,
-          decoration: const InputDecoration(
-            hintText: '搜索运营商、号码、国家、标签…',
-            hintStyle: TextStyle(fontSize: 15),
+          decoration: InputDecoration(
+            hintText: l.homeSearchHint,
+            hintStyle: const TextStyle(fontSize: 15),
             border: InputBorder.none,
             filled: false,
           ),
@@ -140,7 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
       actions: [
         IconButton(
           icon: const Icon(Icons.search_rounded),
-          tooltip: '搜索',
+          tooltip: l.homeSearch,
           onPressed: () {
             setState(() => _isSearching = true);
           },
@@ -153,7 +158,7 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
         IconButton(
           icon: const Icon(Icons.settings_rounded),
-          tooltip: '设置',
+          tooltip: l.settingsTitle,
           onPressed: () {
             Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const SettingsScreen()),
@@ -172,8 +177,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final cards = simCardProvider.simCards;
     final countries = {for (final card in cards) card.countryCode}.toList()
       ..sort();
-    final carriers = {for (final card in cards) card.carrierName}.toList()
-      ..sort();
+    // 运营商：保存的名称 → 按界面语言显示的名称
+    final l = context.l10n;
+    final carriers = {
+      for (final card in cards) card.carrierName: card.carrierLabel(l),
+    }.entries.toList()..sort((a, b) => a.value.compareTo(b.value));
 
     // 可用标签
     final tagEntries = simCardProvider.tags
@@ -210,6 +218,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 使用 SimCardProvider 内置的筛选/排序
     final filteredCards = simCardProvider.getFilteredAndSorted(filterProvider);
+    final maskSensitive = context.select<AuthProvider, bool>(
+      (a) => a.maskSensitiveInfo,
+    );
 
     if (filteredCards.isEmpty) {
       final hasFilters =
@@ -240,6 +251,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onEdit: () => CardActions.edit(context, card),
                 onArchive: () => CardActions.archive(context, card),
                 onMarkAsUsed: () => CardActions.markAsUsed(context, card),
+                maskSensitive: maskSensitive,
               ),
             );
           },
@@ -265,7 +277,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              hasFilters ? '没有匹配的SIM卡' : '还没有SIM卡记录',
+              hasFilters
+                  ? context.l10n.homeEmptyFiltered
+                  : context.l10n.homeEmpty,
               style: TextStyle(
                 fontSize: 17,
                 fontWeight: FontWeight.w600,
@@ -275,7 +289,9 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              hasFilters ? '试试调整筛选条件' : '点击下方按钮添加你的第一张SIM卡',
+              hasFilters
+                  ? context.l10n.homeEmptyFilteredHint
+                  : context.l10n.homeEmptyHint,
               style: TextStyle(
                 fontSize: 14,
                 color: Theme.of(context).colorScheme.onSurface
@@ -289,7 +305,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onPressed: () {
                   context.read<FilterProvider>().clearAll();
                 },
-                child: const Text('清除筛选'),
+                child: Text(context.l10n.homeClearFilters),
               ),
             ],
           ],
@@ -302,9 +318,9 @@ class _HomeScreenState extends State<HomeScreen> {
     return FloatingActionButton.extended(
       onPressed: _navigateToAdd,
       icon: const Icon(Icons.add_rounded),
-      label: const Text(
-        '添加SIM/eSIM信息',
-        style: TextStyle(fontWeight: FontWeight.w600),
+      label: Text(
+        context.l10n.homeAddCard,
+        style: const TextStyle(fontWeight: FontWeight.w600),
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../l10n/l10n.dart';
 import '../models/enums.dart';
 import '../models/sim_card.dart';
 import '../models/tag.dart';
@@ -69,7 +70,11 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.isEditing ? '编辑SIM卡' : '添加SIM/eSIM信息'),
+          title: Text(
+            widget.isEditing
+                ? context.l10n.formEditTitle
+                : context.l10n.formAddTitle,
+          ),
           actions: [
             if (_saving)
               const Padding(
@@ -82,9 +87,12 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
             else
               TextButton(
                 onPressed: _save,
-                child: const Text(
-                  '保存',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                child: Text(
+                  context.l10n.commonSave,
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
           ],
@@ -170,7 +178,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
         }
       });
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('请检查标红的内容')));
+          .showSnackBar(SnackBar(content: Text(context.l10n.formCheckErrors)));
       return;
     }
 
@@ -191,7 +199,7 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('保存失败，请重试')));
+          .showSnackBar(SnackBar(content: Text(context.l10n.formSaveFailed)));
     }
   }
 
@@ -202,19 +210,20 @@ class _AddEditSimScreenState extends State<AddEditSimScreen> {
       navigator.pop();
       return;
     }
+    final l = context.l10n;
     final discard = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('放弃未保存的修改？'),
-        content: const Text('离开后，本次填写的内容不会保存。'),
+        title: Text(l.formDiscardTitle),
+        content: Text(l.formDiscardMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('继续编辑'),
+            child: Text(l.formKeepEditing),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('放弃'),
+            child: Text(l.formDiscard),
           ),
         ],
       ),

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+import '../l10n/l10n.dart';
 import '../models/sim_card.dart';
 import 'reminder_planner.dart';
 
@@ -15,19 +16,19 @@ abstract final class NotificationService {
       FlutterLocalNotificationsPlugin();
 
   static const String _channelId = 'simer_expiry_reminders';
-  static const String _channelName = '到期提醒';
-  static const String _channelDescription = 'SIM 卡即将到期、今天到期或已过期时提醒';
 
-  static const NotificationDetails _details = NotificationDetails(
-    android: AndroidNotificationDetails(
-      _channelId,
-      _channelName,
-      channelDescription: _channelDescription,
-      importance: Importance.high,
-      priority: Priority.high,
-      icon: '@mipmap/ic_launcher',
-    ),
-  );
+  /// 通知渠道的名称与说明显示在系统设置中，随界面语言更新。
+  static NotificationDetails _details(AppLocalizations l) =>
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          _channelId,
+          l.notificationChannelName,
+          channelDescription: l.notificationChannelDescription,
+          importance: Importance.high,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        ),
+      );
 
   /// 用户点击通知后要打开的卡片 UUID；首页监听并展示卡片详情。
   static final ValueNotifier<String?> openCardRequest = ValueNotifier(null);
@@ -70,11 +71,14 @@ abstract final class NotificationService {
       await _android?.requestNotificationsPermission() ?? false;
 
   /// 按当前卡片重新预约所有提醒：先取消尚未触发的旧提醒，已显示的通知保持不变。
+  ///
+  /// 通知文字使用 [strings] 的语言。
   static Future<void> reschedule(
     Iterable<SimCard> cards, {
     required bool enabled,
     required int hour,
     required int minute,
+    required AppLocalizations strings,
   }) async {
     if (!_initialized) return;
     await _plugin.cancelAllPendingNotifications();
@@ -85,7 +89,9 @@ abstract final class NotificationService {
       now: DateTime.now(),
       hour: hour,
       minute: minute,
+      strings: strings,
     );
+    final details = _details(strings);
     for (final reminder in plan) {
       try {
         await _plugin.zonedSchedule(
@@ -94,7 +100,7 @@ abstract final class NotificationService {
           body: reminder.body,
           // 以绝对时刻预约；时区变化后在下次启动时按新时区重新预约
           scheduledDate: tz.TZDateTime.from(reminder.fireAt, tz.UTC),
-          notificationDetails: _details,
+          notificationDetails: details,
           androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
           payload: reminder.cardUuid,
         );

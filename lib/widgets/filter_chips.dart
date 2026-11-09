@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../data/countries.dart';
+import '../l10n/l10n.dart';
 import '../models/enums.dart';
 import '../theme/app_colors.dart';
 
@@ -17,7 +18,9 @@ class FilterChips extends StatelessWidget {
   // 可用选项
   final Map<StatusFilter, int> statusCounts;
   final Set<String> availableCountries;
-  final List<String> availableCarriers;
+
+  /// 卡片中保存的运营商名称 → 显示名称（按界面语言）。
+  final List<MapEntry<String, String>> availableCarriers;
   final List<MapEntry<int, String>> availableTags; // id → name
 
   // 回调
@@ -56,7 +59,7 @@ class FilterChips extends StatelessWidget {
           // ── 状态筛选 ──
           _buildChip(
             context: context,
-            label: '全部',
+            label: context.l10n.filterAll,
             isSelected: statusFilter == null,
             onTap: () => onStatusChanged(null),
             chipTextColor: chipTextColor,
@@ -65,7 +68,9 @@ class FilterChips extends StatelessWidget {
             final count = statusCounts[status] ?? 0;
             return _buildChip(
               context: context,
-              label: count > 0 ? '${status.label} $count' : status.label,
+              label: count > 0
+                  ? '${status.label(context.l10n)} $count'
+                  : status.label(context.l10n),
               isSelected: statusFilter == status,
               onTap: () =>
                   onStatusChanged(statusFilter == status ? null : status),
@@ -82,7 +87,8 @@ class FilterChips extends StatelessWidget {
             final emoji = CountryData.countryCodeToEmoji(code);
             return _buildChip(
               context: context,
-              label: '$emoji ${CountryData.countries[code] ?? code}',
+              label:
+                  '$emoji ${CountryData.name(code, context.l10n.localeName)}',
               isSelected: countryFilter == code,
               onTap: () =>
                   onCountryChanged(countryFilter == code ? null : code),
@@ -96,10 +102,11 @@ class FilterChips extends StatelessWidget {
             ...availableCarriers.map(
               (carrier) => _buildChip(
                 context: context,
-                label: carrier,
-                isSelected: carrierFilter == carrier,
-                onTap: () =>
-                    onCarrierChanged(carrierFilter == carrier ? null : carrier),
+                label: carrier.value,
+                isSelected: carrierFilter == carrier.key,
+                onTap: () => onCarrierChanged(
+                  carrierFilter == carrier.key ? null : carrier.key,
+                ),
                 chipTextColor: chipTextColor,
               ),
             ),

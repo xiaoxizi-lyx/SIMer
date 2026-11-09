@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/l10n.dart';
 import '../form_widgets.dart';
 import '../sim_form_draft.dart';
 import '../sim_form_validators.dart';
@@ -11,6 +12,7 @@ class UsageSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     Widget field(
       String label,
       TextEditingController controller, {
@@ -25,9 +27,11 @@ class UsageSection extends StatelessWidget {
             controller: controller,
             decoration: InputDecoration(hintText: hint),
             keyboardType: TextInputType.numberWithOptions(decimal: !integer),
-            validator: integer
-                ? SimFormValidators.integer
-                : SimFormValidators.decimal,
+            validator: (value) =>
+                (integer
+                        ? SimFormValidators.integer(value)
+                        : SimFormValidators.decimal(value))
+                    ?.message(l),
           ),
         ],
       ),
@@ -45,16 +49,20 @@ class UsageSection extends StatelessWidget {
     return Column(
       children: [
         row([
-          field('流量剩余 (MB)', draft.dataBalance, hint: '例如 1024'),
-          field('流量总量 (MB)', draft.dataTotal, hint: '例如 5120'),
+          field(
+            l.formDataRemaining,
+            draft.dataBalance,
+            hint: l.formDataRemainingHint,
+          ),
+          field(l.formDataTotal, draft.dataTotal, hint: l.formDataTotalHint),
         ]),
         row([
-          field('通话剩余（分钟）', draft.voiceRemaining),
-          field('通话总量（分钟）', draft.voiceTotal),
+          field(l.formVoiceRemaining, draft.voiceRemaining),
+          field(l.formVoiceTotal, draft.voiceTotal),
         ]),
         row([
-          field('短信剩余', draft.smsRemaining, integer: true),
-          field('短信总量', draft.smsTotal, integer: true),
+          field(l.formSmsRemaining, draft.smsRemaining, integer: true),
+          field(l.formSmsTotal, draft.smsTotal, integer: true),
         ]),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,13 +73,14 @@ class UsageSection extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const FieldLabel('话费余额'),
+                  FieldLabel(l.formBalance),
                   TextFormField(
                     controller: draft.balance,
                     keyboardType: const TextInputType.numberWithOptions(
                       decimal: true,
                     ),
-                    validator: SimFormValidators.decimal,
+                    validator: (value) =>
+                        SimFormValidators.decimal(value)?.message(l),
                   ),
                 ],
               ),
@@ -80,7 +89,7 @@ class UsageSection extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const FieldLabel('币种'),
+                  FieldLabel(l.formCurrency),
                   TextFormField(
                     controller: draft.currency,
                     decoration: const InputDecoration(hintText: 'CNY'),

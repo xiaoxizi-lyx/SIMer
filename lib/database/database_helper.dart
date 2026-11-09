@@ -442,15 +442,4 @@ class ImportResult {
 
   /// 备份中无法解析而被跳过的记录。
   final List<BackupRecordError> failedRecords;
-
-  String get summary {
-    final parts = <String>[
-      '新增 $importedCards 张卡片',
-      if (overwrittenCards > 0) '覆盖 $overwrittenCards 张',
-      if (skippedCards > 0) '跳过 $skippedCards 张重复卡片',
-      if (importedTags > 0) '新增 $importedTags 个标签',
-      if (failedRecords.isNotEmpty) '${failedRecords.length} 条记录无法解析',
-    ];
-    return '导入完成：${parts.join('，')}';
-  }
 }

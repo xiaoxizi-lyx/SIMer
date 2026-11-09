@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:simer/providers/sim_card_provider.dart';
 import 'package:simer/screens/add_edit_sim_screen.dart';
 
+import '../support/l10n.dart';
+
 void main() {
   testWidgets('折叠分区中的非法输入同样会阻止保存，并自动展开该分区', (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
@@ -13,7 +15,7 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider(
         create: (_) => SimCardProvider(),
-        child: const MaterialApp(home: AddEditSimScreen()),
+        child: localizedApp(home: const AddEditSimScreen()),
       ),
     );
 

@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:simer/models/enums.dart';
+import 'package:simer/models/sim_card.dart';
 import 'package:simer/services/qr_parser_service.dart';
 
 void main() {
@@ -51,7 +53,7 @@ void main() {
       ]) {
         final result = QrParserService.parse(input);
         expect(result.isSuccess, isFalse, reason: input);
-        expect(result.errorMessage, isNotEmpty);
+        expect(result.error, isNotNull);
       }
     });
 
@@ -88,6 +90,54 @@ void main() {
         ).toLpaString(),
         r'LPA:1$a.b$X',
       );
+    });
+  });
+
+  group('QrParserService.forCard（重新生成二维码）', () {
+    SimCard esim({
+      String? smdp = 'rsp.example.com',
+      String? matchingId = 'ABC-123',
+      String? confirmationCode,
+      String? raw,
+    }) => SimCard(
+      uuid: 'u',
+      carrierName: 'X',
+      countryCode: 'GB',
+      cardColor: 0xFF000000,
+      type: SimType.esim,
+      rspServerAddress: smdp,
+      activationCode: matchingId,
+      confirmationCode: confirmationCode,
+      qrCodeRawData: raw,
+    );
+
+    test('原始内容与当前字段一致时使用原始内容，保留 OID 与确认码标志', () {
+      final code = QrParserService.forCard(
+        esim(raw: r'LPA:1$rsp.example.com$ABC-123$1.3.6.1.4.1.31746$1'),
+      )!;
+      expect(
+        code.toLpaString(),
+        r'LPA:1$rsp.example.com$ABC-123$1.3.6.1.4.1.31746$1',
+      );
+    });
+
+    test('扫码后改过字段时按当前字段重新组成', () {
+      final code = QrParserService.forCard(
+        esim(matchingId: 'NEW-456', raw: r'LPA:1$rsp.example.com$ABC-123'),
+      )!;
+      expect(code.toLpaString(), r'LPA:1$rsp.example.com$NEW-456');
+    });
+
+    test('填写了确认码时标明安装需要确认码', () {
+      final code = QrParserService.forCard(esim(confirmationCode: '2468'))!;
+      expect(code.confirmationCodeRequired, isTrue);
+      expect(code.toLpaString(), r'LPA:1$rsp.example.com$ABC-123$$1');
+    });
+
+    test('信息不完整或地址格式不正确时不生成', () {
+      expect(QrParserService.forCard(esim(smdp: null)), isNull);
+      expect(QrParserService.forCard(esim(matchingId: '  ')), isNull);
+      expect(QrParserService.forCard(esim(smdp: 'not a host')), isNull);
     });
   });
 }

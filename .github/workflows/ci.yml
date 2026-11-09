@@ -44,8 +44,22 @@ jobs:
       - name: Install dependencies (locked)
         run: flutter pub get --enforce-lockfile
 
+      # 界面文案：生成的代码必须与 .arb 一致，英文不能缺少任何条目
+      - name: Check localizations
+        run: |
+          flutter gen-l10n
+          if ! git diff --exit-code -- lib/l10n; then
+            echo "::error::lib/l10n is out of date. Run 'flutter gen-l10n' and commit the result."
+            exit 1
+          fi
+          if grep -q '[^{}[:space:]]' build/l10n_untranslated.json; then
+            echo "::error::Untranslated messages:"
+            cat build/l10n_untranslated.json
+            exit 1
+          fi
+
       - name: Check formatting
-        run: dart format --output=none --set-exit-if-changed lib test
+        run: dart format --output=none --set-exit-if-changed lib test integration_test
 
       - name: Analyze
         run: flutter analyze
@@ -81,6 +95,13 @@ jobs:
 
       - name: Set up Gradle (cache)
         uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      # Maven Central 不时拒绝共享的 GitHub 机器（403 / 429），优先使用 Google 的镜像
+      - name: Prefer the Google mirror of Maven Central
+        run: |
+          init_dir="${GRADLE_USER_HOME:-$HOME/.gradle}/init.d"
+          mkdir -p "${init_dir}"
+          cp .github/gradle/maven-central-mirror.gradle "${init_dir}/"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
@@ -120,8 +141,11 @@ jobs:
           echo "SIMER_KEYSTORE_FILE=${RUNNER_TEMP}/simer-release.jks" >> "${GITHUB_ENV}"
 
       # 非 tag 构建拿不到签名密钥，回退到 debug 签名，产物仅用于测试，不得分发
+      # 测试包的包名带 .ci 后缀、应用名为「SIMer CI」，可以和正式版同时安装
       - name: Build APKs (CI test build)
         if: env.IS_RELEASE != 'true'
+        env:
+          SIMER_TEST_BUILD: 'true'
         run: flutter build apk --release --split-per-abi
 
       - name: Build APKs (release-signed)
@@ -142,10 +166,19 @@ jobs:
         run: |
           build_tools="$(find "${ANDROID_HOME}/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -n 1)"
           echo "Using ${build_tools}"
+          expected_package="io.github.xiaoxizi_lyx.simer"
+          if [ "${IS_RELEASE}" != "true" ]; then
+            expected_package="${expected_package}.ci"
+          fi
           for apk in build/app/outputs/flutter-apk/app-*-release.apk; do
             echo "== ${apk}"
             permissions="$("${build_tools}/aapt2" dump permissions "${apk}")"
             echo "${permissions}"
+            package="$(echo "${permissions}" | sed -n 's/^package: //p')"
+            if [ "${package}" != "${expected_package}" ]; then
+              echo "::error::${apk} has package name '${package}', expected '${expected_package}'"
+              exit 1
+            fi
             # Both checks must fail closed: if the tool output cannot be read, stop instead of passing.
             if ! echo "${permissions}" | grep -q "uses-permission"; then
               echo "::error::Could not read the permissions of ${apk}"
@@ -194,6 +227,63 @@ jobs:
           path: dist/
           if-no-files-found: error
           retention-days: ${{ env.IS_RELEASE == 'true' && 30 || 7 }}
+
+  # 在 Android 模拟器上运行完整应用（真实的 SQLite、通知、isolate 与本地化），
+  # 覆盖电脑上的单元测试验证不到的部分。打标签发布时不运行，不影响发布。
+  android-integration:
+    name: Android emulator tests
+    needs: analyze-and-test
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Java
+        uses: actions/setup-java@77dd5b2ce225ea11469928ac317850245a74ae78 # v6.2.0
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Gradle (cache)
+        uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+
+      # Maven Central 不时拒绝共享的 GitHub 机器（403 / 429），优先使用 Google 的镜像
+      - name: Prefer the Google mirror of Maven Central
+        run: |
+          init_dir="${GRADLE_USER_HOME:-$HOME/.gradle}/init.d"
+          mkdir -p "${init_dir}"
+          cp .github/gradle/maven-central-mirror.gradle "${init_dir}/"
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Install dependencies (locked)
+        run: flutter pub get --enforce-lockfile
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run integration tests on an emulator
+        uses: reactivecircus/android-emulator-runner@a421e43855164a8197daf9d8d40fe71c6996bb0d # v2.38.0
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-snapshot -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: flutter test integration_test --reporter expanded
 
   release:
     name: Publish GitHub Release

@@ -12,24 +12,28 @@ class CarrierData {
     Carrier(
       code: 'cmcc',
       name: '中国移动',
+      nameEn: 'China Mobile',
       countryCode: 'CN',
       themeColor: Color(0xFF0054A6),
     ),
     Carrier(
       code: 'cucc',
       name: '中国联通',
+      nameEn: 'China Unicom',
       countryCode: 'CN',
       themeColor: Color(0xFFE60012),
     ),
     Carrier(
       code: 'ctcc',
       name: '中国电信',
+      nameEn: 'China Telecom',
       countryCode: 'CN',
       themeColor: Color(0xFF007DC3),
     ),
     Carrier(
       code: 'cbn',
       name: '中国广电',
+      nameEn: 'China Broadnet',
       countryCode: 'CN',
       themeColor: Color(0xFF00A651),
     ),
@@ -50,6 +54,7 @@ class CarrierData {
     Carrier(
       code: 'cmhk',
       name: '中国移动香港',
+      nameEn: 'China Mobile Hong Kong',
       countryCode: 'HK',
       themeColor: Color(0xFF0054A6),
     ),
@@ -64,30 +69,35 @@ class CarrierData {
     Carrier(
       code: 'cht',
       name: '中华电信',
+      nameEn: 'Chunghwa Telecom',
       countryCode: 'TW',
       themeColor: Color(0xFF00529B),
     ),
     Carrier(
       code: 'twm',
       name: '台湾大哥大',
+      nameEn: 'Taiwan Mobile',
       countryCode: 'TW',
       themeColor: Color(0xFFFF6B00),
     ),
     Carrier(
       code: 'fet',
       name: '远传电信',
+      nameEn: 'FarEasTone',
       countryCode: 'TW',
       themeColor: Color(0xFF00A1DE),
     ),
     Carrier(
       code: 'tstar',
       name: '台湾之星',
+      nameEn: 'T Star',
       countryCode: 'TW',
       themeColor: Color(0xFFE8272C),
     ),
     Carrier(
       code: 'aptg',
       name: '亚太电信',
+      nameEn: 'Asia Pacific Telecom',
       countryCode: 'TW',
       themeColor: Color(0xFF00AEEF),
     ),
@@ -114,6 +124,7 @@ class CarrierData {
     Carrier(
       code: 'rakuten',
       name: '楽天モバイル',
+      nameEn: 'Rakuten Mobile',
       countryCode: 'JP',
       themeColor: Color(0xFFBF0000),
     ),
@@ -401,5 +412,15 @@ class CarrierData {
       if (carrier.code == code) return carrier;
     }
     return null;
+  }
+
+  /// 卡片上显示的运营商名称：预置运营商按界面语言显示，自定义运营商显示用户输入的名称。
+  static String displayName({
+    required String? carrierCode,
+    required String storedName,
+    required String languageCode,
+  }) {
+    final preset = carrierCode == null ? null : findByCode(carrierCode);
+    return preset?.localizedName(languageCode) ?? storedName;
   }
 }

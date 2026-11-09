@@ -1,3 +1,4 @@
+import '../l10n/l10n.dart';
 import '../models/calendar_date.dart';
 import '../models/enums.dart';
 import '../models/sim_card.dart';
@@ -34,6 +35,7 @@ class PlannedReminder {
 ///
 /// 每张有到期日、未归档的卡片最多三条：提前 N 天（N 为卡片的提前提醒天数）、
 /// 到期当天、过期次日。只安排未来的提醒，不会每天重复提醒同一件事。
+/// 通知文字使用 [strings] 的语言（预约时的界面语言；语言变化后会重新预约）。
 abstract final class ReminderPlanner {
   /// Android 限制每个应用约 500 个待触发闹钟，留出余量。
   static const int maxReminders = 400;
@@ -46,7 +48,9 @@ abstract final class ReminderPlanner {
     required DateTime now,
     required int hour,
     required int minute,
+    required AppLocalizations strings,
   }) {
+    final l = strings;
     // 留一分钟余量，避免预约一个瞬间就过去的时间点
     final earliest = now.add(const Duration(minutes: 1));
     final reminders = <PlannedReminder>[];
@@ -61,26 +65,31 @@ abstract final class ReminderPlanner {
       final rolling = card.validityType == ValidityType.rolling;
       final dateText = CalendarDate.format(expiration);
       final lead = card.reminderDaysBefore.clamp(0, 365);
+      final carrier = card.carrierLabel(l);
 
       final candidates = <(ReminderKind, DateTime, String, String)>[
         if (lead > 0)
           (
             ReminderKind.upcoming,
             at(CalendarDate.addDays(expiration, -lead)),
-            '📅 ${card.carrierName} 将在 $lead 天后到期',
-            rolling ? '请在 $dateText 前使用一次以保号' : '到期日：$dateText',
+            l.reminderUpcomingTitle(carrier, lead),
+            rolling
+                ? l.reminderUpcomingBodyRolling(dateText)
+                : l.reminderUpcomingBodyFixed(dateText),
           ),
         (
           ReminderKind.dueToday,
           at(expiration),
-          '⏰ ${card.carrierName} 今天到期',
-          rolling ? '今天是最后期限，请使用一次以续期' : '请及时续费或处理',
+          l.reminderDueTodayTitle(carrier),
+          rolling ? l.reminderDueTodayBodyRolling : l.reminderDueTodayBodyFixed,
         ),
         (
           ReminderKind.expired,
           at(CalendarDate.addDays(expiration, 1)),
-          '⚠️ ${card.carrierName} 已过期',
-          rolling ? '已超过保号期限 $dateText，请尽快确认号码状态' : '已于 $dateText 到期',
+          l.reminderExpiredTitle(carrier),
+          rolling
+              ? l.reminderExpiredBodyRolling(dateText)
+              : l.reminderExpiredBodyFixed(dateText),
         ),
       ];
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../data/carriers.dart';
+import '../../../l10n/l10n.dart';
 import '../../../models/tag.dart';
 import '../../../widgets/color_picker_dialog.dart';
 import '../form_widgets.dart';
@@ -13,11 +15,12 @@ class AppearanceSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final color = draft.cardColor;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const FieldLabel('卡片颜色'),
+        FieldLabel(l.formCardColor),
         InkWell(
           borderRadius: BorderRadius.circular(12),
           onTap: () async {
@@ -25,7 +28,13 @@ class AppearanceSection extends StatelessWidget {
               context,
               currentColor: color,
               carrierDefaultColor: draft.carrierDefaultColor,
-              carrierName: draft.carrierName,
+              carrierName: draft.carrierName.trim().isEmpty
+                  ? null
+                  : CarrierData.displayName(
+                      carrierCode: draft.carrierCode,
+                      storedName: draft.carrierName,
+                      languageCode: l.localeName,
+                    ),
             );
             if (picked != null) draft.chooseColor(picked);
           },
@@ -51,16 +60,16 @@ class AppearanceSection extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 12),
-                const Text('更改颜色', style: TextStyle(fontSize: 14)),
+                Text(l.formChangeColor, style: const TextStyle(fontSize: 14)),
               ],
             ),
           ),
         ),
         const SizedBox(height: 16),
-        const FieldLabel('标签'),
+        FieldLabel(l.formTags),
         if (tags.isEmpty)
           Text(
-            '还没有标签，可在「设置 → 标签管理」中添加',
+            l.formNoTags,
             style: TextStyle(
               fontSize: 13,
               color: Theme.of(context).colorScheme.onSurface
@@ -100,16 +109,16 @@ class AppearanceSection extends StatelessWidget {
             ],
           ),
         const SizedBox(height: 16),
-        const FieldLabel('来源渠道'),
+        FieldLabel(l.formSource),
         TextFormField(
           controller: draft.source,
-          decoration: const InputDecoration(hintText: '例如：官网、线下门店、朋友转让'),
+          decoration: InputDecoration(hintText: l.formSourceHint),
         ),
         const SizedBox(height: 12),
-        const FieldLabel('备注'),
+        FieldLabel(l.fieldNotes),
         TextFormField(
           controller: draft.notes,
-          decoration: const InputDecoration(hintText: '其他备忘信息'),
+          decoration: InputDecoration(hintText: l.formNotesHint),
           maxLines: 3,
         ),
       ],

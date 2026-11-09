@@ -7,6 +7,7 @@ import 'app.dart';
 import 'licenses.dart';
 import 'providers/auth_provider.dart';
 import 'providers/filter_provider.dart';
+import 'providers/locale_provider.dart';
 import 'providers/reminder_provider.dart';
 import 'providers/sim_card_provider.dart';
 import 'providers/theme_provider.dart';
@@ -20,15 +21,20 @@ Future<void> main() async {
   unawaited(BackupService.purgeExportCache());
 
   final themeProvider = ThemeProvider();
+  final localeProvider = LocaleProvider();
   final authProvider = AuthProvider();
   final simCardProvider = SimCardProvider();
-  final reminderProvider = ReminderProvider(cards: simCardProvider);
+  final reminderProvider = ReminderProvider(
+    cards: simCardProvider,
+    locale: localeProvider,
+  );
   // 卡片有任何变化（含首次加载）都重新预约提醒
   simCardProvider.onCardsChanged = reminderProvider.cardsChanged;
 
   // 各项初始化互不依赖，并行执行以缩短启动白屏时间；单项失败不影响启动
   await Future.wait([
     _guard('主题', themeProvider.loadTheme()),
+    _guard('语言', localeProvider.load()),
     _guard('应用锁', authProvider.initialize()),
     _guard('通知', NotificationService.initialize()),
     _guard('提醒设置', reminderProvider.load()),
@@ -39,6 +45,7 @@ Future<void> main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider.value(value: themeProvider),
+        ChangeNotifierProvider.value(value: localeProvider),
         ChangeNotifierProvider.value(value: authProvider),
         ChangeNotifierProvider.value(value: simCardProvider),
         ChangeNotifierProvider.value(value: reminderProvider),

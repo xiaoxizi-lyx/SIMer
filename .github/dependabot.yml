@@ -1,0 +1,23 @@
+# Dependabot 每月检查一次依赖更新并提 PR，CI 会照常检查这些 PR。
+# Flutter / Gradle / AGP / Kotlin 等工具链需要互相匹配，随 Flutter 版本一起手动升级，不在这里管理。
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      github-actions:
+        patterns: ['*']
+    commit-message:
+      prefix: ci
+
+  - package-ecosystem: pub
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      dart-minor-and-patch:
+        update-types: [minor, patch]
+    commit-message:
+      prefix: chore(deps)

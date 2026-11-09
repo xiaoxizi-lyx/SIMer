@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:simer/l10n/app_localizations.dart';
 import 'package:simer/providers/auth_provider.dart';
 import 'package:simer/screens/lock_screen.dart';
 import 'package:simer/services/auth_service.dart';
+
+import '../support/l10n.dart';
 
 class _Backend implements AuthBackend {
   AuthResult result = AuthResult.success;
@@ -13,7 +16,7 @@ class _Backend implements AuthBackend {
   Future<AuthAvailability> availability() async => AuthAvailability.available;
 
   @override
-  Future<AuthResult> authenticate() async => result;
+  Future<AuthResult> authenticate(AuthPrompt prompt) async => result;
 }
 
 void main() {
@@ -25,7 +28,7 @@ void main() {
     final backend = _Backend();
     final auth = AuthProvider(backend: backend);
     await tester.runAsync(auth.initialize);
-    await tester.runAsync(auth.authenticate);
+    await tester.runAsync(() => auth.authenticate(testPrompt));
     expect(auth.isLocked, isFalse);
     // 之后锁屏自动发起的验证被用户取消，应保持锁定
     backend.result = AuthResult.cancelled;
@@ -34,6 +37,9 @@ void main() {
       ChangeNotifierProvider.value(
         value: auth,
         child: MaterialApp(
+          locale: const Locale('zh'),
+          supportedLocales: AppLocalizations.supportedLocales,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
           builder: (context, child) => AppLockGate(child: child!),
           home: Builder(
             builder: (context) => Scaffold(

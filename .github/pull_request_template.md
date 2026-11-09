@@ -13,7 +13,7 @@
 - [ ] 🔧 构建/工具链 (Build/CI change)
 
 ## 自测清单 (Self-Verification Checklist)
-- [ ] 已运行 `dart format lib test`，代码已通过 `flutter analyze` 静态检查且无告警。
+- [ ] 已运行 `dart format lib test integration_test`，代码已通过 `flutter analyze` 静态检查且无告警。
 - [ ] 运行 `flutter test` 且所有测试用例通过。
 - [ ] 确保未引入任何网络通信或隐式遥测行为，也未开启系统备份（保持 100% 离线）。
 - [ ] 确保未提交任何个人电话号码、真实 ICCID、本地私人路径或敏感凭据。

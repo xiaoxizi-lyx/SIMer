@@ -1,0 +1,35 @@
+// CI 专用的 Gradle 初始化脚本（工作流把它复制到 $GRADLE_USER_HOME/init.d/）。
+//
+// GitHub 托管机器的出口 IP 由许多用户共用，repo.maven.apache.org 不时对其返回
+// 403 / 429，导致依赖下载失败。这里把 Google 维护的 Maven Central 镜像排在最前面：
+// 内容与 Maven Central 相同；镜像上没有的构件（404）仍会回退到原来的仓库。
+// 项目本身的构建配置不变，本地构建不受影响。
+import org.gradle.api.initialization.resolve.RepositoriesMode
+
+def MIRROR = 'https://maven-central.storage-download.googleapis.com/maven2/'
+def preferMirror = { RepositoryHandler repos ->
+    def mirror = repos.maven { url = MIRROR; name = 'MavenCentralMirror' }
+    repos.remove(mirror)
+    repos.addFirst(mirror)
+}
+
+beforeSettings { settings ->
+    preferMirror(settings.pluginManagement.repositories)
+}
+
+settingsEvaluated { settings ->
+    // settings 未声明插件仓库时，保留默认的 Gradle Plugin Portal
+    if (settings.pluginManagement.repositories.size() == 1) {
+        settings.pluginManagement.repositories.gradlePluginPortal()
+    }
+    def drm = settings.dependencyResolutionManagement
+    def mode = drm.repositoriesMode.get()
+    if (mode == RepositoriesMode.FAIL_ON_PROJECT_REPOS || mode == RepositoriesMode.PREFER_SETTINGS) {
+        preferMirror(drm.repositories)
+    } else {
+        settings.gradle.allprojects { p ->
+            preferMirror(p.buildscript.repositories)
+            preferMirror(p.repositories)
+        }
+    }
+}

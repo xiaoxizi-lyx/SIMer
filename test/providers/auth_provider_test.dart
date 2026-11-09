@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:simer/providers/auth_provider.dart';
 import 'package:simer/services/auth_service.dart';
 
+import '../support/l10n.dart';
+
 class FakeAuthBackend implements AuthBackend {
   AuthAvailability availabilityResult = AuthAvailability.available;
   AuthResult authResult = AuthResult.success;
@@ -14,7 +16,7 @@ class FakeAuthBackend implements AuthBackend {
   Future<AuthAvailability> availability() async => availabilityResult;
 
   @override
-  Future<AuthResult> authenticate() async {
+  Future<AuthResult> authenticate(AuthPrompt prompt) async {
     authCalls++;
     return authResult;
   }
@@ -41,7 +43,7 @@ void main() {
     final backend = FakeAuthBackend();
     final auth = await _provider(backend);
     expect(auth.isLocked, isTrue);
-    expect(await auth.authenticate(), isTrue);
+    expect(await auth.authenticate(testPrompt), isTrue);
     expect(auth.isLocked, isFalse);
   });
 
@@ -66,7 +68,7 @@ void main() {
   test('离开应用超过设定时长才重新上锁', () async {
     final backend = FakeAuthBackend();
     final auth = await _provider(backend);
-    await auth.authenticate();
+    await auth.authenticate(testPrompt);
 
     var now = DateTime(2026, 11, 6, 12);
     await withClock(Clock(() => now), () async {
@@ -84,14 +86,14 @@ void main() {
 
   test('「立即」模式在进入后台时就上锁', () async {
     final auth = await _provider(FakeAuthBackend(), timeout: 'immediately');
-    await auth.authenticate();
+    await auth.authenticate(testPrompt);
     auth.handleLifecycle(AppLifecycleState.paused);
     expect(auth.isLocked, isTrue);
   });
 
   test('本应用打开的外部界面（文件选择、分享等）期间不上锁', () async {
     final auth = await _provider(FakeAuthBackend(), timeout: 'immediately');
-    await auth.authenticate();
+    await auth.authenticate(testPrompt);
     await auth.withoutAutoLock(() async {
       auth
         ..handleLifecycle(AppLifecycleState.paused)
@@ -104,17 +106,29 @@ void main() {
     final backend = FakeAuthBackend()
       ..availabilityResult = AuthAvailability.notConfigured;
     final auth = await _provider(backend, lockEnabled: false);
-    expect(await auth.setLockEnabled(true), isNotNull);
+    expect(await auth.setLockEnabled(true, testPrompt), isNotNull);
     expect(auth.lockEnabled, isFalse);
 
     backend
       ..availabilityResult = AuthAvailability.available
       ..authResult = AuthResult.failed;
-    expect(await auth.setLockEnabled(true), isNotNull);
+    expect(await auth.setLockEnabled(true, testPrompt), isNotNull);
     expect(auth.lockEnabled, isFalse);
 
     backend.authResult = AuthResult.success;
-    expect(await auth.setLockEnabled(true), isNull);
+    expect(await auth.setLockEnabled(true, testPrompt), isNull);
     expect(auth.lockEnabled, isTrue);
+  });
+
+  test('「隐藏敏感信息」默认开启，并保存用户的选择', () async {
+    final auth = await _provider(FakeAuthBackend(), lockEnabled: false);
+    expect(auth.maskSensitiveInfo, isTrue);
+
+    await auth.setMaskSensitiveInfo(false);
+    expect(auth.maskSensitiveInfo, isFalse);
+
+    final reloaded = AuthProvider(backend: FakeAuthBackend());
+    await reloaded.initialize();
+    expect(reloaded.maskSensitiveInfo, isFalse);
   });
 }

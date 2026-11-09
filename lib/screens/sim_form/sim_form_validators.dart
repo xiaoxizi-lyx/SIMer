@@ -1,6 +1,24 @@
+/// 表单字段的校验错误；界面层转换为当前语言的文字。
+enum FieldError {
+  invalidIccid,
+  notANumber,
+  negative,
+  notAnInteger,
+  daysRequired,
+  daysNotInteger,
+
+  /// 滚动周期超出 1-[SimFormValidators.maxRollingDays]。
+  rollingDaysOutOfRange,
+
+  /// 提前提醒天数超出 0-[SimFormValidators.maxReminderDays]。
+  reminderDaysOutOfRange,
+  dateInFuture,
+  expirationRequired,
+}
+
 /// 添加/编辑表单的字段解析与校验（纯函数，便于单元测试）。
 ///
-/// 校验函数返回错误文案，合法时返回 null。
+/// 校验函数返回 [FieldError]，合法时返回 null。
 abstract final class SimFormValidators {
   static const int maxRollingDays = 3650;
   static const int maxReminderDays = 365;
@@ -11,10 +29,10 @@ abstract final class SimFormValidators {
   /// 去除空白：用户常从卡托或网页复制带空格的 ICCID。
   static String normalizeIccid(String raw) => raw.replaceAll(RegExp(r'\s'), '');
 
-  static String? iccid(String? raw) {
+  static FieldError? iccid(String? raw) {
     final value = normalizeIccid(raw ?? '');
     if (value.isEmpty) return null;
-    if (!_iccid.hasMatch(value)) return 'ICCID 应为 18-22 位数字';
+    if (!_iccid.hasMatch(value)) return FieldError.invalidIccid;
     return null;
   }
 
@@ -32,47 +50,47 @@ abstract final class SimFormValidators {
   }
 
   /// 可选的非负数字。
-  static String? decimal(String? raw) {
+  static FieldError? decimal(String? raw) {
     final text = (raw ?? '').trim();
     if (text.isEmpty) return null;
     final value = parseDecimal(text);
-    if (value == null) return '请输入有效的数字';
-    if (value < 0) return '不能为负数';
+    if (value == null) return FieldError.notANumber;
+    if (value < 0) return FieldError.negative;
     return null;
   }
 
   /// 可选的非负整数。
-  static String? integer(String? raw) {
+  static FieldError? integer(String? raw) {
     final text = (raw ?? '').trim();
     if (text.isEmpty) return null;
     final value = parseInt(text);
-    if (value == null) return '请输入整数';
-    if (value < 0) return '不能为负数';
+    if (value == null) return FieldError.notAnInteger;
+    if (value < 0) return FieldError.negative;
     return null;
   }
 
-  static String? rollingDays(String? raw) {
+  static FieldError? rollingDays(String? raw) {
     final text = (raw ?? '').trim();
-    if (text.isEmpty) return '请输入天数';
+    if (text.isEmpty) return FieldError.daysRequired;
     final value = parseInt(text);
-    if (value == null) return '请输入整数天数';
+    if (value == null) return FieldError.daysNotInteger;
     if (value < 1 || value > maxRollingDays) {
-      return '天数应在 1-$maxRollingDays 之间';
+      return FieldError.rollingDaysOutOfRange;
     }
     return null;
   }
 
-  static String? reminderDays(String? raw) {
+  static FieldError? reminderDays(String? raw) {
     final text = (raw ?? '').trim();
-    if (text.isEmpty) return '请输入天数';
+    if (text.isEmpty) return FieldError.daysRequired;
     final value = parseInt(text);
-    if (value == null) return '请输入整数天数';
+    if (value == null) return FieldError.daysNotInteger;
     if (value < 0 || value > maxReminderDays) {
-      return '天数应在 0-$maxReminderDays 之间';
+      return FieldError.reminderDaysOutOfRange;
     }
     return null;
   }
 
-  static String? lastUsedDate(DateTime? date, DateTime today) =>
-      date != null && date.isAfter(today) ? '不能晚于今天' : null;
+  static FieldError? lastUsedDate(DateTime? date, DateTime today) =>
+      date != null && date.isAfter(today) ? FieldError.dateInFuture : null;
 }

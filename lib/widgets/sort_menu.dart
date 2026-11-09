@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../models/enums.dart';
 import '../theme/app_colors.dart';
 
@@ -25,7 +26,7 @@ class SortMenu extends StatelessWidget {
         Icons.sort_rounded,
         color: Theme.of(context).colorScheme.onSurface,
       ),
-      tooltip: '排序',
+      tooltip: context.l10n.sortTooltip,
       onSelected: (sortBy) {
         if (sortBy == currentSortBy) {
           // 相同排序项 → 切换升降序
@@ -55,7 +56,7 @@ class SortMenu extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  sortBy.label,
+                  sortBy.label(context.l10n),
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,

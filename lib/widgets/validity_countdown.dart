@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../models/enums.dart';
 import '../theme/app_colors.dart';
 
@@ -98,11 +99,12 @@ class _ValidityCountdownState extends State<ValidityCountdown>
 
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     // 无期限
     if (widget.validityType == ValidityType.noExpiration) {
       return _buildRow(
         icon: Icons.all_inclusive_rounded,
-        text: '无期限',
+        text: l.validityUnlimited,
         color: widget.textColor.withValues(alpha: 0.6),
         animate: false,
       );
@@ -115,24 +117,24 @@ class _ValidityCountdownState extends State<ValidityCountdown>
     if (days != null && days < 0) {
       return _buildRow(
         icon: _icon,
-        text: '已过期 ${-days} 天',
+        text: l.countdownExpiredDays(-days),
         color: color,
         animate: false,
       );
     }
 
     // 滚动有效期的特殊提示
-    String rollingHint = '';
-    if (widget.validityType == ValidityType.rolling &&
-        widget.rollingDays != null) {
-      rollingHint = ' · ${widget.rollingDays}天一用';
-    }
+    final rollingDays = widget.rollingDays;
+    final rollingHint =
+        widget.validityType == ValidityType.rolling && rollingDays != null
+        ? ' · ${l.countdownRollingCycle(rollingDays)}'
+        : '';
 
     // 正常倒计时
     final text = switch (days) {
-      null => '未设定',
-      0 => '今天到期$rollingHint',
-      _ => '剩余 $days 天$rollingHint',
+      null => l.validityUnknown,
+      0 => '${l.countdownDueToday}$rollingHint',
+      _ => '${l.countdownDaysLeft(days)}$rollingHint',
     };
     final shouldPulse = days != null && days >= 0 && days < 7;
 

@@ -6,6 +6,7 @@
 
 <p align="center">
   <strong>完全离线的 SIM 卡与 eSIM 信息管理应用</strong><br>
+  简体中文 · English<br>
   Apple Wallet 风格的卡片交互，为多卡用户、海外保号卡玩家和 eSIM 爱好者打造。
 </p>
 
@@ -24,7 +25,7 @@
 
 - 📇 **钱包风格卡片**：渐变拟物卡片，点击沿 Y 轴 3D 翻转，正面看摘要，背面看完整信息。
 - 📱 **实体 SIM 与 eSIM 全字段记录**：ICCID（等宽分组显示）、多个号码、运营商、国家/地区、来源渠道和备注；流量、通话、短信与话费余额；通话、短信、数据、VoLTE、Wi-Fi Calling、热点共享、eSIM 转移、国际漫游等功能的支持情况。
-- 📷 **eSIM 激活码识别**：相机扫码、从相册截图识别或粘贴激活码文本，按 GSMA SGP.22 规范解析 `LPA:1$<SM-DP+ 地址>$<Matching ID>[$<SM-DP+ OID>[$<确认码要求标志>]]`。确认码不包含在二维码中，需要时应用会提醒你手动填写。可一键复制完整激活码。
+- 📷 **eSIM 激活码识别**：相机扫码、从相册截图识别或粘贴激活码文本，按 GSMA SGP.22 规范解析 `LPA:1$<SM-DP+ 地址>$<Matching ID>[$<SM-DP+ OID>[$<确认码要求标志>]]`。确认码不包含在二维码中，需要时应用会提醒你手动填写。可一键复制完整激活码，也可以把保存的激活码重新显示为二维码，在另一台设备上扫码安装。
 - ⏳ **三种有效期模式**：
   - **固定到期日**：适合按期充值续订的卡，到期当天仍算有效。
   - **滚动有效期（N 天内需使用一次）**：适合 giffgaff 等需要定期使用才能保号的卡。即将到期或已过期时，在卡片上点「我已使用」即可续期，支持撤销。
@@ -33,8 +34,9 @@
 - 🌍 **预置运营商**：内置 16 个国家和地区的 59 家常见运营商及其品牌色；自定义运营商会自动分配不冲突的颜色。
 - 🏷️ **标签、筛选与搜索**：自定义标签；按状态（激活 / 未激活 / 即将到期 / 已过期，显示数量）、国家/地区、运营商和标签筛选；搜索运营商、号码、ICCID、国家名、标签、SM-DP+ 地址、来源和备注，号码与 ICCID 忽略空格和分隔符；按添加时间、到期时间、运营商或国家/地区排序。
 - 🗃️ **归档**：暂时不用的卡可以归档，之后恢复或彻底删除。
-- 🔒 **应用锁与防窥**：用指纹、面容或设备密码解锁；离开应用超过设定时间（立即 / 30 秒 / 1 分钟 / 5 分钟）后自动重新上锁，锁屏覆盖所有页面和弹窗；「防窥保护」在最近任务中隐藏应用内容。
-- 💾 **手动备份与恢复**：导出为 JSON 文件（保存到文件或分享），导入前可预览内容并选择如何处理重复的卡片；兼容 1.x 导出的备份。
+- 🔒 **应用锁与防窥**：用指纹、面容或设备密码解锁；离开应用超过设定时间（立即 / 30 秒 / 1 分钟 / 5 分钟）后自动重新上锁，锁屏覆盖所有页面和弹窗；「防窥保护」在最近任务中隐藏应用内容；ICCID、eSIM 激活码与确认码默认打码显示，点击眼睛图标才显示完整内容。
+- 💾 **加密备份与恢复**：导出时默认用密码加密（AES-256-GCM），保存到文件或分享；导入前可预览内容并选择如何处理重复的卡片；兼容 1.x 与 2.0 导出的备份。
+- 🌐 **中英文界面**：跟随系统语言，也可以在设置中固定为简体中文或 English。
 - 🌙 **深浅色主题**：浅色米白（#FAF8F5）、深色深灰（#1C1C1E），可跟随系统；适配大字体和系统「移除动画」设置。
 
 ---
@@ -46,7 +48,7 @@ SIMer 是纯本地应用：没有账户、没有服务器，也没有统计、�
 - **系统层面禁止联网**：正式版安装包不申请 `INTERNET` 权限，Android 不允许它建立任何网络连接。CI 会检查每个发布的安装包，一旦带有该权限就构建失败。字体随应用内置；二维码识别使用打包在应用内的 Google ML Kit 模型，在本机离线运行。
 - **不参与系统备份和换机迁移**：关闭了 Android 云备份和设备间迁移（`allowBackup="false"` 加 `dataExtractionRules`），数据不会在你不知情的情况下被复制到其他地方。
 - **数据只由你带走**：换机时，在「设置 → 导出备份」中手动导出，自己把文件传到新设备，再「导入备份」。
-- **备份文件是明文**：导出的 JSON 包含 ICCID、号码、eSIM 激活码等敏感信息，请妥善保管，用完及时删除。通过「分享」导出时生成的临时文件会在下次导出或下次启动时自动清理。
+- **备份默认加密**：导出时设置的密码经 PBKDF2-HMAC-SHA512（21 万次迭代）派生密钥，再用 AES-256-GCM 加密整份备份；密码错误或文件被改动时无法解密。请牢记密码，忘记后无法恢复。也可以选择导出未加密的明文 JSON，其中包含 ICCID、号码、eSIM 激活码等敏感信息，请妥善保管、用完及时删除。通过「分享」导出时生成的临时文件会在下次导出或下次启动时自动清理。
 
 正式版安装包申请的权限：
 
@@ -79,6 +81,23 @@ SIMer 是纯本地应用：没有账户、没有服务器，也没有统计、�
 sha256sum -c SHA256SUMS.txt --ignore-missing
 ```
 
+### 核验签名
+
+校验和只能说明文件下载完整，核对签名证书才能确认安装包出自本项目。2.0 起的所有正式版都使用同一个证书，信息如下（可以整段粘贴到 [AppVerifier](https://github.com/soupslurpr/AppVerifier) 中核对已安装的应用）：
+
+```text
+io.github.xiaoxizi_lyx.simer
+62:CC:31:FE:51:C5:A8:C6:35:E1:BC:19:37:28:7D:DD:6B:BD:DF:02:11:E8:73:74:69:0D:C5:22:8B:7D:52:23
+```
+
+也可以用 Android SDK 中的 `apksigner` 查看安装包，输出中 `certificate SHA-256 digest` 后面是同一串指纹（小写、不带冒号）：
+
+```bash
+apksigner verify --print-certs SIMer-v<版本>-arm64-v8a.apk
+```
+
+指纹不一致时请不要安装。
+
 ### 从 1.x 升级
 
 2.0 起应用包名改为 `io.github.xiaoxizi_lyx.simer`，并开始使用固定的正式签名，因此**不能覆盖安装 1.x**（1.x 的安装包使用临时调试签名，本来也无法覆盖升级）。安装 2.0 后，桌面上会同时出现新旧两个 SIMer，请按以下步骤迁移数据：
@@ -103,8 +122,11 @@ sha256sum -c SHA256SUMS.txt --ignore-missing
 | 应用锁 | `local_auth`（Android `BiometricPrompt`，配合 `FlutterFragmentActivity`） |
 | 到期提醒 | `flutter_local_notifications` + `timezone`（系统预约通知） |
 | 备份导入导出 | `file_picker`（系统存储访问框架）、`share_plus` |
+| 备份加密 | `cryptography`（纯 Dart 的 AES-256-GCM 与 PBKDF2） |
+| 二维码生成 | `qr`（纯 Dart） |
+| 界面文案 | `flutter_localizations` + `gen-l10n`（`lib/l10n/*.arb`） |
 | 偏好设置 | `shared_preferences` |
-| 测试 | `flutter_test`、`sqflite_common_ffi` |
+| 测试 | `flutter_test`、`sqflite_common_ffi`、`integration_test`（Android 模拟器） |
 
 ---
 
@@ -118,12 +140,14 @@ SIMer/
 ├── lib/
 │   ├── data/             # 预置运营商与国家/地区数据
 │   ├── database/         # SQLite 数据库、迁移与备份导入
+│   ├── l10n/             # 界面文案（app_zh.arb 为模板、app_en.arb）与生成的代码
 │   ├── models/           # 领域模型（SimCard、CalendarDate、FeatureSet、Tag、Carrier 等）
-│   ├── providers/        # 状态管理（卡片、筛选、主题、应用锁、提醒）
+│   ├── providers/        # 状态管理（卡片、筛选、主题、语言、应用锁、提醒）
 │   ├── screens/          # 页面：首页、添加/编辑表单（sim_form/）、扫码、设置、标签、归档、锁屏
-│   ├── services/         # 激活码解析、备份编解码与导入导出、提醒规划与通知、生物识别、平台通道
+│   ├── services/         # 激活码解析、备份编解码与加密、导入导出、提醒规划与通知、生物识别、平台通道
 │   ├── theme/            # 颜色、字体与主题
-│   └── widgets/          # 卡片正反面、翻转、倒计时、筛选栏等组件
+│   └── widgets/          # 卡片正反面、翻转、倒计时、筛选栏、二维码等组件
+├── integration_test/     # 在 Android 设备 / 模拟器上运行完整应用的测试
 └── test/                 # 单元测试与组件测试
 ```
 
@@ -145,13 +169,23 @@ flutter pub get
 flutter run
 ```
 
+调试版的包名是 `io.github.xiaoxizi_lyx.simer.debug`，桌面上显示为「SIMer Debug」，可以和正式版同时安装，不会影响正式版的数据。
+
 提交前请确保以下检查全部通过（CI 会执行同样的检查）：
 
 ```bash
-dart format --output=none --set-exit-if-changed lib test
+dart format --output=none --set-exit-if-changed lib test integration_test
 flutter analyze
 flutter test
 ```
+
+连接 Android 手机或启动模拟器后，可以运行在真实系统上启动完整应用的集成测试（CI 会在模拟器上运行）：
+
+```bash
+flutter test integration_test
+```
+
+修改界面文字时，编辑 `lib/l10n/app_zh.arb`（模板）和 `lib/l10n/app_en.arb`，然后运行 `flutter gen-l10n` 并把生成的代码一起提交。
 
 ### 构建安装包
 
@@ -161,8 +195,30 @@ flutter build apk --release --split-per-abi
 
 没有配置签名时，本地 release 构建会使用调试签名，只能自己测试，不能分发。正式签名和发布流程见 [docs/RELEASING.md](docs/RELEASING.md)。
 
+| 构建 | 包名 | 桌面名称 |
+| --- | --- | --- |
+| 正式版（推送 `v*` 标签时由 CI 构建） | `io.github.xiaoxizi_lyx.simer` | SIMer |
+| CI 测试包（PR 与 `main`，在 Actions 的 Artifacts 中下载） | `io.github.xiaoxizi_lyx.simer.ci` | SIMer CI |
+| 调试版（`flutter run`） | `io.github.xiaoxizi_lyx.simer.debug` | SIMer Debug |
+| profile 版（`flutter run --profile`） | `io.github.xiaoxizi_lyx.simer.profile` | SIMer Profile |
+
+后三种都可以和正式版同时安装，数据各自独立。
+
+---
+
+## 📝 待办 (TODO)
+
+- [ ] **自适应图标与主题图标**：现在的图标是一张不分层的图片，Android 8.0 及以上的部分桌面会把它缩小后放进白色底板，Android 13 起的主题图标（随壁纸配色的单色图标）也无法使用。需要分层素材（透明背景的前景图加背景色，最好是 SVG），或重新设计一个矢量图标。
+- [ ] **繁体中文界面**：增加 `lib/l10n/app_zh_Hant.arb`；目前繁体中文系统显示简体中文。
+- [ ] **复核国家/地区的英文名称**：英文界面中的国家/地区名称是按中文界面的叫法逐一对应翻译的（例如「中国大陆」→ Mainland China），需要再确认一遍。
+- [ ] **升级 Gradle 与 Android Gradle 插件**（目前为 Gradle 9.1.0、AGP 9.0.1）：计划随下次升级 Flutter 一起进行。
+- [ ] **数据库加密（SQLCipher）**：待评估。系统的文件级加密、应用沙盒、禁用系统备份和应用锁已覆盖常见风险，再加密数据库的收益有限，还会让安装包明显变大，并需要迁移现有数据。
+- [ ] **仓库设置**：在 v1.0.0 Release 说明的开头注明 1.x 已停止维护，并链接到[从 1.x 升级](#从-1x-升级)；在仓库 Settings → Code security 中开启 Dependabot 安全更新（版本更新已由 `.github/dependabot.yml` 配置）。
+
 ---
 
 ## 📄 开源许可
 
 本项目基于 [MIT License](LICENSE) 开源。内置字体 [Inter](assets/fonts/OFL-Inter.txt) 与 [Roboto Mono](assets/fonts/OFL-RobotoMono.txt) 采用 SIL Open Font License 1.1。
+
+应用图标中的 Android 机器人形象复制或修改自 Google 创作并分享的作品，依据[知识共享署名 3.0 许可协议](https://creativecommons.org/licenses/by/3.0/)使用（The Android robot is reproduced or modified from work created and shared by Google and used according to terms described in the Creative Commons 3.0 Attribution License）。

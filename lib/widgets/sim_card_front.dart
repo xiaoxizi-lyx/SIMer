@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../data/countries.dart';
+import '../l10n/l10n.dart';
 import '../models/enums.dart';
+import '../models/sensitive_mask.dart';
 import '../models/sim_card.dart';
 import '../models/tag.dart';
 import '../theme/app_colors.dart';
@@ -14,11 +16,15 @@ class SimCardFront extends StatelessWidget {
   final List<Tag> tags;
   final VoidCallback? onMarkAsUsed;
 
+  /// ICCID 是否打码显示（见设置中的「隐藏敏感信息」）。
+  final bool maskSensitive;
+
   const SimCardFront({
     super.key,
     required this.simCard,
     this.tags = const [],
     this.onMarkAsUsed,
+    this.maskSensitive = true,
   });
 
   Color get _baseColor => Color(simCard.cardColor);
@@ -27,8 +33,15 @@ class SimCardFront extends StatelessWidget {
 
   Color get _secondaryTextColor => _textColor.withValues(alpha: 0.7);
 
+  String get _iccidText {
+    final iccid = simCard.iccid;
+    if (iccid == null || iccid.isEmpty) return '';
+    return maskSensitive ? SensitiveMask.iccid(iccid) : simCard.formattedIccid!;
+  }
+
   @override
   Widget build(BuildContext context) {
+    final l = context.l10n;
     final gradient = AppColors.cardGradient(_baseColor);
 
     // 至少 200 高，系统字体放大时随内容增高而不是溢出
@@ -60,11 +73,11 @@ class SimCardFront extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // ── 顶部行：旗帜+运营商名 / 状态徽章 ──
-                _buildTopRow(),
+                _buildTopRow(l),
                 const Spacer(),
                 const SizedBox(height: 12),
                 // ── 中部：号码 + 倒计时 ──
-                _buildMiddleSection(),
+                _buildMiddleSection(l),
                 const Spacer(),
                 const SizedBox(height: 12),
                 // ── 底部：ICCID / SIM类型+标签 ──
@@ -77,7 +90,7 @@ class SimCardFront extends StatelessWidget {
     );
   }
 
-  Widget _buildTopRow() {
+  Widget _buildTopRow(AppLocalizations l) {
     final emoji = CountryData.countryCodeToEmoji(simCard.countryCode);
     return Row(
       children: [
@@ -85,7 +98,7 @@ class SimCardFront extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: Text(
-            simCard.carrierName,
+            simCard.carrierLabel(l),
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
@@ -94,24 +107,24 @@ class SimCardFront extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
         ),
-        _buildStatusBadge(),
+        _buildStatusBadge(l),
       ],
     );
   }
 
-  Widget _buildStatusBadge() {
+  Widget _buildStatusBadge(AppLocalizations l) {
     // 归档 > 已过期 > 用户设置的激活状态
     final (String label, Color badgeColor) = simCard.isArchived
-        ? ('已归档', AppColors.statusArchived)
+        ? (l.cardArchivedBadge, AppColors.statusArchived)
         : simCard.isExpired
-        ? (ValidityState.expired.label, AppColors.statusExpired)
+        ? (ValidityState.expired.label(l), AppColors.statusExpired)
         : switch (simCard.activationStatus) {
             ActivationStatus.active => (
-              ActivationStatus.active.label,
+              ActivationStatus.active.label(l),
               AppColors.statusActive,
             ),
             ActivationStatus.inactive => (
-              ActivationStatus.inactive.label,
+              ActivationStatus.inactive.label(l),
               AppColors.statusInactive,
             ),
           };
@@ -134,7 +147,7 @@ class SimCardFront extends StatelessWidget {
     );
   }
 
-  Widget _buildMiddleSection() {
+  Widget _buildMiddleSection(AppLocalizations l) {
     // 滚动有效期卡在提醒窗口内或已过期时，在正面直接提供续期按钮
     final state = simCard.validityState;
     final showMarkUsed =
@@ -183,14 +196,14 @@ class SimCardFront extends StatelessWidget {
               textColor: _textColor,
               fontSize: 12,
             ),
-            if (showMarkUsed && onMarkAsUsed != null) _buildMarkUsedButton(),
+            if (showMarkUsed && onMarkAsUsed != null) _buildMarkUsedButton(l),
           ],
         ),
       ],
     );
   }
 
-  Widget _buildMarkUsedButton() {
+  Widget _buildMarkUsedButton(AppLocalizations l) {
     return GestureDetector(
       onTap: onMarkAsUsed,
       child: Container(
@@ -209,7 +222,7 @@ class SimCardFront extends StatelessWidget {
             const Text('✅', style: TextStyle(fontSize: 12)),
             const SizedBox(width: 4),
             Text(
-              '我已使用',
+              l.cardMarkUsed,
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,
@@ -239,7 +252,7 @@ class SimCardFront extends StatelessWidget {
         // ICCID
         Expanded(
           child: Text(
-            simCard.formattedIccid ?? '',
+            _iccidText,
             style: TextStyle(
               fontFamily: AppFonts.mono,
               fontSize: 11,

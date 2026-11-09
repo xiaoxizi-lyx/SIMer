@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../l10n/l10n.dart';
 import '../../../widgets/feature_toggle_tile.dart';
 import '../sim_form_draft.dart';
 
@@ -16,7 +17,7 @@ class FeaturesSection extends StatelessWidget {
             in draft.features.entries)
           FeatureToggleTile(
             key: ValueKey(feature),
-            featureName: feature.label,
+            featureName: feature.label(context.l10n),
             featureItem: item,
             onChanged: (updated) =>
                 draft.update(() => draft.features[feature] = updated),

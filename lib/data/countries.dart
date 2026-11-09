@@ -1,4 +1,4 @@
-/// 国家/地区数据：ISO代码 → 中文名称
+/// 国家/地区数据：ISO 代码 → 中文 / 英文名称
 /// emoji 国旗通过 countryCodeToEmoji() 计算，无需硬编码
 class CountryData {
   CountryData._();
@@ -12,12 +12,14 @@ class CountryData {
     );
   }
 
-  /// 获取国家显示文本：emoji + 名称
-  static String displayName(String countryCode) {
-    final emoji = countryCodeToEmoji(countryCode);
-    final name = countries[countryCode] ?? countryCode;
-    return '$emoji $name';
-  }
+  /// 国家/地区名称：界面语言为中文时用中文名，否则用英文名。未收录的代码原样显示。
+  static String name(String countryCode, String languageCode) =>
+      (languageCode == 'zh' ? countries : countriesEn)[countryCode] ??
+      countryCode;
+
+  /// 国家显示文本：emoji 国旗 + 名称。
+  static String displayName(String countryCode, String languageCode) =>
+      '${countryCodeToEmoji(countryCode)} ${name(countryCode, languageCode)}';
 
   /// 常用国家/地区列表（按使用频率排序）
   static const Map<String, String> countries = {
@@ -115,13 +117,94 @@ class CountryData {
     'TZ': '坦桑尼亚',
   };
 
-  /// 搜索国家（支持代码和中文名模糊匹配）
-  static List<MapEntry<String, String>> search(String query) {
-    if (query.isEmpty) return countries.entries.toList();
-    final lowerQuery = query.toLowerCase();
-    return countries.entries.where((entry) {
-      return entry.key.toLowerCase().contains(lowerQuery) ||
-          entry.value.toLowerCase().contains(lowerQuery);
+  /// 英文名称（与 [countries] 的代码一一对应）。
+  static const Map<String, String> countriesEn = {
+    'CN': 'Mainland China',
+    'HK': 'Hong Kong, China',
+    'MO': 'Macao, China',
+    'TW': 'Taiwan, China',
+    'JP': 'Japan',
+    'KR': 'South Korea',
+    'MN': 'Mongolia',
+    'SG': 'Singapore',
+    'MY': 'Malaysia',
+    'TH': 'Thailand',
+    'VN': 'Vietnam',
+    'PH': 'Philippines',
+    'ID': 'Indonesia',
+    'MM': 'Myanmar',
+    'KH': 'Cambodia',
+    'LA': 'Laos',
+    'BN': 'Brunei',
+    'IN': 'India',
+    'PK': 'Pakistan',
+    'BD': 'Bangladesh',
+    'LK': 'Sri Lanka',
+    'NP': 'Nepal',
+    'AE': 'United Arab Emirates',
+    'SA': 'Saudi Arabia',
+    'TR': 'Türkiye',
+    'IL': 'Israel',
+    'QA': 'Qatar',
+    'KW': 'Kuwait',
+    'BH': 'Bahrain',
+    'OM': 'Oman',
+    'JO': 'Jordan',
+    'IQ': 'Iraq',
+    'US': 'United States',
+    'CA': 'Canada',
+    'MX': 'Mexico',
+    'GB': 'United Kingdom',
+    'DE': 'Germany',
+    'FR': 'France',
+    'IT': 'Italy',
+    'ES': 'Spain',
+    'NL': 'Netherlands',
+    'BE': 'Belgium',
+    'SE': 'Sweden',
+    'NO': 'Norway',
+    'DK': 'Denmark',
+    'FI': 'Finland',
+    'CH': 'Switzerland',
+    'AT': 'Austria',
+    'PT': 'Portugal',
+    'IE': 'Ireland',
+    'PL': 'Poland',
+    'CZ': 'Czechia',
+    'GR': 'Greece',
+    'HU': 'Hungary',
+    'RO': 'Romania',
+    'RU': 'Russia',
+    'UA': 'Ukraine',
+    'IS': 'Iceland',
+    'LU': 'Luxembourg',
+    'AU': 'Australia',
+    'NZ': 'New Zealand',
+    'BR': 'Brazil',
+    'AR': 'Argentina',
+    'CL': 'Chile',
+    'CO': 'Colombia',
+    'PE': 'Peru',
+    'ZA': 'South Africa',
+    'EG': 'Egypt',
+    'NG': 'Nigeria',
+    'KE': 'Kenya',
+    'MA': 'Morocco',
+    'TN': 'Tunisia',
+    'ET': 'Ethiopia',
+    'GH': 'Ghana',
+    'TZ': 'Tanzania',
+  };
+
+  /// 搜索国家/地区：代码、中文名与英文名都参与匹配（不区分大小写）。
+  /// 返回匹配的代码，顺序与 [countries] 一致。
+  static List<String> search(String query) {
+    final q = query.trim().toLowerCase();
+    if (q.isEmpty) return countries.keys.toList();
+    return countries.keys.where((code) {
+      return code.toLowerCase().contains(q) ||
+          countries[code]!.toLowerCase().contains(q) ||
+          (countriesEn[code]?.toLowerCase().contains(q) ?? false);
     }).toList();
   }
 }

@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
+import '../l10n/l10n.dart';
 import '../providers/auth_provider.dart';
+import '../services/auth_service.dart';
 import '../theme/app_colors.dart';
 
 /// 在锁定时覆盖整个应用（包括所有已打开的页面、对话框和底部弹窗）。
@@ -100,12 +102,22 @@ class _LockScreenState extends State<LockScreen>
 
   void _authenticate() {
     if (!mounted) return;
-    unawaited(context.read<AuthProvider>().authenticate());
+    final l = context.l10n;
+    unawaited(
+      context.read<AuthProvider>().authenticate(
+        AuthPrompt(
+          title: l.authPromptTitle,
+          reason: l.authPromptReason,
+          cancel: l.commonCancel,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
+    final l = context.l10n;
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
     final secondary = isDark
@@ -152,14 +164,14 @@ class _LockScreenState extends State<LockScreen>
                   ),
                   const SizedBox(height: 24),
                   Text(
-                    'SIMer 已锁定',
+                    l.lockScreenTitle,
                     style: theme.textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    auth.lastError ?? '请验证身份后继续',
+                    auth.lastError?.message(l) ?? l.lockScreenPrompt,
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 15,
@@ -177,7 +189,7 @@ class _LockScreenState extends State<LockScreen>
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
                         : const Icon(Icons.fingerprint_rounded),
-                    label: const Text('解锁'),
+                    label: Text(l.lockScreenUnlock),
                   ),
                 ],
               ),

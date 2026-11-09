@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 
+import '../l10n/l10n.dart';
 import '../models/sim_card.dart';
 import '../models/tag.dart';
 import 'sim_card_back.dart';
@@ -17,6 +18,9 @@ class SimCardFlip extends StatefulWidget {
   final VoidCallback? onArchive;
   final VoidCallback? onMarkAsUsed;
 
+  /// ICCID、激活码等是否打码显示（见设置中的「隐藏敏感信息」）。
+  final bool maskSensitive;
+
   const SimCardFlip({
     super.key,
     required this.simCard,
@@ -24,6 +28,7 @@ class SimCardFlip extends StatefulWidget {
     this.onEdit,
     this.onArchive,
     this.onMarkAsUsed,
+    this.maskSensitive = true,
   });
 
   @override
@@ -68,7 +73,9 @@ class _SimCardFlipState extends State<SimCardFlip>
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      onTapHint: _isFlipped ? '返回卡片正面' : '查看卡片详情',
+      onTapHint: _isFlipped
+          ? context.l10n.cardFlipHintToFront
+          : context.l10n.cardFlipHintToDetails,
       child: GestureDetector(
         onTap: flip,
         // 正反面高度不同：翻到一半换面时平滑过渡，而不是让列表跳动
@@ -92,6 +99,7 @@ class _SimCardFlipState extends State<SimCardFlip>
                         simCard: widget.simCard,
                         tags: widget.tags,
                         onMarkAsUsed: widget.onMarkAsUsed,
+                        maskSensitive: widget.maskSensitive,
                       )
                     : Transform(
                         alignment: Alignment.center,
@@ -102,6 +110,7 @@ class _SimCardFlipState extends State<SimCardFlip>
                           onEdit: widget.onEdit,
                           onArchive: widget.onArchive,
                           onMarkAsUsed: widget.onMarkAsUsed,
+                          maskSensitive: widget.maskSensitive,
                         ),
                       ),
               );

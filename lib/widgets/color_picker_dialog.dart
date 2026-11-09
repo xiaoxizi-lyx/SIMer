@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_colorpicker/flutter_colorpicker.dart';
 
+import '../l10n/l10n.dart';
 import '../theme/app_colors.dart';
 
 /// 卡片颜色选择对话框
@@ -58,16 +59,20 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              '选择卡片颜色',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+            Text(
+              context.l10n.colorPickerTitle,
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 16),
 
             // ── 运营商推荐色 ──
             if (widget.carrierDefaultColor != null) ...[
               Text(
-                '${widget.carrierName ?? '运营商'}推荐',
+                widget.carrierName == null
+                    ? context.l10n.colorPickerCarrierSuggestedGeneric
+                    : context.l10n.colorPickerCarrierSuggested(
+                        widget.carrierName!,
+                      ),
                 style: TextStyle(
                   fontSize: 12,
                   color: Theme.of(context).colorScheme.onSurface
@@ -89,7 +94,7 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
 
             // ── 预设颜色池 ──
             Text(
-              '预设颜色',
+              context.l10n.colorPickerPresets,
               style: TextStyle(
                 fontSize: 12,
                 color: Theme.of(context).colorScheme.onSurface
@@ -129,9 +134,9 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                     color: AppColors.primary,
                   ),
                   const SizedBox(width: 4),
-                  const Text(
-                    '自定义颜色',
-                    style: TextStyle(
+                  Text(
+                    context.l10n.colorPickerCustom,
+                    style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: AppColors.primary,
@@ -186,12 +191,12 @@ class _ColorPickerDialogState extends State<ColorPickerDialog> {
                 const Spacer(),
                 TextButton(
                   onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('取消'),
+                  child: Text(context.l10n.commonCancel),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton(
                   onPressed: () => Navigator.of(context).pop(_selectedColor),
-                  child: const Text('确定'),
+                  child: Text(context.l10n.commonConfirm),
                 ),
               ],
             ),

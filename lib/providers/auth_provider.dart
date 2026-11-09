@@ -7,20 +7,31 @@ import '../services/platform_service.dart';
 
 /// 离开应用多久后重新上锁。
 enum LockTimeout {
-  immediately(Duration.zero, '立即'),
-  seconds30(Duration(seconds: 30), '30 秒后'),
-  minute1(Duration(minutes: 1), '1 分钟后'),
-  minutes5(Duration(minutes: 5), '5 分钟后');
+  immediately(Duration.zero),
+  seconds30(Duration(seconds: 30)),
+  minute1(Duration(minutes: 1)),
+  minutes5(Duration(minutes: 5));
 
-  const LockTimeout(this.duration, this.label);
+  const LockTimeout(this.duration);
   final Duration duration;
-  final String label;
 
   static LockTimeout fromName(String? name) => LockTimeout.values.firstWhere(
     (t) => t.name == name,
     orElse: () => LockTimeout.seconds30,
   );
 }
+
+/// 需要告知用户的一次性提示。
+enum AuthNotice {
+  /// 设备已移除锁屏，应用锁被自动关闭。
+  lockDisabledNoCredentials,
+}
+
+/// 锁屏上显示的验证失败原因。
+enum AuthError { lockedOut, failed }
+
+/// 开关应用锁失败的原因。
+enum LockToggleError { deviceNotSecure, authenticationFailed }
 
 /// 应用锁与防窥保护。
 ///
@@ -36,6 +47,7 @@ class AuthProvider extends ChangeNotifier {
   static const String _lockEnabledKey = 'app_lock_enabled';
   static const String _lockTimeoutKey = 'app_lock_timeout';
   static const String _privacyKey = 'privacy_protection_enabled';
+  static const String _maskKey = 'mask_sensitive_info';
 
   final AuthBackend _backend;
 
@@ -44,9 +56,10 @@ class AuthProvider extends ChangeNotifier {
   bool _authenticating = false;
   bool _deviceSecure = false;
   bool _privacyProtection = true;
+  bool _maskSensitiveInfo = true;
   LockTimeout _lockTimeout = LockTimeout.seconds30;
-  String? _lastError;
-  String? _notice;
+  AuthError? _lastError;
+  AuthNotice? _notice;
   DateTime? _backgroundedAt;
   int _suspendDepth = 0;
 
@@ -61,17 +74,21 @@ class AuthProvider extends ChangeNotifier {
   LockTimeout get lockTimeout => _lockTimeout;
   bool get privacyProtection => _privacyProtection;
 
+  /// 卡片上的 ICCID、激活码与确认码是否默认打码显示。
+  bool get maskSensitiveInfo => _maskSensitiveInfo;
+
   /// 最近一次验证失败的原因（显示在锁屏上）。
-  String? get lastError => _lastError;
+  AuthError? get lastError => _lastError;
 
   /// 需要告知用户的一次性提示（例如应用锁被自动关闭）。
-  String? get notice => _notice;
+  AuthNotice? get notice => _notice;
 
   Future<void> initialize() async {
     final prefs = await SharedPreferences.getInstance();
     _lockEnabled = prefs.getBool(_lockEnabledKey) ?? false;
     _lockTimeout = LockTimeout.fromName(prefs.getString(_lockTimeoutKey));
     _privacyProtection = prefs.getBool(_privacyKey) ?? true;
+    _maskSensitiveInfo = prefs.getBool(_maskKey) ?? true;
 
     final availability = await _backend.availability();
     _deviceSecure = availability == AuthAvailability.available;
@@ -80,7 +97,7 @@ class AuthProvider extends ChangeNotifier {
         // 设备已移除锁屏（移除时系统本身要求验证原密码），无法再验证身份
         _lockEnabled = false;
         await prefs.setBool(_lockEnabledKey, false);
-        _notice = '设备已不再设置锁屏密码或生物识别，应用锁已自动关闭';
+        _notice = AuthNotice.lockDisabledNoCredentials;
       } else {
         // 可用或查询出错都保持锁定；出错时锁屏上可重试
         _locked = true;
@@ -90,8 +107,8 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// 验证身份以解锁。返回是否已解锁。
-  Future<bool> authenticate() async {
+  /// 验证身份以解锁。返回是否已解锁。[prompt] 是系统验证对话框中的文字。
+  Future<bool> authenticate(AuthPrompt prompt) async {
     if (!_lockEnabled) {
       _locked = false;
       notifyListeners();
@@ -102,7 +119,7 @@ class AuthProvider extends ChangeNotifier {
     _lastError = null;
     notifyListeners();
     try {
-      final result = await _backend.authenticate();
+      final result = await _backend.authenticate(prompt);
       switch (result) {
         case AuthResult.success:
           _locked = false;
@@ -112,12 +129,12 @@ class AuthProvider extends ChangeNotifier {
           // 运行期间设备移除了锁屏：与启动时的处理一致
           _lockEnabled = false;
           _locked = false;
-          _notice = '设备已不再设置锁屏密码或生物识别，应用锁已自动关闭';
+          _notice = AuthNotice.lockDisabledNoCredentials;
           await _savePref((p) => p.setBool(_lockEnabledKey, false));
         case AuthResult.lockedOut:
-          _lastError = '尝试次数过多，请稍后再试或使用设备密码';
+          _lastError = AuthError.lockedOut;
         case AuthResult.failed:
-          _lastError = '验证失败，请重试';
+          _lastError = AuthError.failed;
       }
       return !isLocked;
     } finally {
@@ -127,28 +144,33 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
-  /// 开启或关闭应用锁（两种操作都需要先验证身份）。返回错误信息，成功时为 null。
-  Future<String?> setLockEnabled(bool enabled) async {
+  /// 开启或关闭应用锁（两种操作都需要先验证身份）。返回失败原因；成功或用户取消时为 null。
+  Future<LockToggleError?> setLockEnabled(
+    bool enabled,
+    AuthPrompt prompt,
+  ) async {
     if (_lockEnabled == enabled) return null;
     final availability = await _backend.availability();
     _deviceSecure = availability == AuthAvailability.available;
     if (enabled && !_deviceSecure) {
       notifyListeners();
-      return '请先在系统设置中设置锁屏密码或生物识别';
+      return LockToggleError.deviceNotSecure;
     }
     if (availability == AuthAvailability.available) {
       _authenticating = true;
       notifyListeners();
       final AuthResult result;
       try {
-        result = await _backend.authenticate();
+        result = await _backend.authenticate(prompt);
       } finally {
         _authenticating = false;
         _backgroundedAt = null;
       }
       if (result != AuthResult.success) {
         notifyListeners();
-        return result == AuthResult.cancelled ? null : '身份验证失败';
+        return result == AuthResult.cancelled
+            ? null
+            : LockToggleError.authenticationFailed;
       }
     }
     _lockEnabled = enabled;
@@ -171,6 +193,13 @@ class AuthProvider extends ChangeNotifier {
     notifyListeners();
     await PlatformService.setPrivacyProtection(enabled: enabled);
     await _savePref((p) => p.setBool(_privacyKey, enabled));
+  }
+
+  Future<void> setMaskSensitiveInfo(bool enabled) async {
+    if (_maskSensitiveInfo == enabled) return;
+    _maskSensitiveInfo = enabled;
+    notifyListeners();
+    await _savePref((p) => p.setBool(_maskKey, enabled));
   }
 
   void dismissNotice() {
